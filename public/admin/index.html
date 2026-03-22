@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY 2026 — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB;
+    --gold: #C49A1A; --gold-bg: #FDF6E0;
+    --green: #2E7048; --green-light: #EAF5EE; --green-bright: #4BAE6A;
+    --red: #C0392B; --red-light: #FDECEA;
+    --amber: #D97706; --amber-light: #FEF3C7;
+    --page-bg: #F2F5F8; --card-bg: #fff;
+    --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A; --border: #D4E2EA;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #loginScreen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1C2B38 0%, #2A3D4A 100%);
+  }
+  .login-card {
+    background: #fff; border-radius: 16px; padding: 40px;
+    width: 360px; box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+    text-align: center;
+  }
+  .login-card h1 { font-family: 'Bebas Neue'; font-size: 32px; color: var(--dark); margin-bottom: 4px; letter-spacing: 0.06em; }
+  .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .login-card input {
+    width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+    outline: none; margin-bottom: 12px; color: var(--text); background: #f7fafb;
+  }
+  .login-card input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); }
+  .login-btn {
+    width: 100%; padding: 13px; background: linear-gradient(135deg, var(--green), var(--green-bright));
+    color: #fff; border: none; border-radius: 8px; font-family: 'Bebas Neue';
+    font-size: 18px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s;
+  }
+  .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(46,112,72,0.3); }
+  .login-err { color: var(--red); font-size: 12px; margin-top: 8px; display: none; }
+
+  /* DASHBOARD */
+  #dashboard { display: none; }
+
+  .topbar {
+    background: var(--dark); color: #fff; padding: 0 28px;
+    display: flex; align-items: center; justify-content: space-between; height: 58px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .topbar-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 0.06em; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-right span { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .btn-sm {
+    padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.8); }
+  .btn-outline:hover { border-color: #fff; color: #fff; }
+  .btn-green-sm { background: var(--green); color: #fff; }
+  .btn-green-sm:hover { background: var(--green-bright); }
+
+  .main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+
+  /* STAT CARDS */
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card {
+    background: var(--card-bg); border-radius: 12px; padding: 18px 20px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .stat-val { font-family: 'Bebas Neue'; font-size: 36px; letter-spacing: 0.02em; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .c-total { color: var(--dark); }
+  .c-green { color: var(--green); }
+  .c-amber { color: var(--amber); }
+  .c-blue  { color: var(--sky); }
+  .c-red   { color: var(--red); }
+
+  /* FILTERS ROW */
+  .filters-bar {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 18px; margin-bottom: 18px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    box-shadow: var(--shadow);
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-group label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .filter-group select, .filter-group input {
+    padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+    font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text);
+    background: #f7fafb; outline: none; min-width: 140px;
+  }
+  .filter-group select:focus, .filter-group input:focus { border-color: var(--sky); }
+  .filter-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn-export {
+    padding: 8px 16px; background: var(--sky); color: #fff;
+    border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-export:hover { background: #2E7AAD; }
+  .btn-reset {
+    padding: 8px 14px; background: transparent; border: 1.5px solid var(--border);
+    border-radius: 6px; font-size: 13px; color: var(--muted); cursor: pointer;
+  }
+  .btn-reset:hover { border-color: var(--text); color: var(--text); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .table-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-header h2 { font-size: 14px; font-weight: 700; color: var(--dark); }
+  .table-count { font-size: 12px; color: var(--muted); font-family: 'DM Mono'; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #f7fafb; padding: 10px 16px; text-align: left;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #eef3f6; transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f7fafb; }
+  td { padding: 12px 16px; font-size: 13px; color: var(--text); vertical-align: middle; }
+  td.mono { font-family: 'DM Mono'; font-size: 12px; color: var(--muted); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-green  { background: var(--green-light); color: var(--green); }
+  .badge-amber  { background: var(--amber-light); color: var(--amber); }
+  .badge-blue   { background: var(--sky-light);   color: var(--sky); }
+  .badge-red    { background: var(--red-light);    color: var(--red); }
+
+  .receipt-link { color: var(--sky); text-decoration: none; font-size: 12px; }
+  .receipt-link:hover { text-decoration: underline; }
+
+  /* CHURCH BREAKDOWN */
+  .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+  @media (max-width: 700px) { .bottom-row { grid-template-columns: 1fr; } }
+
+  .church-card {
+    background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .church-card-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 700; color: var(--dark);
+  }
+  .church-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-bottom: 1px solid #eef3f6; font-size: 13px;
+  }
+  .church-row:last-child { border-bottom: none; }
+  .church-name { color: var(--text); }
+  .church-count {
+    font-family: 'DM Mono'; font-size: 12px; color: var(--muted);
+    background: #f0f4f7; padding: 2px 8px; border-radius: 50px;
+  }
+  .church-bar-wrap { flex: 1; margin: 0 12px; background: #eef3f6; border-radius: 50px; height: 6px; overflow: hidden; }
+  .church-bar { height: 6px; border-radius: 50px; background: linear-gradient(90deg, var(--sky), var(--green-bright)); }
+
+  /* LOADING / EMPTY */
+  .loading { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+
+  /* TOAST */
+  .toast {
+    display: none; position: fixed; bottom: 24px; right: 24px;
+    background: var(--dark); color: #fff; padding: 12px 22px;
+    border-radius: 8px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.2); z-index: 999;
+  }
+
+  /* ── MOBILE RESPONSIVE ───────────────────────────── */
+  @media (max-width: 768px) {
+
+    /* LOGIN */
+    .login-card { width: calc(100vw - 40px); padding: 32px 24px; }
+
+    /* TOPBAR */
+    .topbar { padding: 0 16px; height: auto; flex-wrap: wrap; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
+    .topbar-title { font-size: 18px; }
+    .topbar-right { gap: 8px; }
+    .topbar-right span { display: none; }
+
+    /* MAIN */
+    .main { padding: 16px; }
+
+    /* STATS: 2 col on tablet */
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 14px 16px; }
+    .stat-val { font-size: 30px; }
+
+    /* FILTERS: stack vertically */
+    .filters-bar { flex-direction: column; padding: 14px; gap: 10px; }
+    .filter-group { width: 100%; }
+    .filter-group select,
+    .filter-group input { width: 100%; min-width: unset; }
+    .filter-actions { width: 100%; margin-left: 0; }
+    .btn-export, .btn-reset { flex: 1; padding: 10px; text-align: center; }
+
+    /* TABLE: horizontal scroll + tighter cells */
+    .table-wrap { border-radius: 10px; }
+    .table-header { padding: 12px 14px; }
+    table { font-size: 12px; }
+    thead th { padding: 8px 10px; font-size: 10px; }
+    td { padding: 10px 10px; }
+    /* Hide less critical columns on mobile */
+    th:nth-child(3), td:nth-child(3),   /* Age */
+    th:nth-child(10), td:nth-child(10)  /* Registered date */
+    { display: none; }
+
+    /* BOTTOM ROW */
+    .bottom-row { gap: 12px; margin-top: 14px; }
+    .church-row { padding: 9px 14px; font-size: 12px; }
+    .church-card-header { padding: 12px 14px; font-size: 12px; }
+
+    /* TOAST */
+    .toast { right: 12px; left: 12px; bottom: 16px; text-align: center; border-radius: 10px; }
+  }
+
+  @media (max-width: 480px) {
+    /* STATS: still 2 col, just smaller */
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stat-label { font-size: 9px; }
+    .stat-val { font-size: 26px; }
+    .stat-sub { font-size: 10px; }
+
+    /* Hide mobile column too */
+    th:nth-child(4), td:nth-child(4)  /* Mobile number */
+    { display: none; }
+
+    /* Church bar hidden on tiny screens */
+    .church-bar-wrap { display: none; }
+    .church-row { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>RELAY 2026</h1>
+    <p>Admin Dashboard · Enter your password to continue</p>
+    <input type="password" id="passwordInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">Sign In</button>
+    <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-title">⛪ RELAY 2026 · Admin</div>
+    <div class="topbar-right">
+      <span id="lastRefresh"></span>
+      <button class="btn-sm btn-outline" onclick="loadData()">↻ Refresh</button>
+      <button class="btn-sm btn-outline" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card"><div class="stat-label">Total Registered</div><div class="stat-val c-total" id="s-total">–</div></div>
+      <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="s-confirmed">–</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="s-review">–</div></div>
+      <div class="stat-card"><div class="stat-label">Awaiting Payment</div><div class="stat-val c-red" id="s-awaiting">–</div></div>
+      <div class="stat-card"><div class="stat-label">Students / Non</div><div class="stat-val c-blue" id="s-students">–</div><div class="stat-sub" id="s-nonstudents"></div></div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" id="fSearch" placeholder="Name, email, church…" oninput="applyFilters()">
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="fStatus" onchange="applyFilters()">
+          <option value="">All Statuses</option>
+          <option value="confirmed">✅ Confirmed</option>
+          <option value="payment_pending_review">🕐 Pending Review</option>
+          <option value="awaiting_payment">💳 Awaiting Payment</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Student Status</label>
+        <select id="fStudent" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="student">🎓 Student</option>
+          <option value="non-student">💼 Non-Student</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Church</label>
+        <select id="fChurch" onchange="applyFilters()">
+          <option value="">All Churches</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-reset" onclick="resetFilters()">Reset</button>
+        <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <h2>Registrations</h2>
+        <span class="table-count" id="tableCount">–</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Age</th>
+              <th>Mobile</th>
+              <th>Email</th>
+              <th>Church</th>
+              <th>Status</th>
+              <th>Student</th>
+              <th>Receipt</th>
+              <th>Registered</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="10" class="loading">Loading registrations…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW: church breakdown + student breakdown -->
+    <div class="bottom-row">
+      <div class="church-card">
+        <div class="church-card-header">📊 Registrations by Church</div>
+        <div id="churchBreakdown"><div class="loading" style="padding:24px;">Loading…</div></div>
+      </div>
+      <div class="church-card">
+        <div class="church-card-header">👥 Student vs Non-Student</div>
+        <div id="studentBreakdown"><div class="loading" style="padding:24px;">Loading…</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let allData = [];
+  let filteredData = [];
+  let adminPassword = '';
+
+  function login() {
+    const pw = document.getElementById('passwordInput').value;
+    if (!pw) return;
+    adminPassword = pw;
+    loadData().then(ok => {
+      if (ok) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+      } else {
+        document.getElementById('loginErr').style.display = 'block';
+        adminPassword = '';
+      }
+    });
+  }
+
+  function logout() {
+    adminPassword = '';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('loginErr').style.display = 'none';
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        headers: { 'Authorization': 'Bearer ' + adminPassword }
+      });
+      if (res.status === 401) return false;
+      const json = await res.json();
+      allData = json.registrations || [];
+      renderStats(json.stats);
+      populateChurchFilter();
+      applyFilters();
+      renderChurchBreakdown(json.stats.by_church);
+      renderStudentBreakdown(json.stats);
+      document.getElementById('lastRefresh').textContent =
+        'Last updated: ' + new Date().toLocaleTimeString();
+      return true;
+    } catch (e) {
+      showToast('Error loading data: ' + e.message);
+      return false;
+    }
+  }
+
+  function renderStats(s) {
+    document.getElementById('s-total').textContent = s.total;
+    document.getElementById('s-confirmed').textContent = s.confirmed;
+    document.getElementById('s-review').textContent = s.pending_review;
+    document.getElementById('s-awaiting').textContent = s.awaiting_payment;
+    document.getElementById('s-students').textContent = s.students;
+    document.getElementById('s-nonstudents').textContent = s.non_students + ' non-students';
+  }
+
+  function populateChurchFilter() {
+    const churches = [...new Set(allData.map(r => r.church))].sort();
+    const sel = document.getElementById('fChurch');
+    sel.innerHTML = '<option value="">All Churches</option>';
+    churches.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      sel.appendChild(o);
+    });
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('fSearch').value.toLowerCase();
+    const status = document.getElementById('fStatus').value;
+    const student = document.getElementById('fStudent').value;
+    const church = document.getElementById('fChurch').value;
+
+    filteredData = allData.filter(r => {
+      if (search && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(search)) return false;
+      if (status && r.status !== status) return false;
+      if (student && r.student_status !== student) return false;
+      if (church && r.church !== church) return false;
+      return true;
+    });
+
+    renderTable(filteredData);
+    document.getElementById('tableCount').textContent = filteredData.length + ' of ' + allData.length + ' records';
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById('tableBody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty">No registrations match your filters.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td class="mono">${i + 1}</td>
+        <td><strong>${esc(r.name)}</strong></td>
+        <td>${r.age}</td>
+        <td class="mono">${esc(r.mobile)}</td>
+        <td class="mono" style="font-size:12px;">${esc(r.email)}</td>
+        <td style="font-size:12px;">${esc(r.church)}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td>${r.student_status === 'student'
+          ? '<span class="badge badge-blue">🎓 Student</span>'
+          : '<span class="badge badge-amber">💼 Non-Student</span>'}</td>
+        <td>${r.receipt_url
+          ? `<a href="${r.receipt_url}" target="_blank" class="receipt-link">📎 View</a>`
+          : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
+        <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function statusBadge(status) {
+    const map = {
+      confirmed: '<span class="badge badge-green">✅ Confirmed</span>',
+      payment_pending_review: '<span class="badge badge-amber">🕐 Pending Review</span>',
+      awaiting_payment: '<span class="badge badge-red">💳 Awaiting Payment</span>',
+    };
+    return map[status] || `<span class="badge">${status}</span>`;
+  }
+
+  function renderChurchBreakdown(byChurch) {
+    const sorted = Object.entries(byChurch).sort((a, b) => b[1] - a[1]);
+    const max = sorted[0]?.[1] || 1;
+    document.getElementById('churchBreakdown').innerHTML = sorted.map(([church, count]) => `
+      <div class="church-row">
+        <span class="church-name">${esc(church)}</span>
+        <div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(count/max*100)}%"></div></div>
+        <span class="church-count">${count}</span>
+      </div>
+    `).join('') || '<div class="empty">No data</div>';
+  }
+
+  function renderStudentBreakdown(stats) {
+    const total = stats.total || 1;
+    const sPct = Math.round(stats.students / total * 100);
+    const nPct = 100 - sPct;
+    document.getElementById('studentBreakdown').innerHTML = `
+      <div class="church-row">
+        <span class="church-name">🎓 Students</span>
+        <div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div>
+        <span class="church-count">${stats.students} (${sPct}%)</span>
+      </div>
+      <div class="church-row">
+        <span class="church-name">💼 Non-Students</span>
+        <div class="church-bar-wrap"><div class="church-bar" style="width:${nPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div>
+        <span class="church-count">${stats.non_students} (${nPct}%)</span>
+      </div>
+      <div style="padding:14px 20px;background:#f7fafb;border-top:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Estimated Revenue</div>
+        <div style="font-family:'Bebas Neue';font-size:28px;color:var(--dark);">
+          ₱${((stats.students * 3000) + (stats.non_students * 4500)).toLocaleString()}
+        </div>
+        <div style="font-size:11px;color:var(--muted);">Students × ₱3,000 + Non-Students × ₱4,500</div>
+      </div>
+    `;
+  }
+
+  function exportCSV() {
+    const rows = filteredData;
+    if (!rows.length) { showToast('No data to export'); return; }
+    const cols = ['name','age','mobile','email','student_status','church','status','payment_verified','created_at'];
+    const headers = ['Name','Age','Mobile','Email','Student Status','Church','Status','Payment Verified','Registered At'];
+    const csv = [headers.join(','),
+      ...rows.map(r => cols.map(c => `"${(r[c] ?? '').toString().replace(/"/g,'""')}"`).join(','))
+    ].join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `relay2026-registrations-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV exported!');
+  }
+
+  function resetFilters() {
+    document.getElementById('fSearch').value = '';
+    document.getElementById('fStatus').value = '';
+    document.getElementById('fStudent').value = '';
+    document.getElementById('fChurch').value = '';
+    applyFilters();
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function esc(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3500);
+  }
+
+  // Enter key on password
+  document.getElementById('passwordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+</script>
+</body>
+</html>
