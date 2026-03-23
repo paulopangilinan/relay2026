@@ -7,286 +7,219 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --sky: #3A8BBF; --sky-light: #EBF5FB;
-    --gold: #C49A1A; --gold-bg: #FDF6E0;
-    --green: #2E7048; --green-light: #EAF5EE; --green-bright: #4BAE6A;
-    --red: #C0392B; --red-light: #FDECEA;
-    --amber: #D97706; --amber-light: #FEF3C7;
-    --page-bg: #F2F5F8; --card-bg: #fff;
-    --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A; --border: #D4E2EA;
-    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+    --sky:#3A8BBF;--sky-light:#EBF5FB;
+    --gold:#C49A1A;--gold-light:#E8B830;--gold-bg:#FDF6E0;
+    --green:#2E7048;--green-light:#EAF5EE;--green-bright:#4BAE6A;
+    --red:#C0392B;--red-light:#FDECEA;
+    --amber:#D97706;--amber-light:#FEF3C7;
+    --page-bg:#F2F5F8;--card-bg:#fff;
+    --dark:#1C2B38;--text:#2A3D4A;--muted:#6B8A9A;--border:#D4E2EA;
+    --shadow:0 2px 12px rgba(26,58,82,0.08);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--page-bg);color:var(--text);min-height:100vh;}
 
   /* LOGIN */
-  #loginScreen {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1C2B38 0%, #2A3D4A 100%);
-  }
-  .login-card {
-    background: #fff; border-radius: 16px; padding: 40px;
-    width: 360px; box-shadow: 0 16px 48px rgba(0,0,0,0.2);
-    text-align: center;
-  }
-  .login-card h1 { font-family: 'Bebas Neue'; font-size: 32px; color: var(--dark); margin-bottom: 4px; letter-spacing: 0.06em; }
-  .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
-  .login-card input {
-    width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
-    border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif;
-    outline: none; margin-bottom: 12px; color: var(--text); background: #f7fafb;
-  }
-  .login-card input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); }
-  .login-btn {
-    width: 100%; padding: 13px; background: linear-gradient(135deg, var(--green), var(--green-bright));
-    color: #fff; border: none; border-radius: 8px; font-family: 'Bebas Neue';
-    font-size: 18px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s;
-  }
-  .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(46,112,72,0.3); }
-  .login-err { color: var(--red); font-size: 12px; margin-top: 8px; display: none; }
+  #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1C2B38,#2A3D4A);}
+  .login-card{background:#fff;border-radius:16px;padding:40px;width:360px;box-shadow:0 16px 48px rgba(0,0,0,0.2);text-align:center;overflow:hidden;position:relative;}
+  .login-bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);position:absolute;top:0;left:0;right:0;}
+  .login-card h1{font-family:'Bebas Neue';font-size:32px;color:var(--dark);margin-bottom:4px;letter-spacing:0.06em;}
+  .login-card p{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .login-card input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;color:var(--text);background:#f7fafb;}
+  .login-card input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(58,139,191,0.12);}
+  .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--green),var(--green-bright));color:#fff;border:none;border-radius:8px;font-family:'Bebas Neue';font-size:18px;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;}
+  .login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(46,112,72,0.3);}
+  .login-err{color:var(--red);font-size:12px;margin-top:8px;display:none;}
 
-  /* DASHBOARD */
-  #dashboard { display: none; }
+  #dashboard{display:none;}
 
-  .topbar {
-    background: var(--dark); color: #fff; padding: 0 28px;
-    display: flex; align-items: center; justify-content: space-between; height: 58px;
-    position: sticky; top: 0; z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  }
-  .topbar-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 0.06em; }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .topbar-right span { font-size: 12px; color: rgba(255,255,255,0.5); }
-  .btn-sm {
-    padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
-    cursor: pointer; border: none; transition: all 0.15s;
-  }
-  .btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.8); }
-  .btn-outline:hover { border-color: #fff; color: #fff; }
-  .btn-green-sm { background: var(--green); color: #fff; }
-  .btn-green-sm:hover { background: var(--green-bright); }
+  /* TOPBAR */
+  .topbar{background:var(--dark);color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .topbar-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:0.06em;}
+  .topbar-sub{font-size:11px;color:rgba(255,255,255,0.4);font-family:'DM Mono';}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .topbar-right span{font-size:11px;color:rgba(255,255,255,0.4);}
+  .btn-sm{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;}
+  .btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);}
+  .btn-outline:hover{border-color:#fff;color:#fff;}
+  .topbar-bar{height:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);position:absolute;bottom:0;left:0;right:0;}
 
-  .main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+  .main{padding:28px;max-width:1200px;margin:0 auto;}
 
-  /* STAT CARDS */
-  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
-  @media (max-width: 900px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 560px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px;}
+  .stat-card{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);}
+  .stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+  .stat-val{font-family:'Bebas Neue';font-size:32px;letter-spacing:0.02em;line-height:1;}
+  .stat-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+  .c-total{color:var(--dark);} .c-green{color:var(--green);} .c-amber{color:var(--amber);} .c-blue{color:var(--sky);} .c-red{color:var(--red);} .c-gold{color:var(--gold);}
 
-  .stat-card {
-    background: var(--card-bg); border-radius: 12px; padding: 18px 20px;
-    border: 1px solid var(--border); box-shadow: var(--shadow);
-  }
-  .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-  .stat-val { font-family: 'Bebas Neue'; font-size: 36px; letter-spacing: 0.02em; line-height: 1; }
-  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .c-total { color: var(--dark); }
-  .c-green { color: var(--green); }
-  .c-amber { color: var(--amber); }
-  .c-blue  { color: var(--sky); }
-  .c-red   { color: var(--red); }
+  /* REVENUE ROW */
+  .revenue-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;}
+  .rev-card{background:var(--card-bg);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;}
+  .rev-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .rev-icon-green{background:var(--green-light);}
+  .rev-icon-amber{background:var(--amber-light);}
+  .rev-info .rev-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
+  .rev-info .rev-val{font-family:'Bebas Neue';font-size:26px;line-height:1;}
+  .rev-info .rev-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .rev-green .rev-val{color:var(--green);}
+  .rev-amber .rev-val{color:var(--amber);}
 
-  /* FILTERS ROW */
-  .filters-bar {
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-    padding: 14px 18px; margin-bottom: 18px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-    box-shadow: var(--shadow);
-  }
-  .filter-group { display: flex; flex-direction: column; gap: 4px; }
-  .filter-group label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-  .filter-group select, .filter-group input {
-    padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 6px;
-    font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text);
-    background: #f7fafb; outline: none; min-width: 140px;
-  }
-  .filter-group select:focus, .filter-group input:focus { border-color: var(--sky); }
-  .filter-actions { margin-left: auto; display: flex; gap: 8px; }
-  .btn-export {
-    padding: 8px 16px; background: var(--sky); color: #fff;
-    border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .btn-export:hover { background: #2E7AAD; }
-  .btn-reset {
-    padding: 8px 14px; background: transparent; border: 1.5px solid var(--border);
-    border-radius: 6px; font-size: 13px; color: var(--muted); cursor: pointer;
-  }
-  .btn-reset:hover { border-color: var(--text); color: var(--text); }
+  /* FILTERS */
+  .filters-bar{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--shadow);}
+  .filter-group{display:flex;flex-direction:column;gap:4px;}
+  .filter-group label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+  .filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#f7fafb;outline:none;min-width:140px;}
+  .filter-group select:focus,.filter-group input:focus{border-color:var(--sky);}
+  .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end;}
+  .btn-export{padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .btn-export:hover{background:#2E7AAD;}
+  .btn-reset{padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer;}
+  .btn-reset:hover{border-color:var(--text);color:var(--text);}
 
   /* TABLE */
-  .table-wrap {
-    background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border);
-    box-shadow: var(--shadow); overflow: hidden;
+  .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+  .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
+  .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr{border-bottom:1px solid #eef3f6;transition:background 0.1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:#f7fafb;}
+  td{padding:11px 14px;font-size:13px;color:var(--text);vertical-align:middle;}
+  td.mono{font-family:'DM Mono';font-size:12px;color:var(--muted);}
+
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:50px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .badge-green{background:var(--green-light);color:var(--green);}
+  .badge-amber{background:var(--amber-light);color:var(--amber);}
+  .badge-blue{background:var(--sky-light);color:var(--sky);}
+  .badge-red{background:var(--red-light);color:var(--red);}
+
+  .receipt-link{color:var(--sky);text-decoration:none;font-size:12px;font-weight:600;}
+  .receipt-link:hover{text-decoration:underline;}
+
+  /* OVERRIDE BUTTON */
+  .btn-confirm{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-confirm:hover{background:var(--green-bright);}
+  .btn-confirm:disabled{background:#ccc;cursor:default;}
+
+  /* BOTTOM ROW */
+  .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;}
+  .church-card{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+  .church-card-header{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--dark);}
+  .church-row{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid #eef3f6;font-size:13px;}
+  .church-row:last-child{border-bottom:none;}
+  .church-name{color:var(--text);flex-shrink:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .church-count{font-family:'DM Mono';font-size:12px;color:var(--muted);background:#f0f4f7;padding:2px 8px;border-radius:50px;flex-shrink:0;}
+  .church-bar-wrap{flex:1;margin:0 12px;background:#eef3f6;border-radius:50px;height:6px;overflow:hidden;}
+  .church-bar{height:6px;border-radius:50px;background:linear-gradient(90deg,var(--sky),var(--green-bright));}
+
+  .loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;}
+  .modal-overlay.visible{display:flex;}
+  .modal{background:#fff;border-radius:14px;padding:28px;max-width:380px;width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.2);}
+  .modal h3{font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;}
+  .modal p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+  .btn-cancel{padding:9px 18px;background:transparent;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;}
+  .btn-cancel:hover{border-color:var(--text);color:var(--text);}
+  .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-confirm-modal:hover{background:var(--green-bright);}
+
+  .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
+
+  /* MOBILE */
+  @media(max-width:1100px){.stats-row{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:768px){
+    .login-card{width:calc(100vw - 40px);padding:32px 24px;}
+    .topbar{padding:0 16px;height:auto;flex-wrap:wrap;gap:8px;padding-top:12px;padding-bottom:12px;}
+    .topbar-sub{display:none;}
+    .topbar-right span{display:none;}
+    .main{padding:16px;}
+    .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+    .revenue-row{grid-template-columns:1fr;}
+    .stat-val{font-size:26px;}
+    .filters-bar{flex-direction:column;padding:14px;gap:10px;}
+    .filter-group{width:100%;}
+    .filter-group select,.filter-group input{width:100%;min-width:unset;}
+    .filter-actions{width:100%;margin-left:0;}
+    .btn-export,.btn-reset{flex:1;padding:10px;text-align:center;}
+    .bottom-row{grid-template-columns:1fr;gap:12px;margin-top:14px;}
+    th:nth-child(3),td:nth-child(3),th:nth-child(10),td:nth-child(10){display:none;}
+    .toast{right:12px;left:12px;bottom:16px;text-align:center;border-radius:10px;}
   }
-  .table-header {
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .table-header h2 { font-size: 14px; font-weight: 700; color: var(--dark); }
-  .table-count { font-size: 12px; color: var(--muted); font-family: 'DM Mono'; }
-
-  table { width: 100%; border-collapse: collapse; }
-  thead th {
-    background: #f7fafb; padding: 10px 16px; text-align: left;
-    font-size: 11px; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.08em;
-    border-bottom: 1px solid var(--border); white-space: nowrap;
-  }
-  tbody tr { border-bottom: 1px solid #eef3f6; transition: background 0.1s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: #f7fafb; }
-  td { padding: 12px 16px; font-size: 13px; color: var(--text); vertical-align: middle; }
-  td.mono { font-family: 'DM Mono'; font-size: 12px; color: var(--muted); }
-
-  .badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 600;
-    white-space: nowrap;
-  }
-  .badge-green  { background: var(--green-light); color: var(--green); }
-  .badge-amber  { background: var(--amber-light); color: var(--amber); }
-  .badge-blue   { background: var(--sky-light);   color: var(--sky); }
-  .badge-red    { background: var(--red-light);    color: var(--red); }
-
-  .receipt-link { color: var(--sky); text-decoration: none; font-size: 12px; }
-  .receipt-link:hover { text-decoration: underline; }
-
-  /* CHURCH BREAKDOWN */
-  .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
-  @media (max-width: 700px) { .bottom-row { grid-template-columns: 1fr; } }
-
-  .church-card {
-    background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border);
-    box-shadow: var(--shadow); overflow: hidden;
-  }
-  .church-card-header {
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-    font-size: 13px; font-weight: 700; color: var(--dark);
-  }
-  .church-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 20px; border-bottom: 1px solid #eef3f6; font-size: 13px;
-  }
-  .church-row:last-child { border-bottom: none; }
-  .church-name { color: var(--text); }
-  .church-count {
-    font-family: 'DM Mono'; font-size: 12px; color: var(--muted);
-    background: #f0f4f7; padding: 2px 8px; border-radius: 50px;
-  }
-  .church-bar-wrap { flex: 1; margin: 0 12px; background: #eef3f6; border-radius: 50px; height: 6px; overflow: hidden; }
-  .church-bar { height: 6px; border-radius: 50px; background: linear-gradient(90deg, var(--sky), var(--green-bright)); }
-
-  /* LOADING / EMPTY */
-  .loading { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
-  .empty { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
-
-  /* TOAST */
-  .toast {
-    display: none; position: fixed; bottom: 24px; right: 24px;
-    background: var(--dark); color: #fff; padding: 12px 22px;
-    border-radius: 8px; font-size: 13px; font-weight: 500;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.2); z-index: 999;
-  }
-
-  /* ── MOBILE RESPONSIVE ───────────────────────────── */
-  @media (max-width: 768px) {
-
-    /* LOGIN */
-    .login-card { width: calc(100vw - 40px); padding: 32px 24px; }
-
-    /* TOPBAR */
-    .topbar { padding: 0 16px; height: auto; flex-wrap: wrap; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
-    .topbar-title { font-size: 18px; }
-    .topbar-right { gap: 8px; }
-    .topbar-right span { display: none; }
-
-    /* MAIN */
-    .main { padding: 16px; }
-
-    /* STATS: 2 col on tablet */
-    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
-    .stat-card { padding: 14px 16px; }
-    .stat-val { font-size: 30px; }
-
-    /* FILTERS: stack vertically */
-    .filters-bar { flex-direction: column; padding: 14px; gap: 10px; }
-    .filter-group { width: 100%; }
-    .filter-group select,
-    .filter-group input { width: 100%; min-width: unset; }
-    .filter-actions { width: 100%; margin-left: 0; }
-    .btn-export, .btn-reset { flex: 1; padding: 10px; text-align: center; }
-
-    /* TABLE: horizontal scroll + tighter cells */
-    .table-wrap { border-radius: 10px; }
-    .table-header { padding: 12px 14px; }
-    table { font-size: 12px; }
-    thead th { padding: 8px 10px; font-size: 10px; }
-    td { padding: 10px 10px; }
-    /* Hide less critical columns on mobile */
-    th:nth-child(3), td:nth-child(3),   /* Age */
-    th:nth-child(10), td:nth-child(10)  /* Registered date */
-    { display: none; }
-
-    /* BOTTOM ROW */
-    .bottom-row { gap: 12px; margin-top: 14px; }
-    .church-row { padding: 9px 14px; font-size: 12px; }
-    .church-card-header { padding: 12px 14px; font-size: 12px; }
-
-    /* TOAST */
-    .toast { right: 12px; left: 12px; bottom: 16px; text-align: center; border-radius: 10px; }
-  }
-
-  @media (max-width: 480px) {
-    /* STATS: still 2 col, just smaller */
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
-    .stat-label { font-size: 9px; }
-    .stat-val { font-size: 26px; }
-    .stat-sub { font-size: 10px; }
-
-    /* Hide mobile column too */
-    th:nth-child(4), td:nth-child(4)  /* Mobile number */
-    { display: none; }
-
-    /* Church bar hidden on tiny screens */
-    .church-bar-wrap { display: none; }
-    .church-row { gap: 8px; }
+  @media(max-width:480px){
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+    th:nth-child(4),td:nth-child(4){display:none;}
+    .church-bar-wrap{display:none;}
   }
 </style>
 </head>
 <body>
 
-<!-- ── LOGIN ── -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
+    <div class="login-bar"></div>
     <h1>RELAY 2026</h1>
-    <p>Admin Dashboard · Enter your password to continue</p>
-    <input type="password" id="passwordInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
+    <p>Admin Dashboard · Enter your password</p>
+    <input type="password" id="passwordInput" placeholder="Admin password">
     <button class="login-btn" onclick="login()">Sign In</button>
     <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
   </div>
 </div>
 
-<!-- ── DASHBOARD ── -->
+<!-- DASHBOARD -->
 <div id="dashboard">
-  <div class="topbar">
-    <div class="topbar-title">⛪ RELAY 2026 · Admin</div>
+  <div class="topbar" style="position:relative;">
+    <div class="topbar-left">
+      <div class="topbar-title">⛪ RELAY 2026</div>
+      <div class="topbar-sub">Admin Dashboard</div>
+    </div>
     <div class="topbar-right">
       <span id="lastRefresh"></span>
       <button class="btn-sm btn-outline" onclick="loadData()">↻ Refresh</button>
       <button class="btn-sm btn-outline" onclick="logout()">Sign Out</button>
     </div>
+    <div class="topbar-bar"></div>
   </div>
 
   <div class="main">
 
-    <!-- STATS -->
-    <div class="stats-row" id="statsRow">
+    <!-- STAT CARDS -->
+    <div class="stats-row">
       <div class="stat-card"><div class="stat-label">Total Registered</div><div class="stat-val c-total" id="s-total">–</div></div>
       <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="s-confirmed">–</div></div>
       <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="s-review">–</div></div>
       <div class="stat-card"><div class="stat-label">Awaiting Payment</div><div class="stat-val c-red" id="s-awaiting">–</div></div>
-      <div class="stat-card"><div class="stat-label">Students / Non</div><div class="stat-val c-blue" id="s-students">–</div><div class="stat-sub" id="s-nonstudents"></div></div>
+      <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val c-blue" id="s-students">–</div><div class="stat-sub" id="s-nonstudents"></div></div>
+      <div class="stat-card"><div class="stat-label">Non-Students</div><div class="stat-val c-gold" id="s-nonstudents2">–</div></div>
+    </div>
+
+    <!-- REVENUE -->
+    <div class="revenue-row">
+      <div class="rev-card rev-green">
+        <div class="rev-icon rev-icon-green">✅</div>
+        <div class="rev-info">
+          <div class="rev-label">Confirmed Revenue</div>
+          <div class="rev-val" id="r-confirmed">₱0</div>
+          <div class="rev-sub">From verified payments</div>
+        </div>
+      </div>
+      <div class="rev-card rev-amber">
+        <div class="rev-icon rev-icon-amber">🕐</div>
+        <div class="rev-info">
+          <div class="rev-label">Pending Revenue</div>
+          <div class="rev-val" id="r-pending">₱0</div>
+          <div class="rev-sub">Submitted but unverified</div>
+        </div>
+      </div>
     </div>
 
     <!-- FILTERS -->
@@ -334,26 +267,18 @@
         <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Age</th>
-              <th>Mobile</th>
-              <th>Email</th>
-              <th>Church</th>
-              <th>Status</th>
-              <th>Student</th>
-              <th>Receipt</th>
-              <th>Registered</th>
+              <th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th>
+              <th>Church</th><th>Status</th><th>Type</th><th>Receipt</th><th>Registered</th><th>Action</th>
             </tr>
           </thead>
           <tbody id="tableBody">
-            <tr><td colspan="10" class="loading">Loading registrations…</td></tr>
+            <tr><td colspan="11" class="loading">Loading registrations…</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- BOTTOM ROW: church breakdown + student breakdown -->
+    <!-- BOTTOM CHARTS -->
     <div class="bottom-row">
       <div class="church-card">
         <div class="church-card-header">📊 Registrations by Church</div>
@@ -368,12 +293,22 @@
   </div>
 </div>
 
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3>Mark as Paid & Confirmed?</h3>
+    <p>This will mark <strong id="modalName"></strong>'s registration as confirmed and send them a confirmation email. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm-modal" onclick="doConfirm()">✅ Confirm & Send Email</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-  let allData = [];
-  let filteredData = [];
-  let adminPassword = '';
+  let allData = [], filteredData = [], adminPassword = '', pendingConfirmId = null;
 
   function login() {
     const pw = document.getElementById('passwordInput').value;
@@ -411,13 +346,9 @@
       applyFilters();
       renderChurchBreakdown(json.stats.by_church);
       renderStudentBreakdown(json.stats);
-      document.getElementById('lastRefresh').textContent =
-        'Last updated: ' + new Date().toLocaleTimeString();
+      document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
       return true;
-    } catch (e) {
-      showToast('Error loading data: ' + e.message);
-      return false;
-    }
+    } catch (e) { showToast('Error: ' + e.message); return false; }
   }
 
   function renderStats(s) {
@@ -426,18 +357,17 @@
     document.getElementById('s-review').textContent = s.pending_review;
     document.getElementById('s-awaiting').textContent = s.awaiting_payment;
     document.getElementById('s-students').textContent = s.students;
-    document.getElementById('s-nonstudents').textContent = s.non_students + ' non-students';
+    document.getElementById('s-nonstudents').textContent = 'of ' + s.total;
+    document.getElementById('s-nonstudents2').textContent = s.non_students;
+    document.getElementById('r-confirmed').textContent = '₱' + (s.confirmed_revenue || 0).toLocaleString();
+    document.getElementById('r-pending').textContent = '₱' + (s.pending_revenue || 0).toLocaleString();
   }
 
   function populateChurchFilter() {
     const churches = [...new Set(allData.map(r => r.church))].sort();
     const sel = document.getElementById('fChurch');
     sel.innerHTML = '<option value="">All Churches</option>';
-    churches.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c; o.textContent = c;
-      sel.appendChild(o);
-    });
+    churches.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
   }
 
   function applyFilters() {
@@ -445,7 +375,6 @@
     const status = document.getElementById('fStatus').value;
     const student = document.getElementById('fStudent').value;
     const church = document.getElementById('fChurch').value;
-
     filteredData = allData.filter(r => {
       if (search && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(search)) return false;
       if (status && r.status !== status) return false;
@@ -453,56 +382,87 @@
       if (church && r.church !== church) return false;
       return true;
     });
-
     renderTable(filteredData);
     document.getElementById('tableCount').textContent = filteredData.length + ' of ' + allData.length + ' records';
   }
 
   function renderTable(rows) {
     const tbody = document.getElementById('tableBody');
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="empty">No registrations match your filters.</td></tr>';
-      return;
-    }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No registrations match your filters.</td></tr>'; return; }
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
-        <td class="mono">${i + 1}</td>
+        <td class="mono">${i+1}</td>
         <td><strong>${esc(r.name)}</strong></td>
         <td>${r.age}</td>
         <td class="mono">${esc(r.mobile)}</td>
         <td class="mono" style="font-size:12px;">${esc(r.email)}</td>
-        <td style="font-size:12px;">${esc(r.church)}</td>
+        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.church)}</td>
         <td>${statusBadge(r.status)}</td>
-        <td>${r.student_status === 'student'
+        <td>${r.student_status==='student'
           ? '<span class="badge badge-blue">🎓 Student</span>'
           : '<span class="badge badge-amber">💼 Non-Student</span>'}</td>
         <td>${r.receipt_url
           ? `<a href="${r.receipt_url}" target="_blank" class="receipt-link">📎 View</a>`
           : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
+        <td>${r.payment_verified
+          ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>'
+          : `<button class="btn-confirm" onclick="openModal('${r.id}','${esc(r.name)}')">Mark Paid</button>`}</td>
       </tr>
     `).join('');
   }
 
   function statusBadge(status) {
-    const map = {
+    return {
       confirmed: '<span class="badge badge-green">✅ Confirmed</span>',
       payment_pending_review: '<span class="badge badge-amber">🕐 Pending Review</span>',
       awaiting_payment: '<span class="badge badge-red">💳 Awaiting Payment</span>',
-    };
-    return map[status] || `<span class="badge">${status}</span>`;
+    }[status] || `<span class="badge">${status}</span>`;
+  }
+
+  function openModal(id, name) {
+    pendingConfirmId = id;
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('confirmModal').classList.add('visible');
+  }
+
+  function closeModal() {
+    pendingConfirmId = null;
+    document.getElementById('confirmModal').classList.remove('visible');
+  }
+
+  async function doConfirm() {
+    if (!pendingConfirmId) return;
+    const btn = document.querySelector('.btn-confirm-modal');
+    btn.disabled = true; btn.textContent = 'Processing…';
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminPassword, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pendingConfirmId, action: 'confirm' }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error);
+      closeModal();
+      showToast('✅ Marked as confirmed and email sent!');
+      loadData();
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '✅ Confirm & Send Email';
+    }
   }
 
   function renderChurchBreakdown(byChurch) {
-    const sorted = Object.entries(byChurch).sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(byChurch).sort((a,b) => b[1]-a[1]);
     const max = sorted[0]?.[1] || 1;
     document.getElementById('churchBreakdown').innerHTML = sorted.map(([church, count]) => `
       <div class="church-row">
-        <span class="church-name">${esc(church)}</span>
+        <span class="church-name" title="${esc(church)}">${esc(church)}</span>
         <div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(count/max*100)}%"></div></div>
         <span class="church-count">${count}</span>
       </div>
-    `).join('') || '<div class="empty">No data</div>';
+    `).join('') || '<div class="empty">No data yet</div>';
   }
 
   function renderStudentBreakdown(stats) {
@@ -521,46 +481,39 @@
         <span class="church-count">${stats.non_students} (${nPct}%)</span>
       </div>
       <div style="padding:14px 20px;background:#f7fafb;border-top:1px solid var(--border);">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Estimated Revenue</div>
-        <div style="font-family:'Bebas Neue';font-size:28px;color:var(--dark);">
-          ₱${((stats.students * 3000) + (stats.non_students * 4500)).toLocaleString()}
-        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.07em;font-weight:700;">Total Potential Revenue</div>
+        <div style="font-family:'Bebas Neue';font-size:28px;color:var(--dark);">₱${((stats.students*3000)+(stats.non_students*4500)).toLocaleString()}</div>
         <div style="font-size:11px;color:var(--muted);">Students × ₱3,000 + Non-Students × ₱4,500</div>
       </div>
     `;
   }
 
   function exportCSV() {
-    const rows = filteredData;
-    if (!rows.length) { showToast('No data to export'); return; }
+    if (!filteredData.length) { showToast('No data to export'); return; }
     const cols = ['name','age','mobile','email','student_status','church','status','payment_verified','created_at'];
-    const headers = ['Name','Age','Mobile','Email','Student Status','Church','Status','Payment Verified','Registered At'];
-    const csv = [headers.join(','),
-      ...rows.map(r => cols.map(c => `"${(r[c] ?? '').toString().replace(/"/g,'""')}"`).join(','))
-    ].join('\n');
+    const hdrs = ['Name','Age','Mobile','Email','Student Status','Church','Status','Payment Verified','Registered At'];
+    const csv = [hdrs.join(','), ...filteredData.map(r => cols.map(c => `"${(r[c]??'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = `relay2026-registrations-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `relay2026-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     showToast('CSV exported!');
   }
 
   function resetFilters() {
-    document.getElementById('fSearch').value = '';
-    document.getElementById('fStatus').value = '';
-    document.getElementById('fStudent').value = '';
-    document.getElementById('fChurch').value = '';
+    ['fSearch','fStatus','fStudent','fChurch'].forEach(id => {
+      const el = document.getElementById(id);
+      el.tagName === 'INPUT' ? el.value = '' : el.value = '';
+    });
     applyFilters();
   }
 
   function formatDate(iso) {
     if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleDateString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
   }
 
-  function esc(str) {
-    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+  function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -568,10 +521,8 @@
     setTimeout(() => t.style.display = 'none', 3500);
   }
 
-  // Enter key on password
-  document.getElementById('passwordInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') login();
-  });
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key==='Enter') login(); });
+  document.getElementById('confirmModal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
 </script>
 </body>
 </html>

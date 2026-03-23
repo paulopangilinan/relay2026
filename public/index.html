@@ -694,14 +694,8 @@
         throw new Error(json.error || 'Submission failed');
       }
 
-      if (withReceipt) {
-        showToast('🎉 Registration submitted! We will verify your payment and email you a confirmation.');
-      } else {
-        showToast('📧 Thank you! Payment instructions have been sent to your email.');
-      }
-
-      // Reset form after short delay
-      setTimeout(() => document.getElementById('relayForm').reset(), 3000);
+      // Redirect to thank-you page
+      window.location.href = withReceipt ? 'thank-you.html?type=paid' : 'thank-you.html?type=later';
     } catch (err) {
       showToast('❌ Error: ' + err.message, true);
     } finally {

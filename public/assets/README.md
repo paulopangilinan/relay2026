@@ -7,7 +7,8 @@ Keep the exact same filename — the HTML references these paths directly.
 
 assets/
 ├── images/
-│   ├── hero.jpg                        ← Banner at the top of the form
+│   ├── hero.jpg                        ← Banner at the top of the registration form
+│   ├── hero-email.jpg                  ← Banner used inside all email templates (provide this file!)
 │   ├── speakers/
 │   │   ├── dave-taylor.png             ← Speaker photo
 │   │   ├── riley-spring.png            ← Speaker photo
