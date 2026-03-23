@@ -240,7 +240,9 @@ function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, site
                     <span style="color:#888;">Mobile No.:</span>
                     <span style="color:#444;font-weight:600;font-family:monospace;">${gcashMobile || ''}</span>
                   </div>
-                  <a href="https://links.gcash.com/go/pay" style="display:block;margin-top:14px;padding:11px;background:#0070E0;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;text-align:center;">Open GCash to Pay →</a>
+                  <div style="margin-top:14px;background:#E8F4FF;border-radius:8px;padding:10px 14px;font-size:13px;color:#0070E0;text-align:center;">
+                    💡 <strong>Send Money</strong> in GCash using the mobile number above
+                  </div>
                 </td></tr>
               </table>
             </td></tr>
