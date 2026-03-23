@@ -158,14 +158,16 @@
     </div>
   </div>
 
-  <a href="index.html" class="btn-back">← Back to Registration</a>
+  <a id="backBtn" href="register-ph.html" class="btn-back">← Back to Registration</a>
 </div>
 
 <script>
   // Read query param ?type=paid or ?type=later
   const params = new URLSearchParams(window.location.search);
   const type = params.get('type') || 'paid';
+  const form = params.get('form') || 'ph';
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
+  document.getElementById('backBtn').href = form === 'intl' ? 'register-international.html' : 'register-ph.html';
 </script>
 </body>
 </html>

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY 2026 — International Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB;
+    --gold: #C49A1A; --gold-light: #E8B830; --gold-bg: #FDF6E0;
+    --green: #2E7048; --green-light: #EAF5EE; --green-bright: #4BAE6A;
+    --white: #FFFFFF; --page-bg: #F2F5F8; --card-bg: #FFFFFF;
+    --dark: #1C2B38; --muted: #6B8A9A; --text: #2A3D4A; --border: #D4E2EA;
+    --input-bg: #F7FAFB; --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+
+  .hero { width: 100%; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
+
+  .chips-bar { background: var(--dark); padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 50px; padding: 5px 13px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .chip-venue { background: rgba(74,155,196,0.18); color: #8DD4F5; border: 1px solid rgba(74,155,196,0.3); }
+  .chip-date  { background: rgba(212,168,50,0.18);  color: #F5D070; border: 1px solid rgba(212,168,50,0.3); }
+  .chip-age   { background: rgba(75,174,106,0.18);  color: #85E0A3; border: 1px solid rgba(75,174,106,0.3); }
+  .chip-intl  { background: rgba(255,255,255,0.1);  color: #fff;    border: 1px solid rgba(255,255,255,0.2); }
+
+  .confetti-bar { height: 4px; background: linear-gradient(90deg, var(--green-bright), var(--sky), var(--gold-light), var(--green-bright)); background-size: 200%; animation: shimmer 3s linear infinite; }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .page-wrap { max-width: 700px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  .form-heading { margin-bottom: 28px; }
+  .form-heading h1 { font-family: 'Bebas Neue'; font-size: 36px; letter-spacing: 0.05em; color: var(--dark); margin-bottom: 4px; }
+  .form-heading p { color: var(--muted); font-size: 13px; }
+
+  .card { background: var(--card-bg); border-radius: 14px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border); }
+
+  .section-label { font-family: 'DM Mono'; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sky); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
+  label .req { color: #E05050; margin-left: 2px; }
+  label .opt { color: var(--muted); font-weight: 400; margin-left: 4px; font-size: 11px; }
+
+  input[type=text], input[type=email], input[type=tel], input[type=number], select, textarea {
+    background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    padding: 11px 13px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); background: #fff; }
+  input::placeholder, textarea::placeholder { color: #B0C4CE; }
+  select option { background: #fff; color: var(--text); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* Field validation states */
+  input.field-error { border-color: #E05050 !important; box-shadow: 0 0 0 3px rgba(224,80,80,0.1) !important; }
+  input.field-ok { border-color: var(--green) !important; }
+  .field-msg { font-size: 11px; margin-top: 2px; display: none; }
+  .field-msg.show-error { color: #E05050; display: block; }
+  .field-msg.show-ok { color: var(--green); display: block; }
+
+  /* Mobile with country code */
+  .mobile-wrap { display: flex; }
+  .country-select {
+    background: var(--input-bg); border: 1.5px solid var(--border);
+    border-right: none; border-radius: 8px 0 0 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 11px 8px 11px 12px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; appearance: none; cursor: pointer;
+    flex-shrink: 0; width: auto;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B8A9A'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px;
+  }
+  .country-select:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); z-index:1; position:relative; }
+  .mobile-wrap input[type=tel] { border-radius: 0 8px 8px 0; flex: 1; border-left: 1px solid var(--border); width: auto; }
+
+  /* Select wrapper */
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: '▾'; position: absolute; right: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); font-size: 14px; }
+
+  /* Slide panel */
+  .slide-panel { display: none; animation: slideDown 0.25s ease; }
+  .slide-panel.visible { display: block; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* Fee highlight */
+  .fee-box {
+    background: linear-gradient(135deg, #EBF5FB, #F7FAFB);
+    border: 1.5px solid #C5DFF0; border-radius: 10px;
+    padding: 18px 20px; text-align: center;
+  }
+  .fee-amount { font-family: 'Bebas Neue'; font-size: 42px; color: var(--sky); letter-spacing: 0.04em; line-height: 1; }
+  .fee-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* BPI payment box */
+  .bpi-box {
+    background: #EAF5EE; border: 1.5px solid #B8DFC4;
+    border-radius: 10px; padding: 18px 20px;
+  }
+  .bpi-box h4 { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bpi-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #D0EADA; font-size: 13px; }
+  .bpi-row:last-child { border-bottom: none; }
+  .bpi-row .bpi-lbl { color: var(--muted); font-size: 12px; }
+  .bpi-row .bpi-val { color: var(--text); font-weight: 600; }
+
+  /* Allergen checkboxes */
+  .checkbox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  @media (max-width: 480px) { .checkbox-grid { grid-template-columns: 1fr; } }
+  .check-item { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--input-bg); transition: all 0.15s; }
+  .check-item:hover { border-color: var(--sky); background: var(--sky-light); }
+  .check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--sky); cursor: pointer; flex-shrink: 0; }
+  .check-item.checked { border-color: var(--sky); background: var(--sky-light); }
+  .check-label { font-size: 13px; color: var(--text); }
+
+  /* Upload */
+  .upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--input-bg); position: relative; }
+  .upload-area:hover { border-color: var(--sky); background: var(--sky-light); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .upload-text strong { color: var(--sky); }
+  .upload-preview { margin-top: 8px; font-size: 12px; color: var(--green); display: none; font-weight: 500; }
+
+  /* Note */
+  .note { background: var(--gold-bg); border-left: 3px solid var(--gold-light); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 12px; }
+
+  /* Buttons */
+  .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-family: 'Bebas Neue'; font-size: 20px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; }
+  .btn-green { background: linear-gradient(135deg, var(--green), var(--green-bright)); color: #fff; box-shadow: 0 4px 16px rgba(46,112,72,0.25); }
+  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(46,112,72,0.35); }
+  .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: #fff; box-shadow: 0 4px 16px rgba(196,154,26,0.25); margin-top: 14px; }
+  .btn-gold:hover { transform: translateY(-1px); }
+
+  /* Speakers */
+  .speakers-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 560px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
+  .speaker-card { text-align: center; }
+  .speaker-photo { width: 90px; height: 90px; border-radius: 50%; overflow: hidden; margin: 0 auto 10px; border: 3px solid var(--border); box-shadow: 0 4px 14px rgba(58,139,191,0.15); }
+  .speaker-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .speaker-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .speaker-role { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .worship-card { display: flex; align-items: center; gap: 18px; background: linear-gradient(135deg, #f0f8ff, #f7fbfe); border: 1.5px solid #C5DFF0; border-radius: 12px; padding: 18px 20px; }
+  .worship-photo { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 3px solid var(--sky); box-shadow: 0 4px 14px rgba(58,139,191,0.2); }
+  .worship-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .worship-name { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .worship-org { font-size: 12px; color: var(--muted); }
+  @media (max-width: 480px) { .worship-card { flex-direction: column; text-align: center; } .worship-photo { margin: 0 auto; } }
+
+  /* Directions */
+  .directions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 520px) { .directions-grid { grid-template-columns: 1fr; } }
+  .dir-card { background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 14px; }
+  .dir-icon { font-size: 22px; margin-bottom: 6px; }
+  .dir-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .dir-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .dir-text strong { color: var(--text); }
+  .map-link-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--sky); color: #fff; text-decoration: none; padding: 11px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+  .map-link-btn:hover { background: #2E7AAD; }
+
+  /* Toast */
+  .toast { display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); padding: 14px 26px; border-radius: 50px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 999; text-align: center; max-width: 90vw; color: #fff; }
+
+  /* Mobile responsive */
+  @media (max-width: 600px) {
+    .chips-bar { padding: 10px 12px; gap: 6px; }
+    .chip { font-size: 11px; padding: 4px 10px; }
+    .page-wrap { padding: 20px 14px 60px; }
+    .form-heading h1 { font-size: 28px; }
+    .card { padding: 18px 16px; border-radius: 12px; margin-bottom: 14px; }
+    .grid-2 { grid-template-columns: 1fr; gap: 10px; }
+    .fee-amount { font-size: 34px; }
+    .speakers-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .speaker-photo { width: 72px; height: 72px; }
+    .map-link-btn { width: 100%; justify-content: center; }
+    .toast { width: calc(100% - 28px); border-radius: 10px; bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="assets/images/hero.jpg" alt="RELAY Conference 2026">
+</div>
+
+<div class="chips-bar">
+  <span class="chip chip-venue">📍 CCT Tagaytay, Philippines</span>
+  <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
+  <span class="chip chip-age">👥 Ages 17–33</span>
+  <span class="chip chip-intl">🌏 International Attendees</span>
+</div>
+
+<div class="confetti-bar"></div>
+
+<div class="page-wrap">
+
+  <div class="form-heading">
+    <h1>International Registration</h1>
+    <p>Sovereign Grace Churches Asia Pacific &nbsp;·&nbsp; International Attendees</p>
+  </div>
+
+  <form id="intlForm" novalidate>
+
+    <!-- PERSONAL INFO -->
+    <div class="card">
+      <div class="section-label">Personal Information</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="name" placeholder="Your full name" required>
+        </div>
+        <div class="field">
+          <label>Age <span class="req">*</span></label>
+          <input type="number" id="age" placeholder="e.g. 22" min="17" max="45" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Mobile Number <span class="req">*</span></label>
+          <div class="mobile-wrap">
+            <select class="country-select" id="countryCode">
+              <option value="+61">🇦🇺 +61</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+64">🇳🇿 +64</option>
+              <option value="+65">🇸🇬 +65</option>
+              <option value="+60">🇲🇾 +60</option>
+              <option value="+62">🇮🇩 +62</option>
+              <option value="+66">🇹🇭 +66</option>
+              <option value="+82">🇰🇷 +82</option>
+              <option value="+81">🇯🇵 +81</option>
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+91">🇮🇳 +91</option>
+              <option value="+92">🇵🇰 +92</option>
+              <option value="+86">🇨🇳 +86</option>
+            </select>
+            <input type="tel" id="mobile" placeholder="Enter mobile number" required oninput="validateMobileField()">
+          </div>
+          <div class="field-msg" id="mobileMsg"></div>
+        </div>
+        <div class="field">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="you@email.com" required oninput="validateEmailField()">
+          <div class="field-msg" id="emailMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COUNTRY & CHURCH -->
+    <div class="card">
+      <div class="section-label">Location & Church</div>
+      <div class="field">
+        <label>Country <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="country" required onchange="handleCountryChange(this)">
+            <option value="" disabled selected>Select your country…</option>
+            <option value="Australia">🇦🇺 Australia</option>
+            <option value="South Korea">🇰🇷 South Korea</option>
+            <option value="Pakistan">🇵🇰 Pakistan</option>
+            <option value="India">🇮🇳 India</option>
+            <option value="USA">🇺🇸 United States</option>
+            <option value="United Kingdom">🇬🇧 United Kingdom</option>
+            <option value="New Zealand">🇳🇿 New Zealand</option>
+            <option value="Singapore">🇸🇬 Singapore</option>
+            <option value="Malaysia">🇲🇾 Malaysia</option>
+            <option value="Indonesia">🇮🇩 Indonesia</option>
+            <option value="Japan">🇯🇵 Japan</option>
+            <option value="Germany">🇩🇪 Germany</option>
+            <option value="UAE">🇦🇪 United Arab Emirates</option>
+            <option value="Others">🌍 Others</option>
+          </select>
+        </div>
+      </div>
+      <div class="slide-panel" id="otherCountryWrap">
+        <div class="field" style="margin-top:12px;">
+          <label>Please specify your country <span class="req">*</span></label>
+          <input type="text" id="otherCountry" placeholder="Enter your country">
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px;">
+        <label>Church Name <span class="req">*</span></label>
+        <input type="text" id="church" placeholder="Enter your church name" required>
+      </div>
+    </div>
+
+    <!-- CONFERENCE FEE -->
+    <div class="card">
+      <div class="section-label">Conference Fee</div>
+      <div class="fee-box" style="margin-bottom:16px;">
+        <div class="fee-amount">USD $300</div>
+        <div class="fee-label">Per person · includes accommodation (3 nights) with full board</div>
+      </div>
+      <div class="note">Payment is via BPI bank transfer. Account details are shown below after confirming your registration.</div>
+    </div>
+
+    <!-- ALLERGEN INFO -->
+    <div class="card">
+      <div class="section-label">Dietary & Allergen Information <span style="font-size:10px;color:var(--muted);font-family:'DM Sans';text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Please let us know if you have any dietary requirements or food allergies so we can inform the venue.</p>
+      <div class="checkbox-grid" id="allergenGrid">
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Vegetarian"> <span class="check-label">🥦 Vegetarian</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Vegan"> <span class="check-label">🌱 Vegan</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Gluten-free"> <span class="check-label">🌾 Gluten-free</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Halal"> <span class="check-label">☪️ Halal</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Kosher"> <span class="check-label">✡️ Kosher</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Nut allergy"> <span class="check-label">🥜 Nut Allergy</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Dairy-free"> <span class="check-label">🥛 Dairy-free</span>
+        </label>
+        <label class="check-item" onclick="toggleCheck(this)">
+          <input type="checkbox" name="allergen" value="Seafood allergy"> <span class="check-label">🦐 Seafood Allergy</span>
+        </label>
+      </div>
+      <div class="field">
+        <label>Other dietary needs <span class="opt">(optional)</span></label>
+        <textarea id="allergenOther" placeholder="Describe any other dietary requirements or allergies…"></textarea>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="card">
+      <div class="section-label">Payment</div>
+      <div class="bpi-box" style="margin-bottom:16px;">
+        <h4>🏦 BPI Bank Transfer</h4>
+        <div class="bpi-row"><span class="bpi-lbl">Account Name</span><span class="bpi-val" id="bpiName">Loading…</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Account Number</span><span class="bpi-val" id="bpiNumber">Loading…</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Account Type</span><span class="bpi-val" id="bpiType">Loading…</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Amount</span><span class="bpi-val" style="color:var(--sky);">USD $300</span></div>
+      </div>
+      <div class="note" style="margin-bottom:16px;">Please use your full name as the payment reference. After transferring, attach a screenshot of your receipt below.</div>
+      <div class="field">
+        <label>Payment Receipt <span class="req">*</span></label>
+        <div class="upload-area">
+          <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(this)">
+          <div class="upload-icon">📸</div>
+          <div class="upload-text"><strong>Click to attach</strong> your BPI transfer receipt<br>PNG or JPG · make sure reference number is visible</div>
+        </div>
+        <div class="upload-preview" id="receiptPreview"></div>
+      </div>
+      <button type="button" class="btn btn-gold" onclick="submitForm()" style="margin-top:16px;">Submit Registration + Payment</button>
+    </div>
+
+  </form>
+
+  <!-- SPEAKERS -->
+  <div class="card" style="margin-top:32px;">
+    <div class="section-label">Speakers</div>
+    <div class="speakers-grid">
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
+        <div class="speaker-name">Dave Taylor</div>
+        <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
+        <div class="speaker-name">Riley Spring</div>
+        <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
+        <div class="speaker-name">Jared Mellinger</div>
+        <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
+        <div class="speaker-name">Walt Alexander</div>
+        <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORSHIP -->
+  <div class="card">
+    <div class="section-label">Worship</div>
+    <div class="worship-card">
+      <div class="worship-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
+      <div>
+        <div class="worship-name">David Zimmer</div>
+        <div class="worship-org">Sovereign Grace Music</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO GET THERE -->
+  <div class="card">
+    <div class="section-label">How to Get There</div>
+    <div class="directions-grid">
+      <div class="dir-card">
+        <div class="dir-icon">✈️</div>
+        <div class="dir-title">From the Airport</div>
+        <div class="dir-text">From <strong>NAIA (Manila)</strong>, take Skyway → SLEX → Sta. Rosa exit → Tagaytay Road. By Grab/taxi approx. <strong>₱800–₱1,200</strong>. Travel time: <strong>~2 hrs</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">🚗</div>
+        <div class="dir-title">By Private Car / Grab</div>
+        <div class="dir-text">From Manila, take <strong>SLEX → Sta. Rosa–Tagaytay Road</strong>. CCT is along Km 58, past Robinsons Tagaytay. Travel time: <strong>~1.5–2 hrs</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">🏨</div>
+        <div class="dir-title">Pre-Conference Arrival</div>
+        <div class="dir-text">We recommend arriving in Manila a day early. <strong>Hotels near NAIA</strong> are convenient for an early morning departure to Tagaytay.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">📞</div>
+        <div class="dir-title">Need Help?</div>
+        <div class="dir-text">Email us at <strong>ccsgmprojects@gmail.com</strong> for assistance with travel arrangements or directions from your point of arrival.</div>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" class="map-link-btn">🗺 Open in Google Maps</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Prefill country from URL param ─────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const country = params.get('country');
+    if (country) {
+      const sel = document.getElementById('country');
+      const opt = [...sel.options].find(o => o.value.toLowerCase() === country.toLowerCase());
+      if (opt) {
+        sel.value = opt.value;
+        // Sync country code picker
+        syncCountryCode(opt.value);
+      } else {
+        // Not in list — select Others and prefill text
+        sel.value = 'Others';
+        document.getElementById('otherCountryWrap').classList.add('visible');
+        document.getElementById('otherCountry').value = country;
+      }
+    }
+
+    // Load BPI details from meta tags injected by Netlify function
+    // Fallback: fetch from a small endpoint
+    loadBPIDetails();
+  });
+
+  // Country code map for auto-sync
+  const countryCodeMap = {
+    'Australia': '+61', 'South Korea': '+82', 'Pakistan': '+92',
+    'India': '+91', 'USA': '+1', 'United Kingdom': '+44',
+    'New Zealand': '+64', 'Singapore': '+65', 'Malaysia': '+60',
+    'Indonesia': '+62', 'Japan': '+81', 'Germany': '+49',
+    'UAE': '+971',
+  };
+
+  function syncCountryCode(country) {
+    const code = countryCodeMap[country];
+    if (code) {
+      const sel = document.getElementById('countryCode');
+      const opt = [...sel.options].find(o => o.value === code);
+      if (opt) sel.value = code;
+    }
+  }
+
+  function handleCountryChange(sel) {
+    document.getElementById('otherCountryWrap').classList.toggle('visible', sel.value === 'Others');
+    syncCountryCode(sel.value);
+  }
+
+  async function loadBPIDetails() {
+    try {
+      const res = await fetch('/.netlify/functions/bpi-details');
+      const data = await res.json();
+      document.getElementById('bpiName').textContent   = data.name   || '—';
+      document.getElementById('bpiNumber').textContent = data.number || '—';
+      document.getElementById('bpiType').textContent   = data.type   || '—';
+    } catch(e) {
+      document.getElementById('bpiName').textContent   = 'Contact us for details';
+      document.getElementById('bpiNumber').textContent = '';
+      document.getElementById('bpiType').textContent   = '';
+    }
+  }
+
+  // ── Allergen toggle ────────────────────────────────────────────────────
+  function toggleCheck(label) {
+    setTimeout(() => {
+      label.classList.toggle('checked', label.querySelector('input').checked);
+    }, 0);
+  }
+
+  // ── Validation ─────────────────────────────────────────────────────────
+  function validateEmailField() {
+    const el = document.getElementById('email');
+    const msg = document.getElementById('emailMsg');
+    const val = el.value.trim();
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val);
+    el.classList.toggle('field-error', val.length > 0 && !ok);
+    el.classList.toggle('field-ok', ok);
+    msg.className = 'field-msg';
+    if (val.length > 0 && !ok) { msg.textContent = 'Please enter a valid email (e.g. name@example.com)'; msg.classList.add('show-error'); }
+    else if (ok) { msg.textContent = '✓ Looks good'; msg.classList.add('show-ok'); }
+    return ok;
+  }
+
+  function validateMobileField() {
+    const el = document.getElementById('mobile');
+    const msg = document.getElementById('mobileMsg');
+    const val = el.value.trim().replace(/[\s\-().]/g, '');
+    const ok = /^\d{6,12}$/.test(val);
+    el.classList.toggle('field-error', val.length > 0 && !ok);
+    el.classList.toggle('field-ok', ok);
+    msg.className = 'field-msg';
+    if (val.length > 0 && !ok) { msg.textContent = 'Numbers only, 6–12 digits'; msg.classList.add('show-error'); }
+    else if (ok) { msg.textContent = '✓ Looks good'; msg.classList.add('show-ok'); }
+    return ok;
+  }
+
+  function validateForm() {
+    const name    = document.getElementById('name').value.trim();
+    const age     = document.getElementById('age').value;
+    const country = document.getElementById('country').value;
+    const church  = document.getElementById('church').value.trim();
+
+    if (!name || !age || !country || !church) {
+      showToast('⚠️ Please fill in all required fields.', true); return false;
+    }
+    if (country === 'Others' && !document.getElementById('otherCountry').value.trim()) {
+      showToast('⚠️ Please specify your country.', true); return false;
+    }
+    if (!validateEmailField()) {
+      document.getElementById('email').focus();
+      showToast('⚠️ Please enter a valid email address.', true); return false;
+    }
+    if (!validateMobileField()) {
+      document.getElementById('mobile').focus();
+      showToast('⚠️ Please enter a valid mobile number.', true); return false;
+    }
+    return true;
+  }
+
+  function handleReceiptUpload(input) {
+    if (input.files[0]) {
+      const p = document.getElementById('receiptPreview');
+      p.textContent = '✅ ' + input.files[0].name;
+      p.style.display = 'block';
+    }
+  }
+
+  function fileToBase64(fileInput) {
+    return new Promise((resolve, reject) => {
+      const file = fileInput.files[0];
+      if (!file) { resolve(null); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve({ base64: reader.result.split(',')[1], name: file.name });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function submitForm() {
+    if (!validateForm()) return;
+    if (!document.getElementById('receiptFile').files.length) {
+      showToast('⚠️ Please attach your payment receipt.', true); return;
+    }
+
+    const btn = document.querySelector('.btn-gold');
+    btn.textContent = 'Submitting…'; btn.disabled = true;
+
+    try {
+      const country = document.getElementById('country').value;
+      const allergens = [...document.querySelectorAll('input[name="allergen"]:checked')].map(c => c.value);
+      const allergenOther = document.getElementById('allergenOther').value.trim();
+      const receiptData = await fileToBase64(document.getElementById('receiptFile'));
+
+      const payload = {
+        registrantType: 'international',
+        name:     document.getElementById('name').value.trim(),
+        age:      document.getElementById('age').value,
+        mobile:   document.getElementById('countryCode').value + document.getElementById('mobile').value.trim(),
+        email:    document.getElementById('email').value.trim(),
+        country:  country === 'Others' ? document.getElementById('otherCountry').value.trim() : country,
+        church:   document.getElementById('church').value.trim(),
+        allergens,
+        allergenOther,
+        receiptBase64: receiptData?.base64 || null,
+        receiptName:   receiptData?.name   || null,
+      };
+
+      const res = await fetch('/.netlify/functions/submit-international', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Submission failed');
+      window.location.href = 'thank-you.html?type=paid&form=intl';
+    } catch (err) {
+      showToast('❌ Error: ' + err.message, true);
+    } finally {
+      btn.textContent = 'Submit Registration + Payment';
+      btn.disabled = false;
+    }
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.background = isError ? '#C0392B' : '#2E7048';
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 5500);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY Conference — Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF;
+    --sky-light: #EBF5FB;
+    --deep: #1a3a52;
+    --gold: #C49A1A;
+    --gold-light: #E8B830;
+    --gold-bg: #FDF6E0;
+    --green: #2E7048;
+    --green-light: #EAF5EE;
+    --green-bright: #4BAE6A;
+    --white: #FFFFFF;
+    --page-bg: #F2F5F8;
+    --card-bg: #FFFFFF;
+    --dark: #1C2B38;
+    --muted: #6B8A9A;
+    --text: #2A3D4A;
+    --border: #D4E2EA;
+    --input-bg: #F7FAFB;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+
+  .hero { width: 100%; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
+
+  .chips-bar {
+    background: var(--dark);
+    padding: 12px 20px;
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 50px; padding: 5px 13px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .chip-venue { background: rgba(74,155,196,0.18); color: #8DD4F5; border: 1px solid rgba(74,155,196,0.3); }
+  .chip-date  { background: rgba(212,168,50,0.18);  color: #F5D070; border: 1px solid rgba(212,168,50,0.3); }
+  .chip-age   { background: rgba(75,174,106,0.18);  color: #85E0A3; border: 1px solid rgba(75,174,106,0.3); }
+
+  .confetti-bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--green-bright), var(--sky), var(--gold-light), var(--green-bright));
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .page-wrap { max-width: 700px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  .form-heading { margin-bottom: 28px; }
+  .form-heading h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 36px;
+    letter-spacing: 0.05em; color: var(--dark); margin-bottom: 4px;
+  }
+  .form-heading p { color: var(--muted); font-size: 13px; }
+
+  .card {
+    background: var(--card-bg); border-radius: 14px; padding: 24px;
+    box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--sky);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
+  label .req { color: #E05050; margin-left: 2px; }
+
+  input[type=text], input[type=email], input[type=tel], input[type=number], select {
+    background: var(--input-bg); border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    padding: 11px 13px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); background: #fff;
+  }
+  input::placeholder { color: #B0C4CE; }
+  select option { background: #fff; color: var(--text); }
+
+  /* Field error/success states */
+  input.field-error { border-color: #E05050 !important; box-shadow: 0 0 0 3px rgba(224,80,80,0.1) !important; }
+  input.field-ok { border-color: var(--green) !important; }
+  .field-msg { font-size: 11px; margin-top: 2px; display: none; }
+  .field-msg.show-error { color: #E05050; display: block; }
+  .field-msg.show-ok { color: var(--green); display: block; }
+
+  /* Fixed country code (PH form) */
+  .country-code-fixed {
+    background: #EBF5FB; border: 1.5px solid var(--border);
+    border-right: none; border-radius: 8px 0 0 8px;
+    color: var(--sky); font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 600; padding: 11px 12px; flex-shrink: 0; white-space: nowrap;
+    display: flex; align-items: center;
+  }
+
+  /* Country code + mobile combo */
+  .mobile-wrap { display: flex; }
+  .country-select {
+    background: var(--input-bg); border: 1.5px solid var(--border);
+    border-right: none; border-radius: 8px 0 0 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 11px 8px 11px 12px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; appearance: none;
+    cursor: pointer; flex-shrink: 0; width: auto;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B8A9A'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center;
+    padding-right: 26px;
+  }
+  .country-select:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); z-index: 1; position: relative; }
+  .mobile-wrap input[type=tel] { border-radius: 0 8px 8px 0; flex: 1; border-left: 1px solid var(--border); width: auto; }
+  .mobile-wrap input[type=tel]:focus { z-index: 1; position: relative; }
+
+  .toggle-wrap {
+    display: flex; border: 1.5px solid var(--border);
+    border-radius: 8px; overflow: hidden; background: var(--input-bg);
+  }
+  .toggle-wrap input[type=radio] { display: none; }
+  .toggle-wrap label {
+    flex: 1; text-align: center; padding: 11px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    transition: all 0.2s; border: none; margin-bottom: 0;
+  }
+  .toggle-wrap input[type=radio]:checked + label { background: var(--sky); color: #fff; }
+
+  .upload-area {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 20px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: var(--input-bg); position: relative;
+  }
+  .upload-area:hover { border-color: var(--sky); background: var(--sky-light); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .upload-text strong { color: var(--sky); }
+  .upload-preview { margin-top: 8px; font-size: 12px; color: var(--green); display: none; font-weight: 500; }
+
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▾'; position: absolute; right: 13px; top: 50%;
+    transform: translateY(-50%); pointer-events: none; color: var(--muted); font-size: 14px;
+  }
+
+  .slide-panel { display: none; animation: slideDown 0.25s ease; }
+  .slide-panel.visible { display: block; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  .fee-note {
+    background: var(--gold-bg); border-left: 3px solid var(--gold-light);
+    border-radius: 0 8px 8px 0; padding: 10px 14px;
+    font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 12px;
+  }
+  .fee-note strong { color: #9A6F10; }
+
+  .pay-option { cursor: pointer; margin-bottom: 10px; }
+  .pay-option:last-child { margin-bottom: 0; }
+  .pay-option input[type=radio] { display: none; }
+  .pay-card {
+    border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--input-bg); transition: all 0.2s; cursor: pointer;
+  }
+  .pay-option input:checked ~ .pay-card { border-color: var(--gold-light); background: var(--gold-bg); }
+  .pay-radio {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;
+  }
+  .pay-option input:checked ~ .pay-card .pay-radio { border-color: var(--gold); background: var(--gold); }
+  .pay-option input:checked ~ .pay-card .pay-radio::after {
+    content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff;
+  }
+  .pay-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .pay-desc { font-size: 12px; color: var(--muted); }
+
+  .gcash-box {
+    background: linear-gradient(135deg, #EBF5FB 0%, #F7FAFB 100%);
+    border: 1.5px solid #C5DFF0; border-radius: 12px;
+    padding: 24px; text-align: center; margin-top: 16px;
+  }
+  .gcash-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+    letter-spacing: 0.06em; color: var(--sky); margin-bottom: 4px;
+  }
+  .gcash-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .gcash-qr {
+    width: 180px; height: 180px; background: #fff; border-radius: 12px;
+    margin: 0 auto 14px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .gcash-acct { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--sky); margin-bottom: 4px; }
+  .gcash-name { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+  /* SPEAKERS */
+  .speakers-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  @media (max-width: 560px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .speaker-card {
+    text-align: center;
+  }
+  .speaker-photo {
+    width: 90px; height: 90px;
+    border-radius: 50%; overflow: hidden;
+    margin: 0 auto 10px;
+    border: 3px solid var(--border);
+    box-shadow: 0 4px 14px rgba(58,139,191,0.15);
+  }
+  .speaker-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .speaker-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .speaker-role { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  .worship-card {
+    display: flex; align-items: center; gap: 18px;
+    background: linear-gradient(135deg, #f0f8ff 0%, #f7fbfe 100%);
+    border: 1.5px solid #C5DFF0; border-radius: 12px; padding: 18px 20px;
+  }
+  .worship-photo {
+    width: 80px; height: 80px; border-radius: 50%; overflow: hidden;
+    flex-shrink: 0; border: 3px solid var(--sky);
+    box-shadow: 0 4px 14px rgba(58,139,191,0.2);
+  }
+  .worship-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .worship-name { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .worship-tag {
+    display: inline-block; background: var(--sky); color: #fff;
+    border-radius: 50px; padding: 3px 10px; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.04em; margin-bottom: 4px;
+  }
+  .worship-org { font-size: 12px; color: var(--muted); }
+
+  /* DIRECTIONS */
+  .directions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 520px) { .directions-grid { grid-template-columns: 1fr; } }
+  .dir-card {
+    background: var(--input-bg); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 14px;
+  }
+  .dir-icon { font-size: 22px; margin-bottom: 6px; }
+  .dir-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .dir-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .dir-text strong { color: var(--text); }
+
+  .map-link-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--sky); color: #fff; text-decoration: none;
+    padding: 11px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .map-link-btn:hover { background: #2E7AAD; box-shadow: 0 4px 14px rgba(58,139,191,0.3); }
+
+  .btn {
+    width: 100%; padding: 15px; border: none; border-radius: 10px;
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-green {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-bright) 100%);
+    color: #fff; box-shadow: 0 4px 16px rgba(46,112,72,0.25);
+  }
+  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(46,112,72,0.35); }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+    color: #fff; box-shadow: 0 4px 16px rgba(196,154,26,0.25); margin-top: 14px;
+  }
+  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(196,154,26,0.35); }
+
+  .toast {
+    display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    padding: 14px 26px; border-radius: 50px; font-size: 14px; font-weight: 500;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 999;
+    text-align: center; max-width: 90vw; color: #fff;
+  }
+
+  /* ── MOBILE RESPONSIVE ─────────────────────────────── */
+  @media (max-width: 600px) {
+
+    /* Chips bar: allow wrapping with smaller text */
+    .chips-bar { padding: 10px 12px; gap: 6px; }
+    .chip { font-size: 11px; padding: 4px 10px; }
+
+    /* Page padding */
+    .page-wrap { padding: 20px 14px 60px; }
+
+    /* Heading */
+    .form-heading { margin-bottom: 20px; }
+    .form-heading h1 { font-size: 28px; }
+
+    /* Cards */
+    .card { padding: 18px 16px; border-radius: 12px; margin-bottom: 14px; }
+
+    /* All 2-col grids → single col */
+    .grid-2 { grid-template-columns: 1fr; gap: 10px; }
+
+    /* Student toggle: stack vertically on very small screens */
+    .toggle-wrap { flex-direction: column; }
+    .toggle-wrap label { padding: 12px; border-bottom: 1px solid var(--border); }
+    .toggle-wrap label:last-of-type { border-bottom: none; }
+    .toggle-wrap input[type=radio]:checked + label { border-color: transparent; }
+
+    /* Upload area */
+    .upload-area { padding: 16px 12px; }
+
+    /* Payment cards */
+    .pay-card { padding: 12px 14px; }
+    .pay-title { font-size: 13px; }
+
+    /* GCash box */
+    .gcash-box { padding: 18px 14px; }
+    .gcash-qr { width: 150px; height: 150px; }
+
+    /* Speakers: 2 columns on mobile */
+    .speakers-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .speaker-photo { width: 72px; height: 72px; }
+    .speaker-name { font-size: 12px; }
+    .speaker-role { font-size: 10px; }
+
+    /* Worship card: stack on mobile */
+    .worship-card { flex-direction: column; text-align: center; padding: 20px 16px; gap: 12px; }
+    .worship-photo { margin: 0 auto; }
+    .worship-name { font-size: 16px; }
+
+    /* Directions: already 1-col at 520px, just tighten padding */
+    .dir-card { padding: 12px; }
+    .directions-grid { gap: 10px; }
+
+    /* Map button full width */
+    .map-link-btn { width: 100%; justify-content: center; }
+
+    /* Submit buttons */
+    .btn { font-size: 18px; padding: 14px; }
+
+    /* Toast — full width at bottom */
+    .toast { width: calc(100% - 28px); border-radius: 10px; bottom: 16px; font-size: 13px; }
+
+    /* Section label smaller */
+    .section-label { font-size: 9px; }
+
+    /* Fee note */
+    .fee-note { font-size: 11px; }
+  }
+
+  @media (max-width: 380px) {
+    .speakers-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .speaker-photo { width: 60px; height: 60px; }
+    .chip { font-size: 10px; padding: 3px 8px; }
+    .gcash-qr { width: 130px; height: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
+</div>
+
+<div class="chips-bar">
+  <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
+  <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
+  <span class="chip chip-age">👥 Ages 17–33 (Young Adults &amp; Leaders)</span>
+</div>
+
+<div class="confetti-bar"></div>
+
+<div class="page-wrap">
+
+  <div class="form-heading">
+    <h1>Conference Registration</h1>
+    <p>Sovereign Grace Churches Asia Pacific &nbsp;·&nbsp; Fill in all required fields to register</p>
+  </div>
+
+  <form id="relayForm" novalidate>
+
+    <!-- PERSONAL INFO -->
+    <div class="card">
+      <div class="section-label">Personal Information</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="name" placeholder="Your full name" required>
+        </div>
+        <div class="field">
+          <label>Age <span class="req">*</span></label>
+          <input type="number" id="age" placeholder="e.g. 22" min="17" max="45" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Mobile Number <span class="req">*</span></label>
+          <div class="mobile-wrap">
+            <div class="country-code-fixed">🇵🇭 +63</div>
+            <input type="hidden" id="countryCode" value="+63">
+            <input type="tel" id="mobile" placeholder="9XX XXX XXXX" required oninput="validateMobileField()">
+          </div>
+          <div class="field-msg" id="mobileMsg"></div>
+        </div>
+        <div class="field">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="you@email.com" required oninput="validateEmailField()">
+          <div class="field-msg" id="emailMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STUDENT STATUS -->
+    <div class="card">
+      <div class="section-label">Student Status</div>
+      <div class="toggle-wrap">
+        <input type="radio" name="studentStatus" id="isStudent" value="student">
+        <label for="isStudent">🎓 Student (PHP 3,000)</label>
+        <input type="radio" name="studentStatus" id="notStudent" value="non-student">
+        <label for="notStudent">💼 Non-Student (PHP 4,500)</label>
+      </div>
+      <div class="fee-note">
+        <strong>Students get 50% off</strong> — must present valid school ID.<br>
+        <strong>Non-students get 25% off.</strong> CCT full board (3 nights) is PHP 6,000.
+      </div>
+      <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
+        <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
+        <div class="upload-area">
+          <input type="file" id="schoolIdFile" accept="image/*,.pdf" onchange="handleIdUpload(this)">
+          <div class="upload-icon">🪪</div>
+          <div class="upload-text"><strong>Click to upload</strong> your school ID<br>PNG, JPG, or PDF</div>
+        </div>
+        <div class="upload-preview" id="idPreview"></div>
+      </div>
+    </div>
+
+    <!-- CHURCH -->
+    <div class="card">
+      <div class="section-label">Church Affiliation</div>
+      <div class="field">
+        <label>Church Name <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="church" required onchange="handleChurchChange(this)">
+            <option value="" disabled selected>Select your church…</option>
+            <optgroup label="CCSGM">
+              <option>CCSGM – Kawit</option>
+              <option>CCSGM – Imus</option>
+              <option>CCSGM – Cavite City</option>
+              <option>CCSGM – Dasma</option>
+              <option>CCSGM – Carrascal</option>
+              <option>CCSGM – Maitum</option>
+              <option>CCSGM – Madrid</option>
+              <option>CCSGM – Tandag</option>
+              <option>CCSGM – Castillo</option>
+              <option>CCSGM – Agusan Del Sur</option>
+              <option>CCSGM – Cabangahan</option>
+              <option>CCSGM – Nangka</option>
+              <option>CCSGM – Gacub</option>
+            </optgroup>
+            <optgroup label="His Dwelling Christian Church">
+              <option value="HDCC - Cebu City">His Dwelling Christian Church – Cebu City</option>
+              <option value="HDCC - Isabela">His Dwelling Christian Church – Isabela</option>
+            </optgroup>
+            <optgroup label="Other Churches">
+              <option>His Touch Ministries</option>
+              <option value="others">Others…</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <div class="slide-panel" id="other-church-wrap">
+        <div class="field" style="margin-top:12px;">
+          <label>Please specify your church <span class="req">*</span></label>
+          <input type="text" id="otherChurch" placeholder="Enter your church name">
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="card">
+      <div class="section-label">Payment</div>
+      <label class="pay-option">
+        <input type="radio" name="paymentReady" id="payNow" value="now" onchange="handlePayment(this)">
+        <div class="pay-card">
+          <div class="pay-radio"></div>
+          <div>
+            <div class="pay-title">✅ Yes, I am ready to pay</div>
+            <div class="pay-desc">Scan the GCash QR and attach your transaction screenshot</div>
+          </div>
+        </div>
+      </label>
+      <label class="pay-option">
+        <input type="radio" name="paymentReady" id="payLater" value="later" onchange="handlePayment(this)">
+        <div class="pay-card">
+          <div class="pay-radio"></div>
+          <div>
+            <div class="pay-title">🕐 No, I will pay later</div>
+            <div class="pay-desc">We'll send payment instructions to your email</div>
+          </div>
+        </div>
+      </label>
+
+      <div class="slide-panel" id="gcash-section">
+        <div class="gcash-box">
+          <div class="gcash-title">Scan to Pay via GCash / BPI</div>
+          <div class="gcash-sub">BPI Account of CCSGM</div>
+          <div class="gcash-qr">
+            <img src="assets/images/qr/gcash-qr.png" alt="GCash QR Code" style="width:160px;height:160px;object-fit:contain;">
+          </div>
+          <div class="gcash-acct">BPI · CCSGM Account</div>
+          <div class="gcash-name">Replace the QR above with your actual GCash/BPI QR image</div>
+          <div class="field" style="text-align:left;">
+            <label>Attach Payment Screenshot <span class="req">*</span></label>
+            <div class="upload-area">
+              <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(this)">
+              <div class="upload-icon">📸</div>
+              <div class="upload-text"><strong>Click to attach</strong> your receipt screenshot<br>PNG or JPG · make sure reference number is visible</div>
+            </div>
+            <div class="upload-preview" id="receiptPreview"></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-gold" onclick="submitForm()">Submit Registration + Payment</button>
+      </div>
+
+      <div class="slide-panel" id="payLaterSubmit" style="margin-top:16px;">
+        <button type="button" class="btn btn-green" onclick="submitLater()">Submit Registration</button>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- SPEAKERS -->
+  <div class="card" style="margin-top:32px;">
+    <div class="section-label">Speakers</div>
+    <div class="speakers-grid">
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
+        <div class="speaker-name">Dave Taylor</div>
+        <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
+        <div class="speaker-name">Riley Spring</div>
+        <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
+        <div class="speaker-name">Jared Mellinger</div>
+        <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
+        <div class="speaker-name">Walt Alexander</div>
+        <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORSHIP -->
+  <div class="card">
+    <div class="section-label">Worship</div>
+    <div class="worship-card">
+      <div class="worship-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
+      <div>
+        <div class="worship-name">David Zimmer</div>
+        <div class="worship-org">Sovereign Grace Music</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO GET THERE -->
+  <div class="card">
+    <div class="section-label">How to Get There</div>
+    <div class="directions-grid">
+      <div class="dir-card">
+        <div class="dir-icon">🚗</div>
+        <div class="dir-title">By Private Car</div>
+        <div class="dir-text">From Manila, take <strong>SLEX → Sta. Rosa–Tagaytay Road</strong>. Follow signs to Tagaytay–Nasugbu Highway. CCT is along Km 58, past Robinsons Tagaytay. Travel time: <strong>~1.5–2 hrs</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">🚌</div>
+        <div class="dir-title">By Bus (from Manila)</div>
+        <div class="dir-text">Take a <strong>JAC Liner or ALPS</strong> bus bound for Tagaytay from Buendia or Cubao. Alight at <strong>Mahogany Market</strong>, then ride a jeepney or tricycle to CCT. Travel time: <strong>~2 hrs</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">🚐</div>
+        <div class="dir-title">From Cavite / CCSGM</div>
+        <div class="dir-text">Take the <strong>Imus–Tagaytay route</strong> via Amadeo Road. Alternatively, ride a jeepney from Imus or Dasmarinas toward Tagaytay. Travel time: <strong>~45–60 mins</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">✈️</div>
+        <div class="dir-title">From the Airport</div>
+        <div class="dir-text">From <strong>NAIA</strong>, take Skyway → SLEX → Sta. Rosa exit, then follow Tagaytay Road. By Grab/taxi: approx. <strong>₱800–₱1,200</strong>. Travel time: <strong>~2 hrs</strong>.</div>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" class="map-link-btn">
+        🗺 Open in Google Maps
+      </a>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+  document.querySelectorAll('input[name="studentStatus"]').forEach(r => {
+    r.addEventListener('change', function() {
+      document.getElementById('schoolIdWrap').classList.toggle('visible', this.value === 'student');
+    });
+  });
+
+  function handleChurchChange(sel) {
+    document.getElementById('other-church-wrap').classList.toggle('visible', sel.value === 'others');
+  }
+
+  function handlePayment(radio) {
+    document.getElementById('gcash-section').classList.toggle('visible', radio.value === 'now');
+    document.getElementById('payLaterSubmit').classList.toggle('visible', radio.value === 'later');
+  }
+
+  function handleIdUpload(input) {
+    if (input.files[0]) {
+      const p = document.getElementById('idPreview');
+      p.textContent = '✅ ' + input.files[0].name;
+      p.style.display = 'block';
+    }
+  }
+
+  function handleReceiptUpload(input) {
+    if (input.files[0]) {
+      const p = document.getElementById('receiptPreview');
+      p.textContent = '✅ ' + input.files[0].name;
+      p.style.display = 'block';
+    }
+  }
+
+  // ── Real-time field validators ──────────────────────────────────────────
+  function validateEmailField() {
+    const el = document.getElementById('email');
+    const msg = document.getElementById('emailMsg');
+    const val = el.value.trim();
+    // RFC5322-ish pattern
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val);
+    el.classList.toggle('field-error', val.length > 0 && !ok);
+    el.classList.toggle('field-ok', ok);
+    msg.className = 'field-msg';
+    if (val.length > 0 && !ok) {
+      msg.textContent = 'Please enter a valid email address (e.g. name@example.com)';
+      msg.classList.add('show-error');
+    } else if (ok) {
+      msg.textContent = '✓ Looks good';
+      msg.classList.add('show-ok');
+    }
+    return ok;
+  }
+
+  function validateMobileField() {
+    const el = document.getElementById('mobile');
+    const msg = document.getElementById('mobileMsg');
+    const code = document.getElementById('countryCode').value;
+    const val = el.value.trim().replace(/[\s\-().]/g, '');
+    // Must be digits only, 6–12 digits
+    const digitsOnly = /^\d{6,12}$/.test(val);
+    // PH: starts with 9 when +63, 10 digits (without leading 0)
+    const phOk = code !== '+63' || /^9\d{9}$/.test(val);
+    const ok = digitsOnly && phOk;
+    el.classList.toggle('field-error', val.length > 0 && !ok);
+    el.classList.toggle('field-ok', ok);
+    msg.className = 'field-msg';
+    if (val.length > 0 && !digitsOnly) {
+      msg.textContent = 'Numbers only, no spaces or dashes needed';
+      msg.classList.add('show-error');
+    } else if (val.length > 0 && !phOk) {
+      msg.textContent = 'PH mobile: enter 10 digits starting with 9 (e.g. 9171234567)';
+      msg.classList.add('show-error');
+    } else if (ok) {
+      msg.textContent = '✓ Looks good';
+      msg.classList.add('show-ok');
+    }
+    return ok;
+  }
+
+  // ── Full form validation ─────────────────────────────────────────────────
+  function validateBase() {
+    const name = document.getElementById('name').value.trim();
+    const age = document.getElementById('age').value;
+    const church = document.getElementById('church').value;
+    const status = document.querySelector('input[name="studentStatus"]:checked');
+
+    if (!name || !age || !church || !status) {
+      showToast('⚠️ Please fill in all required fields.', true); return false;
+    }
+
+    // Email
+    if (!validateEmailField()) {
+      document.getElementById('email').focus();
+      showToast('⚠️ Please enter a valid email address.', true); return false;
+    }
+
+    // Mobile
+    if (!validateMobileField()) {
+      document.getElementById('mobile').focus();
+      const code = document.getElementById('countryCode').value;
+      const hint = code === '+63' ? ' (PH format: 9XXXXXXXXX)' : '';
+      showToast('⚠️ Please enter a valid mobile number' + hint + '.', true); return false;
+    }
+
+    if (church === 'others' && !document.getElementById('otherChurch').value.trim()) {
+      showToast('⚠️ Please specify your church name.', true); return false;
+    }
+    if (status.value === 'student' && !document.getElementById('schoolIdFile').files.length) {
+      showToast('⚠️ Please upload your valid school ID.', true); return false;
+    }
+    return true;
+  }
+
+  // Convert a file input to base64 string
+  function fileToBase64(fileInput) {
+    return new Promise((resolve, reject) => {
+      const file = fileInput.files[0];
+      if (!file) { resolve(null); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        base64: reader.result.split(',')[1],
+        name: file.name
+      });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function buildPayload(withReceipt) {
+    const church = document.getElementById('church').value;
+    const schoolIdData = await fileToBase64(document.getElementById('schoolIdFile'));
+    const receiptData = withReceipt ? await fileToBase64(document.getElementById('receiptFile')) : null;
+
+    return {
+      name: document.getElementById('name').value.trim(),
+      age: document.getElementById('age').value,
+      mobile: document.getElementById('countryCode').value + document.getElementById('mobile').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      studentStatus: document.querySelector('input[name="studentStatus"]:checked').value,
+      church,
+      otherChurch: document.getElementById('otherChurch')?.value.trim() || '',
+      paymentReady: withReceipt ? 'now' : 'later',
+      schoolIdBase64: schoolIdData?.base64 || null,
+      schoolIdName: schoolIdData?.name || null,
+      receiptBase64: receiptData?.base64 || null,
+      receiptName: receiptData?.name || null,
+    };
+  }
+
+  async function submitForm() {
+    if (!validateBase()) return;
+    if (!document.getElementById('receiptFile').files.length) {
+      showToast('⚠️ Please attach your payment screenshot.', true); return;
+    }
+    await doSubmit(true);
+  }
+
+  async function submitLater() {
+    if (!validateBase()) return;
+    await doSubmit(false);
+  }
+
+  async function doSubmit(withReceipt) {
+    const btn = withReceipt
+      ? document.querySelector('.btn-gold')
+      : document.querySelector('.btn-green');
+    const origText = btn.textContent;
+    btn.textContent = 'Submitting…';
+    btn.disabled = true;
+
+    try {
+      const payload = await buildPayload(withReceipt);
+      const res = await fetch('/.netlify/functions/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        throw new Error(json.error || 'Submission failed');
+      }
+
+      // Redirect to thank-you page
+      window.location.href = withReceipt ? 'thank-you.html?type=paid&form=ph' : 'thank-you.html?type=later&form=ph';
+    } catch (err) {
+      showToast('❌ Error: ' + err.message, true);
+    } finally {
+      btn.textContent = origText;
+      btn.disabled = false;
+    }
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#C0392B' : '#2E7048';
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 5500);
+  }
+</script>
+</body>
+</html>

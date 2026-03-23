@@ -9,6 +9,7 @@ assets/
 ├── images/
 │   ├── hero.jpg                        ← Banner at the top of the registration form
 │   ├── hero-email.jpg                  ← Banner used inside all email templates (provide this file!)
+│   ├── admin-logo.jpg                  ← Logo shown in admin dashboard header (provide this file!)
 │   ├── speakers/
 │   │   ├── dave-taylor.png             ← Speaker photo
 │   │   ├── riley-spring.png            ← Speaker photo

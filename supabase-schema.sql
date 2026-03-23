@@ -1,61 +1,66 @@
 -- ============================================================
 -- RELAY Conference 2026 — Supabase Schema
--- Run this in Supabase → SQL Editor → New Query → Run
+-- Full reset script — drops everything and starts fresh
 -- ============================================================
 
+-- Drop table
+drop table if exists public.registrations cascade;
+
+-- Drop storage policies (ignore errors if they don't exist)
+drop policy if exists "Public read relay-uploads"     on storage.objects;
+drop policy if exists "Allow upload relay-uploads"    on storage.objects;
+drop policy if exists "Service role upload relay-uploads" on storage.objects;
+
+-- ============================================================
 -- Registrations table
-create table if not exists public.registrations (
-  id              uuid primary key default gen_random_uuid(),
-  created_at      timestamptz default now(),
-  verified_at     timestamptz,
+-- ============================================================
+create table public.registrations (
+  id               uuid primary key default gen_random_uuid(),
+  created_at       timestamptz default now(),
+  verified_at      timestamptz,
 
-  -- Personal info
-  name            text not null,
-  age             integer not null,
-  mobile          text not null,
-  email           text not null,
+  -- Type: 'local' | 'international'
+  registrant_type  text not null default 'local',
 
-  -- Conference details
-  student_status  text not null check (student_status in ('student', 'non-student')),
-  church          text not null,
+  -- Personal info (both forms)
+  name             text not null,
+  age              integer not null,
+  mobile           text not null,
+  email            text not null,
+
+  -- Local-only
+  student_status   text check (student_status in ('student', 'non-student')),
+  school_id_url    text,
+
+  -- International-only
+  country          text,
+  allergens        text,
+
+  -- Church (dropdown value for local, plain text for international)
+  church           text not null,
 
   -- Payment
-  payment_ready   boolean default false,
+  payment_ready    boolean default false,
   payment_verified boolean default false,
-  school_id_url   text,
-  receipt_url     text,
+  receipt_url      text,
 
   -- Status: awaiting_payment | payment_pending_review | confirmed
-  status          text default 'awaiting_payment'
+  status           text default 'awaiting_payment'
 );
 
--- Enable Row Level Security
+-- Row Level Security
 alter table public.registrations enable row level security;
 
--- Policy: allow insert from anyone (the function uses service role, but this keeps it open for the anon key too)
-create policy "Allow insert"
-  on public.registrations
-  for insert
-  with check (true);
-
--- Policy: allow select/update only via service role
-create policy "Allow select"
-  on public.registrations
-  for select
-  using (true);
-
-create policy "Allow update"
-  on public.registrations
-  for update
-  using (true);
+create policy "Allow insert" on public.registrations for insert with check (true);
+create policy "Allow select" on public.registrations for select using (true);
+create policy "Allow update" on public.registrations for update using (true);
 
 -- ============================================================
--- Storage bucket for uploads
+-- Storage bucket
 -- ============================================================
-
 insert into storage.buckets (id, name, public)
 values ('relay-uploads', 'relay-uploads', true)
-on conflict do nothing;
+on conflict (id) do update set public = true;
 
 create policy "Public read relay-uploads"
   on storage.objects for select

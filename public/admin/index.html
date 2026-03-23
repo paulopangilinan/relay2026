@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RELAY 2026 — Admin Dashboard</title>
+<title>RELAY 2026 — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -23,8 +23,9 @@
   #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1C2B38,#2A3D4A);}
   .login-card{background:#fff;border-radius:16px;padding:40px;width:360px;box-shadow:0 16px 48px rgba(0,0,0,0.2);text-align:center;overflow:hidden;position:relative;}
   .login-bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);position:absolute;top:0;left:0;right:0;}
-  .login-card h1{font-family:'Bebas Neue';font-size:32px;color:var(--dark);margin-bottom:4px;letter-spacing:0.06em;}
-  .login-card p{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .login-logo{width:52px;height:52px;border-radius:10px;object-fit:cover;margin-bottom:12px;}
+  .login-card h1{font-family:'Bebas Neue';font-size:28px;color:var(--dark);margin-bottom:4px;letter-spacing:0.06em;}
+  .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;}
   .login-card input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;color:var(--text);background:#f7fafb;}
   .login-card input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(58,139,191,0.12);}
   .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--green),var(--green-bright));color:#fff;border:none;border-radius:8px;font-family:'Bebas Neue';font-size:18px;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;}
@@ -34,44 +35,55 @@
   #dashboard{display:none;}
 
   /* TOPBAR */
-  .topbar{background:var(--dark);color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
-  .topbar-left{display:flex;align-items:center;gap:14px;}
-  .topbar-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:0.06em;}
+  .topbar{background:var(--dark);color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.15);position:relative;}
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .topbar-logo{width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;}
+  .topbar-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:0.05em;}
   .topbar-sub{font-size:11px;color:rgba(255,255,255,0.4);font-family:'DM Mono';}
   .topbar-right{display:flex;align-items:center;gap:10px;}
-  .topbar-right span{font-size:11px;color:rgba(255,255,255,0.4);}
+  .topbar-right .ts{font-size:11px;color:rgba(255,255,255,0.4);}
   .btn-sm{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;}
   .btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);}
   .btn-outline:hover{border-color:#fff;color:#fff;}
   .topbar-bar{height:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);position:absolute;bottom:0;left:0;right:0;}
 
-  .main{padding:28px;max-width:1200px;margin:0 auto;}
+  .main{padding:24px 28px;max-width:1200px;margin:0 auto;}
+
+  /* TABS */
+  .tab-bar{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border);}
+  .tab-btn{padding:12px 24px;font-size:14px;font-weight:600;color:var(--muted);background:transparent;border:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s;display:flex;align-items:center;gap:8px;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--sky);border-bottom-color:var(--sky);}
+  .tab-badge{background:var(--border);color:var(--muted);border-radius:50px;padding:2px 8px;font-size:11px;font-family:'DM Mono';}
+  .tab-btn.active .tab-badge{background:var(--sky-light);color:var(--sky);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
 
   /* STATS */
-  .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px;}
+  .stats-row{display:grid;gap:12px;margin-bottom:18px;}
+  .stats-row.local-stats{grid-template-columns:repeat(6,1fr);}
+  .stats-row.intl-stats{grid-template-columns:repeat(4,1fr);}
   .stat-card{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);}
   .stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
   .stat-val{font-family:'Bebas Neue';font-size:32px;letter-spacing:0.02em;line-height:1;}
   .stat-sub{font-size:11px;color:var(--muted);margin-top:3px;}
-  .c-total{color:var(--dark);} .c-green{color:var(--green);} .c-amber{color:var(--amber);} .c-blue{color:var(--sky);} .c-red{color:var(--red);} .c-gold{color:var(--gold);}
+  .c-total{color:var(--dark);}.c-green{color:var(--green);}.c-amber{color:var(--amber);}.c-blue{color:var(--sky);}.c-red{color:var(--red);}.c-gold{color:var(--gold);}
 
-  /* REVENUE ROW */
-  .revenue-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;}
-  .rev-card{background:var(--card-bg);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;}
-  .rev-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-  .rev-icon-green{background:var(--green-light);}
-  .rev-icon-amber{background:var(--amber-light);}
-  .rev-info .rev-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
-  .rev-info .rev-val{font-family:'Bebas Neue';font-size:26px;line-height:1;}
-  .rev-info .rev-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-  .rev-green .rev-val{color:var(--green);}
-  .rev-amber .rev-val{color:var(--amber);}
+  /* REVENUE */
+  .revenue-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+  .rev-card{background:var(--card-bg);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;}
+  .rev-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .rev-icon-green{background:var(--green-light);}.rev-icon-amber{background:var(--amber-light);}
+  .rev-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
+  .rev-val{font-family:'Bebas Neue';font-size:24px;line-height:1;}
+  .rev-green .rev-val{color:var(--green);}.rev-amber .rev-val{color:var(--amber);}
+  .rev-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 
   /* FILTERS */
   .filters-bar{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--shadow);}
   .filter-group{display:flex;flex-direction:column;gap:4px;}
   .filter-group label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
-  .filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#f7fafb;outline:none;min-width:140px;}
+  .filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#f7fafb;outline:none;min-width:130px;}
   .filter-group select:focus,.filter-group input:focus{border-color:var(--sky);}
   .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end;}
   .btn-export{padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
@@ -91,34 +103,29 @@
   tbody tr:hover{background:#f7fafb;}
   td{padding:11px 14px;font-size:13px;color:var(--text);vertical-align:middle;}
   td.mono{font-family:'DM Mono';font-size:12px;color:var(--muted);}
-
   .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:50px;font-size:11px;font-weight:600;white-space:nowrap;}
   .badge-green{background:var(--green-light);color:var(--green);}
   .badge-amber{background:var(--amber-light);color:var(--amber);}
   .badge-blue{background:var(--sky-light);color:var(--sky);}
   .badge-red{background:var(--red-light);color:var(--red);}
-
   .receipt-link{color:var(--sky);text-decoration:none;font-size:12px;font-weight:600;}
   .receipt-link:hover{text-decoration:underline;}
+  .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-confirm-row:hover{background:var(--green-bright);}
 
-  /* OVERRIDE BUTTON */
-  .btn-confirm{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
-  .btn-confirm:hover{background:var(--green-bright);}
-  .btn-confirm:disabled{background:#ccc;cursor:default;}
-
-  /* BOTTOM ROW */
+  /* BOTTOM */
   .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;}
   .church-card{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
   .church-card-header{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--dark);}
-  .church-row{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid #eef3f6;font-size:13px;}
+  .church-row{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid #eef3f6;font-size:13px;gap:8px;}
   .church-row:last-child{border-bottom:none;}
-  .church-name{color:var(--text);flex-shrink:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .church-name{color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .church-count{font-family:'DM Mono';font-size:12px;color:var(--muted);background:#f0f4f7;padding:2px 8px;border-radius:50px;flex-shrink:0;}
-  .church-bar-wrap{flex:1;margin:0 12px;background:#eef3f6;border-radius:50px;height:6px;overflow:hidden;}
+  .church-bar-wrap{width:80px;background:#eef3f6;border-radius:50px;height:6px;overflow:hidden;flex-shrink:0;}
   .church-bar{height:6px;border-radius:50px;background:linear-gradient(90deg,var(--sky),var(--green-bright));}
 
   .loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
-  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
 
   /* MODAL */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;}
@@ -135,16 +142,15 @@
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
 
   /* MOBILE */
-  @media(max-width:1100px){.stats-row{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:1100px){.stats-row.local-stats{grid-template-columns:repeat(3,1fr);}.stats-row.intl-stats{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:768px){
     .login-card{width:calc(100vw - 40px);padding:32px 24px;}
-    .topbar{padding:0 16px;height:auto;flex-wrap:wrap;gap:8px;padding-top:12px;padding-bottom:12px;}
-    .topbar-sub{display:none;}
-    .topbar-right span{display:none;}
+    .topbar{padding:0 16px;height:auto;flex-wrap:wrap;gap:8px;padding-top:10px;padding-bottom:10px;}
+    .topbar-sub,.ts{display:none;}
     .main{padding:16px;}
-    .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+    .stats-row.local-stats,.stats-row.intl-stats{grid-template-columns:repeat(2,1fr);gap:10px;}
     .revenue-row{grid-template-columns:1fr;}
-    .stat-val{font-size:26px;}
+    .tab-btn{padding:10px 16px;font-size:13px;}
     .filters-bar{flex-direction:column;padding:14px;gap:10px;}
     .filter-group{width:100%;}
     .filter-group select,.filter-group input{width:100%;min-width:unset;}
@@ -153,11 +159,10 @@
     .bottom-row{grid-template-columns:1fr;gap:12px;margin-top:14px;}
     th:nth-child(3),td:nth-child(3),th:nth-child(10),td:nth-child(10){display:none;}
     .toast{right:12px;left:12px;bottom:16px;text-align:center;border-radius:10px;}
+    .church-bar-wrap{display:none;}
   }
   @media(max-width:480px){
-    .stats-row{grid-template-columns:repeat(2,1fr);}
     th:nth-child(4),td:nth-child(4){display:none;}
-    .church-bar-wrap{display:none;}
   }
 </style>
 </head>
@@ -167,7 +172,8 @@
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-bar"></div>
-    <h1>RELAY 2026</h1>
+    <img src="../assets/images/admin-logo.jpg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
+    <h1>Relay Conference 2026</h1>
     <p>Admin Dashboard · Enter your password</p>
     <input type="password" id="passwordInput" placeholder="Admin password">
     <button class="login-btn" onclick="login()">Sign In</button>
@@ -177,13 +183,16 @@
 
 <!-- DASHBOARD -->
 <div id="dashboard">
-  <div class="topbar" style="position:relative;">
+  <div class="topbar">
     <div class="topbar-left">
-      <div class="topbar-title">⛪ RELAY 2026</div>
-      <div class="topbar-sub">Admin Dashboard</div>
+      <img src="../assets/images/admin-logo.jpg" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
+      <div>
+        <div class="topbar-title">Relay Conference 2026</div>
+        <div class="topbar-sub">Admin Dashboard</div>
+      </div>
     </div>
     <div class="topbar-right">
-      <span id="lastRefresh"></span>
+      <span class="ts" id="lastRefresh"></span>
       <button class="btn-sm btn-outline" onclick="loadData()">↻ Refresh</button>
       <button class="btn-sm btn-outline" onclick="logout()">Sign Out</button>
     </div>
@@ -192,101 +201,107 @@
 
   <div class="main">
 
-    <!-- STAT CARDS -->
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">Total Registered</div><div class="stat-val c-total" id="s-total">–</div></div>
-      <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="s-confirmed">–</div></div>
-      <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="s-review">–</div></div>
-      <div class="stat-card"><div class="stat-label">Awaiting Payment</div><div class="stat-val c-red" id="s-awaiting">–</div></div>
-      <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val c-blue" id="s-students">–</div><div class="stat-sub" id="s-nonstudents"></div></div>
-      <div class="stat-card"><div class="stat-label">Non-Students</div><div class="stat-val c-gold" id="s-nonstudents2">–</div></div>
+    <!-- TABS -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('ph')" id="tab-ph">
+        🇵🇭 Philippines <span class="tab-badge" id="badge-ph">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
+        🌏 International <span class="tab-badge" id="badge-intl">0</span>
+      </button>
     </div>
 
-    <!-- REVENUE -->
-    <div class="revenue-row">
-      <div class="rev-card rev-green">
-        <div class="rev-icon rev-icon-green">✅</div>
-        <div class="rev-info">
-          <div class="rev-label">Confirmed Revenue</div>
-          <div class="rev-val" id="r-confirmed">₱0</div>
-          <div class="rev-sub">From verified payments</div>
+    <!-- PH TAB -->
+    <div class="tab-content active" id="content-ph">
+      <div class="stats-row local-stats">
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val c-total" id="ph-total">–</div></div>
+        <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="ph-confirmed">–</div></div>
+        <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="ph-review">–</div></div>
+        <div class="stat-card"><div class="stat-label">Awaiting Payment</div><div class="stat-val c-red" id="ph-awaiting">–</div></div>
+        <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val c-blue" id="ph-students">–</div></div>
+        <div class="stat-card"><div class="stat-label">Non-Students</div><div class="stat-val c-gold" id="ph-nonstudents">–</div></div>
+      </div>
+      <div class="revenue-row">
+        <div class="rev-card rev-green"><div class="rev-icon rev-icon-green">✅</div><div><div class="rev-label">Confirmed Revenue</div><div class="rev-val" id="ph-rev-confirmed">₱0</div><div class="rev-sub">Verified payments</div></div></div>
+        <div class="rev-card rev-amber"><div class="rev-icon rev-icon-amber">🕐</div><div><div class="rev-label">Pending Revenue</div><div class="rev-val" id="ph-rev-pending">₱0</div><div class="rev-sub">Awaiting verification</div></div></div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group"><label>Search</label><input type="text" id="ph-search" placeholder="Name, email, church…" oninput="applyFilters('ph')"></div>
+        <div class="filter-group"><label>Status</label>
+          <select id="ph-status" onchange="applyFilters('ph')">
+            <option value="">All Statuses</option>
+            <option value="confirmed">✅ Confirmed</option>
+            <option value="payment_pending_review">🕐 Pending Review</option>
+            <option value="awaiting_payment">💳 Awaiting Payment</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Type</label>
+          <select id="ph-student" onchange="applyFilters('ph')">
+            <option value="">All</option>
+            <option value="student">🎓 Student</option>
+            <option value="non-student">💼 Non-Student</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Church</label><select id="ph-church" onchange="applyFilters('ph')"><option value="">All Churches</option></select></div>
+        <div class="filter-actions">
+          <button class="btn-reset" onclick="resetFilters('ph')">Reset</button>
+          <button class="btn-export" onclick="exportCSV('ph')">⬇ Export CSV</button>
         </div>
       </div>
-      <div class="rev-card rev-amber">
-        <div class="rev-icon rev-icon-amber">🕐</div>
-        <div class="rev-info">
-          <div class="rev-label">Pending Revenue</div>
-          <div class="rev-val" id="r-pending">₱0</div>
-          <div class="rev-sub">Submitted but unverified</div>
+      <div class="table-wrap">
+        <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Church</th><th>Status</th><th>Type</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <tbody id="ph-body"><tr><td colspan="11" class="loading">Loading…</td></tr></tbody>
+          </table>
         </div>
       </div>
-    </div>
-
-    <!-- FILTERS -->
-    <div class="filters-bar">
-      <div class="filter-group">
-        <label>Search</label>
-        <input type="text" id="fSearch" placeholder="Name, email, church…" oninput="applyFilters()">
-      </div>
-      <div class="filter-group">
-        <label>Status</label>
-        <select id="fStatus" onchange="applyFilters()">
-          <option value="">All Statuses</option>
-          <option value="confirmed">✅ Confirmed</option>
-          <option value="payment_pending_review">🕐 Pending Review</option>
-          <option value="awaiting_payment">💳 Awaiting Payment</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Student Status</label>
-        <select id="fStudent" onchange="applyFilters()">
-          <option value="">All</option>
-          <option value="student">🎓 Student</option>
-          <option value="non-student">💼 Non-Student</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Church</label>
-        <select id="fChurch" onchange="applyFilters()">
-          <option value="">All Churches</option>
-        </select>
-      </div>
-      <div class="filter-actions">
-        <button class="btn-reset" onclick="resetFilters()">Reset</button>
-        <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+      <div class="bottom-row">
+        <div class="church-card"><div class="church-card-header">📊 By Church</div><div id="ph-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">👥 Student Breakdown</div><div id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
       </div>
     </div>
 
-    <!-- TABLE -->
-    <div class="table-wrap">
-      <div class="table-header">
-        <h2>Registrations</h2>
-        <span class="table-count" id="tableCount">–</span>
+    <!-- INTERNATIONAL TAB -->
+    <div class="tab-content" id="content-intl">
+      <div class="stats-row intl-stats">
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val c-total" id="intl-total">–</div></div>
+        <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="intl-confirmed">–</div></div>
+        <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="intl-review">–</div></div>
+        <div class="stat-card"><div class="stat-label">Awaiting Verification</div><div class="stat-val c-red" id="intl-awaiting">–</div></div>
       </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th>
-              <th>Church</th><th>Status</th><th>Type</th><th>Receipt</th><th>Registered</th><th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody">
-            <tr><td colspan="11" class="loading">Loading registrations…</td></tr>
-          </tbody>
-        </table>
+      <div class="revenue-row">
+        <div class="rev-card rev-green"><div class="rev-icon rev-icon-green">✅</div><div><div class="rev-label">Confirmed Revenue</div><div class="rev-val" id="intl-rev-confirmed">$0</div><div class="rev-sub">Verified payments (USD)</div></div></div>
+        <div class="rev-card rev-amber"><div class="rev-icon rev-icon-amber">🕐</div><div><div class="rev-label">Pending Revenue</div><div class="rev-val" id="intl-rev-pending">$0</div><div class="rev-sub">Awaiting verification (USD)</div></div></div>
       </div>
-    </div>
-
-    <!-- BOTTOM CHARTS -->
-    <div class="bottom-row">
-      <div class="church-card">
-        <div class="church-card-header">📊 Registrations by Church</div>
-        <div id="churchBreakdown"><div class="loading" style="padding:24px;">Loading…</div></div>
+      <div class="filters-bar">
+        <div class="filter-group"><label>Search</label><input type="text" id="intl-search" placeholder="Name, email, country…" oninput="applyFilters('intl')"></div>
+        <div class="filter-group"><label>Status</label>
+          <select id="intl-status" onchange="applyFilters('intl')">
+            <option value="">All Statuses</option>
+            <option value="confirmed">✅ Confirmed</option>
+            <option value="payment_pending_review">🕐 Pending Review</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Country</label><select id="intl-country" onchange="applyFilters('intl')"><option value="">All Countries</option></select></div>
+        <div class="filter-actions">
+          <button class="btn-reset" onclick="resetFilters('intl')">Reset</button>
+          <button class="btn-export" onclick="exportCSV('intl')">⬇ Export CSV</button>
+        </div>
       </div>
-      <div class="church-card">
-        <div class="church-card-header">👥 Student vs Non-Student</div>
-        <div id="studentBreakdown"><div class="loading" style="padding:24px;">Loading…</div></div>
+      <div class="table-wrap">
+        <div class="table-header"><h2>International Registrations</h2><span class="table-count" id="intl-count">–</span></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Country</th><th>Church</th><th>Status</th><th>Allergens</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <tbody id="intl-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bottom-row">
+        <div class="church-card"><div class="church-card-header">🌍 By Country</div><div id="intl-country-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">⛪ By Church</div><div id="intl-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
       </div>
     </div>
 
@@ -308,7 +323,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  let allData = [], filteredData = [], adminPassword = '', pendingConfirmId = null;
+  let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
+  let adminPassword = '', pendingConfirmId = null, activeTab = 'ph';
 
   function login() {
     const pw = document.getElementById('passwordInput').value;
@@ -335,89 +351,149 @@
 
   async function loadData() {
     try {
-      const res = await fetch('/.netlify/functions/admin-data', {
-        headers: { 'Authorization': 'Bearer ' + adminPassword }
-      });
+      const res = await fetch('/.netlify/functions/admin-data', { headers: { 'Authorization': 'Bearer ' + adminPassword } });
       if (res.status === 401) return false;
       const json = await res.json();
-      allData = json.registrations || [];
-      renderStats(json.stats);
-      populateChurchFilter();
-      applyFilters();
-      renderChurchBreakdown(json.stats.by_church);
-      renderStudentBreakdown(json.stats);
+
+      localData = json.local || [];
+      intlData  = json.international || [];
+
+      // Tab badges
+      document.getElementById('badge-ph').textContent   = localData.length;
+      document.getElementById('badge-intl').textContent = intlData.length;
+
+      renderStats(json.stats_local, json.stats_intl);
+      populateFilters();
+      applyFilters('ph');
+      applyFilters('intl');
+      renderBreakdowns(json.stats_local, json.stats_intl);
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
       return true;
     } catch (e) { showToast('Error: ' + e.message); return false; }
   }
 
-  function renderStats(s) {
-    document.getElementById('s-total').textContent = s.total;
-    document.getElementById('s-confirmed').textContent = s.confirmed;
-    document.getElementById('s-review').textContent = s.pending_review;
-    document.getElementById('s-awaiting').textContent = s.awaiting_payment;
-    document.getElementById('s-students').textContent = s.students;
-    document.getElementById('s-nonstudents').textContent = 'of ' + s.total;
-    document.getElementById('s-nonstudents2').textContent = s.non_students;
-    document.getElementById('r-confirmed').textContent = '₱' + (s.confirmed_revenue || 0).toLocaleString();
-    document.getElementById('r-pending').textContent = '₱' + (s.pending_revenue || 0).toLocaleString();
+  function renderStats(ph, intl) {
+    // PH
+    document.getElementById('ph-total').textContent       = ph.total;
+    document.getElementById('ph-confirmed').textContent   = ph.confirmed;
+    document.getElementById('ph-review').textContent      = ph.pending_review;
+    document.getElementById('ph-awaiting').textContent    = ph.awaiting_payment;
+    document.getElementById('ph-students').textContent    = ph.students;
+    document.getElementById('ph-nonstudents').textContent = ph.non_students;
+    document.getElementById('ph-rev-confirmed').textContent = '₱' + (ph.confirmed_revenue||0).toLocaleString();
+    document.getElementById('ph-rev-pending').textContent   = '₱' + (ph.pending_revenue||0).toLocaleString();
+    // Intl
+    document.getElementById('intl-total').textContent       = intl.total;
+    document.getElementById('intl-confirmed').textContent   = intl.confirmed;
+    document.getElementById('intl-review').textContent      = intl.pending_review;
+    document.getElementById('intl-awaiting').textContent    = intl.awaiting_payment;
+    document.getElementById('intl-rev-confirmed').textContent = '$' + (intl.confirmed_revenue||0).toLocaleString();
+    document.getElementById('intl-rev-pending').textContent   = '$' + (intl.pending_revenue||0).toLocaleString();
   }
 
-  function populateChurchFilter() {
-    const churches = [...new Set(allData.map(r => r.church))].sort();
-    const sel = document.getElementById('fChurch');
-    sel.innerHTML = '<option value="">All Churches</option>';
-    churches.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  function populateFilters() {
+    // PH church filter
+    const phChurches = [...new Set(localData.map(r => r.church))].sort();
+    const phSel = document.getElementById('ph-church');
+    phSel.innerHTML = '<option value="">All Churches</option>';
+    phChurches.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; phSel.appendChild(o); });
+    // Intl country filter
+    const countries = [...new Set(intlData.map(r => r.country).filter(Boolean))].sort();
+    const intlSel = document.getElementById('intl-country');
+    intlSel.innerHTML = '<option value="">All Countries</option>';
+    countries.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; intlSel.appendChild(o); });
   }
 
-  function applyFilters() {
-    const search = document.getElementById('fSearch').value.toLowerCase();
-    const status = document.getElementById('fStatus').value;
-    const student = document.getElementById('fStudent').value;
-    const church = document.getElementById('fChurch').value;
-    filteredData = allData.filter(r => {
-      if (search && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(search)) return false;
-      if (status && r.status !== status) return false;
-      if (student && r.student_status !== student) return false;
-      if (church && r.church !== church) return false;
-      return true;
-    });
-    renderTable(filteredData);
-    document.getElementById('tableCount').textContent = filteredData.length + ' of ' + allData.length + ' records';
+  function applyFilters(tab) {
+    if (tab === 'ph') {
+      const s = document.getElementById('ph-search').value.toLowerCase();
+      const st = document.getElementById('ph-status').value;
+      const stu = document.getElementById('ph-student').value;
+      const ch = document.getElementById('ph-church').value;
+      filteredPH = localData.filter(r => {
+        if (s && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
+        if (st && r.status !== st) return false;
+        if (stu && r.student_status !== stu) return false;
+        if (ch && r.church !== ch) return false;
+        return true;
+      });
+      renderTable('ph', filteredPH);
+      document.getElementById('ph-count').textContent = filteredPH.length + ' of ' + localData.length + ' records';
+    } else {
+      const s = document.getElementById('intl-search').value.toLowerCase();
+      const st = document.getElementById('intl-status').value;
+      const co = document.getElementById('intl-country').value;
+      filteredIntl = intlData.filter(r => {
+        if (s && !`${r.name} ${r.email} ${r.country} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
+        if (st && r.status !== st) return false;
+        if (co && r.country !== co) return false;
+        return true;
+      });
+      renderTable('intl', filteredIntl);
+      document.getElementById('intl-count').textContent = filteredIntl.length + ' of ' + intlData.length + ' records';
+    }
   }
 
-  function renderTable(rows) {
-    const tbody = document.getElementById('tableBody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty">No registrations match your filters.</td></tr>'; return; }
+  function renderTable(tab, rows) {
+    const isPH = tab === 'ph';
+    const cols = isPH ? 11 : 12;
+    const tbody = document.getElementById(`${tab}-body`);
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">No registrations match your filters.</td></tr>`; return; }
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
         <td class="mono">${i+1}</td>
         <td><strong>${esc(r.name)}</strong></td>
         <td>${r.age}</td>
-        <td class="mono">${esc(r.mobile)}</td>
+        <td class="mono" style="font-size:12px;">${esc(r.mobile)}</td>
         <td class="mono" style="font-size:12px;">${esc(r.email)}</td>
-        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.church)}</td>
+        ${isPH ? '' : `<td style="font-size:12px;">${esc(r.country||'')}</td>`}
+        <td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.church)}</td>
         <td>${statusBadge(r.status)}</td>
-        <td>${r.student_status==='student'
-          ? '<span class="badge badge-blue">🎓 Student</span>'
-          : '<span class="badge badge-amber">💼 Non-Student</span>'}</td>
-        <td>${r.receipt_url
-          ? `<a href="${r.receipt_url}" target="_blank" class="receipt-link">📎 View</a>`
-          : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
+        ${isPH ? `<td>${r.student_status==='student'?'<span class="badge badge-blue">🎓 Student</span>':'<span class="badge badge-amber">💼 Non-Student</span>'}</td>` : `<td style="font-size:11px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.allergens||'')}">${r.allergens ? esc(r.allergens.substring(0,30)) + (r.allergens.length>30?'…':'') : '—'}</td>`}
+        <td>${r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
-        <td>${r.payment_verified
-          ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>'
-          : `<button class="btn-confirm" onclick="openModal('${r.id}','${esc(r.name)}')">Mark Paid</button>`}</td>
+        <td>${r.payment_verified ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>' : `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}')">Mark Paid</button>`}</td>
       </tr>
     `).join('');
   }
 
-  function statusBadge(status) {
-    return {
-      confirmed: '<span class="badge badge-green">✅ Confirmed</span>',
-      payment_pending_review: '<span class="badge badge-amber">🕐 Pending Review</span>',
-      awaiting_payment: '<span class="badge badge-red">💳 Awaiting Payment</span>',
-    }[status] || `<span class="badge">${status}</span>`;
+  function statusBadge(s) {
+    return {confirmed:'<span class="badge badge-green">✅ Confirmed</span>',payment_pending_review:'<span class="badge badge-amber">🕐 Pending</span>',awaiting_payment:'<span class="badge badge-red">💳 Awaiting</span>'}[s]||`<span class="badge">${s}</span>`;
+  }
+
+  function renderBreakdowns(ph, intl) {
+    // PH church
+    renderBarList('ph-church-breakdown', ph.by_church);
+    // PH student
+    const phTotal = ph.total || 1;
+    const sPct = Math.round(ph.students/phTotal*100);
+    document.getElementById('ph-student-breakdown').innerHTML = `
+      <div class="church-row"><span class="church-name">🎓 Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div><span class="church-count">${ph.students} (${sPct}%)</span></div>
+      <div class="church-row"><span class="church-name">💼 Non-Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${100-sPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div><span class="church-count">${ph.non_students} (${100-sPct}%)</span></div>
+      <div style="padding:14px 20px;background:#f7fafb;border-top:1px solid var(--border);">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:700;margin-bottom:4px;">Total Potential</div>
+        <div style="font-family:'Bebas Neue';font-size:26px;color:var(--dark);">₱${((ph.students*3000)+(ph.non_students*4500)).toLocaleString()}</div>
+      </div>`;
+    // Intl country
+    renderBarList('intl-country-breakdown', intl.by_country);
+    // Intl church
+    renderBarList('intl-church-breakdown', intl.by_church);
+  }
+
+  function renderBarList(id, obj) {
+    const sorted = Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]);
+    const max = sorted[0]?.[1]||1;
+    document.getElementById(id).innerHTML = sorted.length
+      ? sorted.map(([k,v]) => `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v/max*100)}%"></div></div><span class="church-count">${v}</span></div>`).join('')
+      : '<div class="empty">No data yet</div>';
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.getElementById(`content-${tab}`).classList.add('active');
   }
 
   function openModal(id, name) {
@@ -425,11 +501,7 @@
     document.getElementById('modalName').textContent = name;
     document.getElementById('confirmModal').classList.add('visible');
   }
-
-  function closeModal() {
-    pendingConfirmId = null;
-    document.getElementById('confirmModal').classList.remove('visible');
-  }
+  function closeModal() { pendingConfirmId = null; document.getElementById('confirmModal').classList.remove('visible'); }
 
   async function doConfirm() {
     if (!pendingConfirmId) return;
@@ -446,83 +518,39 @@
       closeModal();
       showToast('✅ Marked as confirmed and email sent!');
       loadData();
-    } catch (e) {
-      showToast('Error: ' + e.message);
-    } finally {
-      btn.disabled = false; btn.textContent = '✅ Confirm & Send Email';
-    }
+    } catch (e) { showToast('Error: ' + e.message); }
+    finally { btn.disabled = false; btn.textContent = '✅ Confirm & Send Email'; }
   }
 
-  function renderChurchBreakdown(byChurch) {
-    const sorted = Object.entries(byChurch).sort((a,b) => b[1]-a[1]);
-    const max = sorted[0]?.[1] || 1;
-    document.getElementById('churchBreakdown').innerHTML = sorted.map(([church, count]) => `
-      <div class="church-row">
-        <span class="church-name" title="${esc(church)}">${esc(church)}</span>
-        <div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(count/max*100)}%"></div></div>
-        <span class="church-count">${count}</span>
-      </div>
-    `).join('') || '<div class="empty">No data yet</div>';
-  }
-
-  function renderStudentBreakdown(stats) {
-    const total = stats.total || 1;
-    const sPct = Math.round(stats.students / total * 100);
-    const nPct = 100 - sPct;
-    document.getElementById('studentBreakdown').innerHTML = `
-      <div class="church-row">
-        <span class="church-name">🎓 Students</span>
-        <div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div>
-        <span class="church-count">${stats.students} (${sPct}%)</span>
-      </div>
-      <div class="church-row">
-        <span class="church-name">💼 Non-Students</span>
-        <div class="church-bar-wrap"><div class="church-bar" style="width:${nPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div>
-        <span class="church-count">${stats.non_students} (${nPct}%)</span>
-      </div>
-      <div style="padding:14px 20px;background:#f7fafb;border-top:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.07em;font-weight:700;">Total Potential Revenue</div>
-        <div style="font-family:'Bebas Neue';font-size:28px;color:var(--dark);">₱${((stats.students*3000)+(stats.non_students*4500)).toLocaleString()}</div>
-        <div style="font-size:11px;color:var(--muted);">Students × ₱3,000 + Non-Students × ₱4,500</div>
-      </div>
-    `;
-  }
-
-  function exportCSV() {
-    if (!filteredData.length) { showToast('No data to export'); return; }
-    const cols = ['name','age','mobile','email','student_status','church','status','payment_verified','created_at'];
-    const hdrs = ['Name','Age','Mobile','Email','Student Status','Church','Status','Payment Verified','Registered At'];
-    const csv = [hdrs.join(','), ...filteredData.map(r => cols.map(c => `"${(r[c]??'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
+  function exportCSV(tab) {
+    const rows = tab === 'ph' ? filteredPH : filteredIntl;
+    if (!rows.length) { showToast('No data to export'); return; }
+    const cols = tab === 'ph'
+      ? ['name','age','mobile','email','student_status','church','status','payment_verified','created_at']
+      : ['name','age','mobile','email','country','church','allergens','status','payment_verified','created_at'];
+    const hdrs = tab === 'ph'
+      ? ['Name','Age','Mobile','Email','Student Status','Church','Status','Payment Verified','Registered At']
+      : ['Name','Age','Mobile','Email','Country','Church','Allergens','Status','Payment Verified','Registered At'];
+    const csv = [hdrs.join(','), ...rows.map(r => cols.map(c => `"${(r[c]??'').toString().replace(/"/g,'""')}"`).join(','))].join('\n');
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = `relay2026-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `relay2026-${tab}-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     showToast('CSV exported!');
   }
 
-  function resetFilters() {
-    ['fSearch','fStatus','fStudent','fChurch'].forEach(id => {
-      const el = document.getElementById(id);
-      el.tagName === 'INPUT' ? el.value = '' : el.value = '';
-    });
-    applyFilters();
+  function resetFilters(tab) {
+    if (tab === 'ph') { ['ph-search','ph-status','ph-student','ph-church'].forEach(id => document.getElementById(id).value=''); }
+    else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value=''); }
+    applyFilters(tab);
   }
 
-  function formatDate(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-  }
+  function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
-  function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 3500);
-  }
-
-  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key==='Enter') login(); });
-  document.getElementById('confirmModal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+  document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
 </script>
 </body>
 </html>
