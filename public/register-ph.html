@@ -671,6 +671,22 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── IP Guard: redirect international users away from PH form ─────────────
+  (async function() {
+    try {
+      const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2500) });
+      if (!res.ok) return; // Can't detect — let them through
+      const data = await res.json();
+      const country = data.country_code || '';
+      if (country && country !== 'PH') {
+        // International user — redirect to international form
+        const name = encodeURIComponent(data.country_name || '');
+        window.location.replace('register-international.html' + (name ? '?country=' + name : ''));
+      }
+    } catch(e) {
+      // Detection failed — let them through rather than block
+    }
+  })();
   // Load GCash details from ENV VARs — wait for DOM
   window.addEventListener('DOMContentLoaded', () => {
     fetch('/.netlify/functions/gcash-details')

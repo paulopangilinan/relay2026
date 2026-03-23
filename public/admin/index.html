@@ -65,9 +65,11 @@
   .tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}
   .tile{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);}
   .tile-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
-  .tile-count{font-family:'Bebas Neue';font-size:36px;letter-spacing:0.02em;line-height:1;margin-bottom:4px;}
-  .tile-amount{font-size:13px;font-weight:700;margin-bottom:2px;}
-  .tile-sub{font-size:11px;color:var(--muted);line-height:1.4;}
+  .tile-main{display:flex;align-items:baseline;gap:8px;}
+  .tile-count{font-family:'Bebas Neue';font-size:36px;letter-spacing:0.02em;line-height:1;}
+  .tile-pipe{font-size:20px;color:var(--border);font-weight:300;line-height:1;}
+  .tile-amount{font-family:'Bebas Neue';font-size:22px;letter-spacing:0.02em;line-height:1;}
+  .tile-sub{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px;}
   .c-total{color:var(--dark);}.c-green{color:var(--green);}.c-amber{color:var(--amber);}.c-blue{color:var(--sky);}.c-red{color:var(--red);}.c-gold{color:var(--gold);}
 
   /* FILTERS */
@@ -214,15 +216,21 @@
         <!-- Confirmed Payment -->
         <div class="tile">
           <div class="tile-label">Confirmed Payment</div>
-          <div class="tile-count c-green" id="ph-confirmed">–</div>
-          <div class="tile-amount c-green" id="ph-rev-confirmed">₱0</div>
+          <div class="tile-main">
+            <span class="tile-count c-green" id="ph-confirmed">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-green" id="ph-rev-confirmed">₱0</span>
+          </div>
           <div class="tile-sub">Verified payments</div>
         </div>
         <!-- Pending Review -->
         <div class="tile">
           <div class="tile-label">Pending Review</div>
-          <div class="tile-count c-amber" id="ph-review">–</div>
-          <div class="tile-amount c-amber" id="ph-rev-pending">₱0</div>
+          <div class="tile-main">
+            <span class="tile-count c-amber" id="ph-review">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-amber" id="ph-rev-pending">₱0</span>
+          </div>
           <div class="tile-sub">Submitted, awaiting verification</div>
         </div>
         <!-- Awaiting Payment -->
@@ -276,22 +284,31 @@
         <!-- Total -->
         <div class="tile">
           <div class="tile-label">Total</div>
-          <div class="tile-count c-total" id="intl-total">–</div>
-          <div class="tile-amount c-total" id="intl-rev-total">$0</div>
+          <div class="tile-main">
+            <span class="tile-count c-total" id="intl-total">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-total" id="intl-rev-total">$0</span>
+          </div>
           <div class="tile-sub">Total collected (USD)</div>
         </div>
         <!-- Confirmed Payment -->
         <div class="tile">
           <div class="tile-label">Confirmed Payment</div>
-          <div class="tile-count c-green" id="intl-confirmed">–</div>
-          <div class="tile-amount c-green" id="intl-rev-confirmed">$0</div>
+          <div class="tile-main">
+            <span class="tile-count c-green" id="intl-confirmed">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-green" id="intl-rev-confirmed">$0</span>
+          </div>
           <div class="tile-sub">Verified payments (USD)</div>
         </div>
         <!-- Pending Review -->
         <div class="tile">
           <div class="tile-label">Pending Review</div>
-          <div class="tile-count c-amber" id="intl-review">–</div>
-          <div class="tile-amount c-amber" id="intl-rev-pending">$0</div>
+          <div class="tile-main">
+            <span class="tile-count c-amber" id="intl-review">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-amber" id="intl-rev-pending">$0</span>
+          </div>
           <div class="tile-sub">Submitted, awaiting verification</div>
         </div>
       </div>
