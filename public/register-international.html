@@ -136,10 +136,10 @@
     border-radius: 10px; padding: 18px 20px;
   }
   .bpi-box h4 { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .bpi-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #D0EADA; font-size: 13px; }
+  .bpi-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #D0EADA; font-size: 13px; gap: 12px; }
   .bpi-row:last-child { border-bottom: none; }
-  .bpi-row .bpi-lbl { color: var(--muted); font-size: 12px; }
-  .bpi-row .bpi-val { color: var(--text); font-weight: 600; }
+  .bpi-row .bpi-lbl { color: var(--muted); font-size: 12px; flex-shrink: 0; min-width: 110px; }
+  .bpi-row .bpi-val { color: var(--text); font-weight: 600; text-align: right; }
 
   /* Allergen checkboxes */
   .checkbox-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }

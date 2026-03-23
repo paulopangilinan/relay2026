@@ -110,9 +110,9 @@ function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
     .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;}
     .bpi-box{background:#EAF5EE;border-radius:10px;padding:16px 20px;margin:16px 0;}
     .bpi-box h4{font-size:12px;font-weight:700;color:#2E7048;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;}
-    .bpi-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #D0EADA;font-size:13px;}
+    .bpi-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #D0EADA;font-size:13px;}
     .bpi-row:last-child{border-bottom:none;}
-    .bpi-lbl{color:#6B8A9A;} .bpi-val{color:#2A3D4A;font-weight:600;}
+    .bpi-lbl{color:#6B8A9A;flex-shrink:0;min-width:110px;} .bpi-val{color:#2A3D4A;font-weight:600;text-align:right;}
     .info-box{background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;}
     .cta{display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;}
     .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}

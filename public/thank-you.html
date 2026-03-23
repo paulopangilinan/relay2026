@@ -24,8 +24,8 @@
   }
   @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
 
-  .hero { width: 100%; display: block; line-height: 0; max-height: 180px; overflow: hidden; }
-  .hero img { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; }
+  .hero { max-width: 600px; margin: 32px auto 0; padding: 0 20px; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; border-radius: 12px; }
 
   .page-wrap {
     max-width: 600px; margin: 0 auto; padding: 40px 20px 80px;
@@ -112,12 +112,12 @@
   <div id="statePaid" style="display:none;">
     <div class="icon-wrap icon-paid">🎉</div>
     <h1>Registration Received!</h1>
-    <p class="subtitle">Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment screenshot and will verify it shortly.</p>
+    <p class="subtitle" id="paidSubtitle">Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment screenshot and will verify it shortly.</p>
 
     <div class="card">
       <div class="section-label">What Happens Next</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text">Our team will <strong>verify your GCash payment</strong> and send you a confirmation email shortly.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="verifyStep">Our team will <strong>verify your GCash payment</strong> and send you a confirmation email shortly.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">You'll receive a <strong>confirmation email</strong> once your slot is officially reserved.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text"><strong>See you in Tagaytay</strong> on September 23–26, 2026! 🙌</div></div>
       </div>
@@ -140,7 +140,7 @@
     <div class="card">
       <div class="section-label">Complete Your Registration</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
       </div>
@@ -166,8 +166,20 @@
   const params = new URLSearchParams(window.location.search);
   const type = params.get('type') || 'paid';
   const form = params.get('form') || 'ph';
+  const isIntl = form === 'intl';
+
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
-  document.getElementById('backBtn').href = form === 'intl' ? 'register-international.html' : 'register-ph.html';
+  document.getElementById('backBtn').href = isIntl ? 'register-international.html' : 'register-ph.html';
+
+  // Swap payment method wording for international (BPI) vs PH (GCash)
+  if (isIntl) {
+    const verifyStep = document.getElementById('verifyStep');
+    const payStep    = document.getElementById('payInstructStep');
+    const subtitle   = document.getElementById('paidSubtitle');
+    if (verifyStep) verifyStep.innerHTML = 'Our team will <strong>verify your BPI transfer</strong> and send you a confirmation email shortly.';
+    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from ccsgmprojects@gmail.com.';
+    if (subtitle)   subtitle.innerHTML  = 'Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment receipt and will verify it shortly.';
+  }
 </script>
 </body>
 </html>
