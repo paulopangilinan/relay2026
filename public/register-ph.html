@@ -491,47 +491,53 @@
     <!-- PAYMENT -->
     <div class="card">
       <div class="section-label">Payment</div>
-      <label class="pay-option">
-        <input type="radio" name="paymentReady" id="payNow" value="now" onchange="handlePayment(this)">
-        <div class="pay-card">
-          <div class="pay-radio"></div>
-          <div>
-            <div class="pay-title">✅ Yes, I am ready to pay</div>
-            <div class="pay-desc">Scan the GCash QR and attach your transaction screenshot</div>
-          </div>
-        </div>
-      </label>
-      <label class="pay-option">
-        <input type="radio" name="paymentReady" id="payLater" value="later" onchange="handlePayment(this)">
-        <div class="pay-card">
-          <div class="pay-radio"></div>
-          <div>
-            <div class="pay-title">🕐 No, I will pay later</div>
-            <div class="pay-desc">We'll send payment instructions to your email</div>
-          </div>
-        </div>
-      </label>
 
-      <div class="slide-panel" id="gcash-section">
-        <div class="gcash-box">
-          <div class="gcash-title">Scan to Pay via GCash / BPI</div>
-          <div class="gcash-sub">BPI Account of CCSGM</div>
-          <div class="gcash-qr">
-            <img src="assets/images/qr/gcash-qr.png" alt="GCash QR Code" style="width:160px;height:160px;object-fit:contain;">
-          </div>
-          <div class="gcash-acct">BPI · CCSGM Account</div>
-          <div class="gcash-name">Replace the QR above with your actual GCash/BPI QR image</div>
-          <div class="field" style="text-align:left;">
-            <label>Attach Payment Screenshot <span class="req">*</span></label>
-            <div class="upload-area">
-              <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(this)">
-              <div class="upload-icon">📸</div>
-              <div class="upload-text"><strong>Click to attach</strong> your receipt screenshot<br>PNG or JPG · make sure reference number is visible</div>
-            </div>
-            <div class="upload-preview" id="receiptPreview"></div>
-          </div>
+      <!-- GCash QR always visible -->
+      <div class="gcash-box">
+        <div class="gcash-title">Scan to Pay via GCash</div>
+        <div class="gcash-sub">CCSGM · InstaPay QR</div>
+        <div class="gcash-qr">
+          <img src="assets/images/qr/gcash-qr.png" alt="GCash QR Code" style="width:180px;height:180px;object-fit:contain;">
         </div>
-        <button type="button" class="btn btn-gold" onclick="submitForm()">Submit Registration + Payment</button>
+        <div class="gcash-acct" style="margin-bottom:2px;">CCSGM</div>
+        <div class="gcash-name">Scan with GCash · Transfer fees may apply</div>
+      </div>
+
+      <!-- Pay now / pay later toggle -->
+      <div style="margin-top:16px;">
+        <label class="pay-option">
+          <input type="radio" name="paymentReady" id="payNow" value="now" onchange="handlePayment(this)">
+          <div class="pay-card">
+            <div class="pay-radio"></div>
+            <div>
+              <div class="pay-title">✅ I've already paid</div>
+              <div class="pay-desc">Attach your GCash screenshot below</div>
+            </div>
+          </div>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="paymentReady" id="payLater" value="later" onchange="handlePayment(this)">
+          <div class="pay-card">
+            <div class="pay-radio"></div>
+            <div>
+              <div class="pay-title">🕐 I will pay later</div>
+              <div class="pay-desc">We'll send payment instructions to your email</div>
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <div class="slide-panel" id="gcash-section" style="margin-top:4px;">
+        <div class="field" style="margin-top:12px;">
+          <label>Attach GCash Screenshot <span class="req">*</span></label>
+          <div class="upload-area">
+            <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(this)">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text"><strong>Click to attach</strong> your GCash receipt<br>PNG or JPG · make sure reference number is visible</div>
+          </div>
+          <div class="upload-preview" id="receiptPreview"></div>
+        </div>
+        <button type="button" class="btn btn-gold" onclick="submitForm()" style="margin-top:14px;">Submit Registration + Payment</button>
       </div>
 
       <div class="slide-panel" id="payLaterSubmit" style="margin-top:16px;">

@@ -347,26 +347,6 @@
       </div>
     </div>
 
-    <!-- CONFERENCE FEE -->
-    <div class="card">
-      <div class="section-label">Conference Fee</div>
-      <div class="fee-box" style="margin-bottom:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 18px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="fee-amount">USD $300</div>
-          <div class="tooltip-wrap">
-            <div class="fee-label" style="font-size:11px;color:var(--muted);">per person</div>
-            <div class="tooltip-icon" tabindex="0">?</div>
-            <div class="tooltip-box">Payment via BPI bank transfer.<br>Account details shown after this section.</div>
-          </div>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">✈️ Airport Transfers</span>
-          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">🍽️ All Meals</span>
-          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">🏨 3 Nights</span>
-        </div>
-      </div>
-    </div>
-
     <!-- ALLERGEN INFO -->
     <div class="card">
       <div class="section-label">Dietary & Allergen Information <span style="font-size:10px;color:var(--muted);font-family:'DM Sans';text-transform:none;letter-spacing:0;">(optional)</span></div>
@@ -376,9 +356,24 @@
       </div>
     </div>
 
-    <!-- PAYMENT -->
+    <!-- CONFERENCE FEE + PAYMENT (merged) -->
     <div class="card">
-      <div class="section-label">Payment</div>
+      <div class="section-label">Conference Fee &amp; Payment</div>
+
+      <!-- Fee summary row -->
+      <div class="fee-box" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 18px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="fee-amount">USD $300</div>
+          <div class="fee-label" style="font-size:11px;color:var(--muted);">per person</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">✈️ Airport Transfers</span>
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">🍽️ All Meals</span>
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">🏨 3 Nights</span>
+        </div>
+      </div>
+
+      <!-- BPI transfer details -->
       <div class="bpi-box" style="margin-bottom:16px;">
         <h4>🏦 BPI Bank Transfer</h4>
         <div class="bpi-row"><span class="bpi-lbl">Account Name</span><span class="bpi-val" id="bpiName">Loading…</span></div>
