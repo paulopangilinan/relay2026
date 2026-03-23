@@ -240,7 +240,7 @@
     font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px;
   }
   .gcash-detail-row {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: center; align-items: center; gap: 6px;
     padding: 4px 0; font-size: 13px;
   }
   .gcash-detail-lbl { color: #888; font-weight: 500; }
@@ -568,8 +568,8 @@
               <span class="gcash-detail-lbl">Mobile No.:</span>
               <span class="gcash-detail-val" id="gcashMobile"></span>
             </div>
-            <button type="button" onclick="copyGCashNumber()" id="copyBtn" style="margin-top:16px;width:100%;padding:12px;background:#0070E0;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-              <span>📋</span> <span id="copyBtnText">Copy GCash Number</span>
+            <button type="button" onclick="openGCash()" style="margin-top:16px;width:100%;padding:12px;background:#0070E0;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <span style="font-size:18px;">📱</span> <span>Open GCash App</span>
             </button>
           </div>
         </div>
@@ -886,17 +886,9 @@
     setTimeout(() => { t.style.display = 'none'; }, 5500);
   }
 
-  function copyGCashNumber() {
-    const mobile = document.getElementById('gcashMobile')?.textContent?.trim();
-    if (!mobile) { showToast('GCash number not loaded yet.', true); return; }
-    navigator.clipboard.writeText(mobile).then(() => {
-      const btn = document.getElementById('copyBtnText');
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy GCash Number', 2000);
-    }).catch(() => {
-      // Fallback for older browsers
-      showToast('GCash number: ' + mobile, false);
-    });
+  function openGCash() {
+    // Opens GCash app on mobile devices that have it installed
+    window.location.href = 'gcash://';
   }
 </script>
 </body>
