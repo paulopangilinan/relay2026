@@ -101,7 +101,7 @@
     border: 1.5px solid #C5DFF0; border-radius: 10px;
     padding: 18px 20px; text-align: center;
   }
-  .fee-amount { font-family: 'Bebas Neue'; font-size: 42px; color: var(--sky); letter-spacing: 0.04em; line-height: 1; }
+  .fee-amount { font-family: 'Bebas Neue'; font-size: 28px; color: var(--sky); letter-spacing: 0.04em; line-height: 1; }
   .fee-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
   /* BPI payment box */
@@ -180,12 +180,34 @@
     .form-heading h1 { font-size: 28px; }
     .card { padding: 18px 16px; border-radius: 12px; margin-bottom: 14px; }
     .grid-2 { grid-template-columns: 1fr; gap: 10px; }
-    .fee-amount { font-size: 34px; }
+    .fee-amount { font-size: 24px; }
     .speakers-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
     .speaker-photo { width: 72px; height: 72px; }
     .map-link-btn { width: 100%; justify-content: center; }
     .toast { width: calc(100% - 28px); border-radius: 10px; bottom: 16px; }
   }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+  .tooltip-icon {
+    width: 16px; height: 16px; border-radius: 50%; background: var(--gold);
+    color: #fff; font-size: 10px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 6px; flex-shrink: 0; line-height: 1;
+  }
+  .tooltip-box {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%); background: #7A5A10; color: #FDF6E0;
+    font-size: 12px; line-height: 1.5; padding: 8px 12px; border-radius: 8px;
+    white-space: nowrap; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    pointer-events: none;
+  }
+  .tooltip-box::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: #7A5A10;
+  }
+  .tooltip-wrap:hover .tooltip-box,
+  .tooltip-wrap:focus-within .tooltip-box { display: block; }
 </style>
 </head>
 <body>
@@ -295,16 +317,21 @@
     <!-- CONFERENCE FEE -->
     <div class="card">
       <div class="section-label">Conference Fee</div>
-      <div class="fee-box" style="margin-bottom:16px;">
-        <div class="fee-amount">USD $300</div>
-        <div class="fee-label" style="margin-top:8px;">Per person · all-inclusive</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;">
-          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;">✈️ Airport Transfers</span>
-          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;">🍽️ All Meals</span>
-          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;">🏨 Accommodation (3 nights)</span>
+      <div class="fee-box" style="margin-bottom:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 18px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="fee-amount">USD $300</div>
+          <div class="tooltip-wrap">
+            <div class="fee-label" style="font-size:11px;color:var(--muted);">per person</div>
+            <div class="tooltip-icon" tabindex="0">?</div>
+            <div class="tooltip-box">Payment via BPI bank transfer.<br>Account details shown after this section.</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">✈️ Airport Transfers</span>
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">🍽️ All Meals</span>
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">🏨 3 Nights</span>
         </div>
       </div>
-      <div class="note">Payment is via BPI bank transfer. Account details are shown below after confirming your registration.</div>
     </div>
 
     <!-- ALLERGEN INFO -->
