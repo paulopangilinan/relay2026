@@ -362,17 +362,20 @@
       document.getElementById('badge-ph').textContent   = localData.length;
       document.getElementById('badge-intl').textContent = intlData.length;
 
-      renderStats(json.stats_local, json.stats_intl);
+      const ph  = json.stats_local  || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, students:0, non_students:0, confirmed_revenue:0, pending_revenue:0, by_church:{} };
+      const intl = json.stats_intl || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, confirmed_revenue:0, pending_revenue:0, by_country:{}, by_church:{} };
+      renderStats(ph, intl);
       populateFilters();
       applyFilters('ph');
       applyFilters('intl');
-      renderBreakdowns(json.stats_local, json.stats_intl);
+      renderBreakdowns(ph, intl);
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
       return true;
     } catch (e) { showToast('Error: ' + e.message); return false; }
   }
 
   function renderStats(ph, intl) {
+    if (!ph || !intl) return;
     // PH
     document.getElementById('ph-total').textContent       = ph.total;
     document.getElementById('ph-confirmed').textContent   = ph.confirmed;
@@ -481,7 +484,7 @@
   }
 
   function renderBarList(id, obj) {
-    const sorted = Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]);
+    const sorted = Object.entries(obj || {}).sort((a,b)=>b[1]-a[1]);
     const max = sorted[0]?.[1]||1;
     document.getElementById(id).innerHTML = sorted.length
       ? sorted.map(([k,v]) => `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v/max*100)}%"></div></div><span class="church-count">${v}</span></div>`).join('')

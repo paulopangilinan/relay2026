@@ -10,6 +10,9 @@ assets/
 │   ├── hero.jpg                        ← Banner at the top of the registration form
 │   ├── hero-email.jpg                  ← Banner used inside all email templates (provide this file!)
 │   ├── admin-logo.jpg                  ← Logo shown in admin dashboard header (provide this file!)
+│   ├── gcash-header.png               ← GCash header image shown at top of the payment card
+│   │                                      Replace with any image — recommended ratio 3:1 (e.g. 600×200px)
+│   │                                      Used in: PH registration form, pay-later email, upload-receipt page
 │   ├── speakers/
 │   │   ├── dave-taylor.png             ← Speaker photo
 │   │   ├── riley-spring.png            ← Speaker photo

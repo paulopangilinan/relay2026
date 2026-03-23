@@ -102,7 +102,13 @@ export const handler = async (event) => {
         from: `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: "RELAY 2026 — Complete your registration",
-        html: registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, siteUrl }),
+        html: registrantPaymentEmail({
+          name, fee, studentStatus, qrUrl, heroUrl, siteUrl,
+          registrationId: reg.id,
+          gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
+          gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
+          gcashMobile:        process.env.GCASH_MOBILE,
+        }),
       });
     }
 
@@ -202,8 +208,9 @@ function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }) {
   });
 }
 
-// ── Registrant: pay later (with QR) ──────────────────────────────────────────
-function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, siteUrl }) {
+// ── Registrant: pay later (GCash QR + upload link) ───────────────────────────
+function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, siteUrl, registrationId, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+  const uploadLink = `${siteUrl}/upload-receipt.html?id=${registrationId}`;
   return emailShell({
     heroUrl,
     headerBg: 'linear-gradient(135deg,#1C2B38,#3A8BBF)',
@@ -211,18 +218,43 @@ function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, site
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${name}</strong>, thank you for your interest in RELAY Conference Asia Pacific 2026!</p>
-      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">To confirm your slot, please send your payment of <strong>${fee}</strong> using the details below:</p>
+      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">To confirm your slot, scan the GCash QR below and pay <strong>${fee}</strong>, then click the button to submit your receipt.</p>
 
-      <div style="background:#EBF5FB;border-radius:12px;padding:24px;margin-bottom:20px;text-align:center;">
-        <p style="font-size:13px;font-weight:700;color:#3A8BBF;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">BPI Account · CCSGM</p>
-        <p style="font-size:13px;color:#2A3D4A;margin-bottom:4px;"><strong>Account Name:</strong> [Your Account Name]</p>
-        <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;"><strong>Account Number:</strong> [Your BPI Account Number]</p>
-        <img src="${qrUrl}" alt="GCash QR Code" style="width:180px;height:180px;object-fit:contain;border-radius:10px;border:1px solid #D4E2EA;background:#fff;display:block;margin:0 auto 12px;">
-        <p style="font-size:12px;color:#6B8A9A;">Scan with GCash to pay</p>
-      </div>
+      <!-- GCash card -->
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+        <tr><td align="center">
+          <table cellpadding="0" cellspacing="0" border="0" style="background:#0A8FD9;border-radius:16px;overflow:hidden;width:100%;max-width:360px;">
+            <tr><td align="center" style="padding:0;background:#0A8FD9;line-height:0;border-radius:16px 16px 0 0;overflow:hidden;">
+              <img src="${siteUrl}/assets/images/gcash-header.png" alt="GCash" width="360" style="display:block;width:100%;height:auto;border-radius:16px 16px 0 0;">
+            </td></tr>
+            <tr><td style="padding:0 14px 14px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">
+                <tr><td align="center" style="padding-bottom:16px;">
+                  <img src="${qrUrl}" alt="GCash QR" width="190" height="190" style="display:block;border-radius:10px;border:1px solid #e0e0e0;background:#fff;">
+                </td></tr>
+                <tr><td style="font-size:13px;color:#666;padding-bottom:14px;">Transfer fees may apply.</td></tr>
+                <tr><td style="border-top:1px solid #E0E0E0;padding-top:14px;">
+                  <div style="font-size:22px;font-weight:800;color:#0070E0;letter-spacing:0.04em;margin-bottom:4px;">${gcashAccountName || 'CCSGM'}</div>
+                  <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">${gcashAccountHolder || ''}</div>
+                  <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;">
+                    <span style="color:#888;">Mobile No.:</span>
+                    <span style="color:#444;font-weight:600;font-family:monospace;">${gcashMobile || ''}</span>
+                  </div>
+                  <a href="https://links.gcash.com/go/pay" style="display:block;margin-top:14px;padding:11px;background:#0070E0;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;text-align:center;">Open GCash to Pay →</a>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
 
       ${rows(['Your Status', studentStatus==='student'?'Student':'Non-Student'],['Amount Due', `<strong>${fee}</strong>`])}
-      <div class="note">After paying, <strong>reply to this email with a screenshot</strong> of your transaction receipt so we can verify and confirm your registration.</div>
+
+      <div class="note" style="margin-top:16px;">After paying, click the button below to attach your GCash receipt screenshot and confirm your registration.</div>
+      <div style="text-align:center;margin-top:20px;">
+        <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
+      </div>
+      <p style="font-size:11px;color:#6B8A9A;text-align:center;margin-top:10px;">Or copy this link: ${uploadLink}</p>
     `
   });
 }

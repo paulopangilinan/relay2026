@@ -64,6 +64,7 @@ export const handler = async (event) => {
     if (error) throw error;
 
     function statsFor(subset) {
+      subset = subset || [];
       const confirmed     = subset.filter(r => r.payment_verified);
       const pendingReview = subset.filter(r => r.payment_ready && !r.payment_verified);
       const awaitingPay   = subset.filter(r => !r.payment_ready && !r.payment_verified);
