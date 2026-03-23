@@ -231,24 +231,29 @@
           <div class="mobile-wrap">
             <select class="country-select" id="countryCode">
               <option value="+61">🇦🇺 +61</option>
+              <option value="+82">🇰🇷 +82</option>
+              <option value="+92">🇵🇰 +92</option>
+              <option value="+91">🇮🇳 +91</option>
               <option value="+1">🇺🇸 +1</option>
+              <option value="+63">🇵🇭 +63</option>
               <option value="+44">🇬🇧 +44</option>
               <option value="+64">🇳🇿 +64</option>
               <option value="+65">🇸🇬 +65</option>
               <option value="+60">🇲🇾 +60</option>
               <option value="+62">🇮🇩 +62</option>
               <option value="+66">🇹🇭 +66</option>
-              <option value="+82">🇰🇷 +82</option>
               <option value="+81">🇯🇵 +81</option>
               <option value="+49">🇩🇪 +49</option>
               <option value="+971">🇦🇪 +971</option>
-              <option value="+91">🇮🇳 +91</option>
-              <option value="+92">🇵🇰 +92</option>
               <option value="+86">🇨🇳 +86</option>
+              <option value="+55">🇧🇷 +55</option>
+              <option value="+27">🇿🇦 +27</option>
             </select>
             <input type="tel" id="mobile" placeholder="Enter mobile number" required oninput="validateMobileField()">
           </div>
           <div class="field-msg" id="mobileMsg"></div>
+          <div id="ccHint" style="display:none;font-size:11px;color:var(--sky);margin-top:2px;">↑ Please select your country's calling code above</div>
+          <div id="ccHint" style="display:none;font-size:11px;color:var(--sky);margin-top:2px;">↑ Please select your country's calling code above</div>
         </div>
         <div class="field">
           <label>Email Address <span class="req">*</span></label>
@@ -271,14 +276,6 @@
             <option value="Pakistan">🇵🇰 Pakistan</option>
             <option value="India">🇮🇳 India</option>
             <option value="USA">🇺🇸 United States</option>
-            <option value="United Kingdom">🇬🇧 United Kingdom</option>
-            <option value="New Zealand">🇳🇿 New Zealand</option>
-            <option value="Singapore">🇸🇬 Singapore</option>
-            <option value="Malaysia">🇲🇾 Malaysia</option>
-            <option value="Indonesia">🇮🇩 Indonesia</option>
-            <option value="Japan">🇯🇵 Japan</option>
-            <option value="Germany">🇩🇪 Germany</option>
-            <option value="UAE">🇦🇪 United Arab Emirates</option>
             <option value="Others">🌍 Others</option>
           </select>
         </div>
@@ -300,7 +297,12 @@
       <div class="section-label">Conference Fee</div>
       <div class="fee-box" style="margin-bottom:16px;">
         <div class="fee-amount">USD $300</div>
-        <div class="fee-label">Per person · includes accommodation (3 nights) with full board</div>
+        <div class="fee-label" style="margin-top:8px;">Per person · all-inclusive</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;">
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;">✈️ Airport Transfers</span>
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;">🍽️ All Meals</span>
+          <span style="background:rgba(58,139,191,0.1);color:var(--sky);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;">🏨 Accommodation (3 nights)</span>
+        </div>
       </div>
       <div class="note">Payment is via BPI bank transfer. Account details are shown below after confirming your registration.</div>
     </div>
@@ -309,35 +311,8 @@
     <div class="card">
       <div class="section-label">Dietary & Allergen Information <span style="font-size:10px;color:var(--muted);font-family:'DM Sans';text-transform:none;letter-spacing:0;">(optional)</span></div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Please let us know if you have any dietary requirements or food allergies so we can inform the venue.</p>
-      <div class="checkbox-grid" id="allergenGrid">
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Vegetarian"> <span class="check-label">🥦 Vegetarian</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Vegan"> <span class="check-label">🌱 Vegan</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Gluten-free"> <span class="check-label">🌾 Gluten-free</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Halal"> <span class="check-label">☪️ Halal</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Kosher"> <span class="check-label">✡️ Kosher</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Nut allergy"> <span class="check-label">🥜 Nut Allergy</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Dairy-free"> <span class="check-label">🥛 Dairy-free</span>
-        </label>
-        <label class="check-item" onclick="toggleCheck(this)">
-          <input type="checkbox" name="allergen" value="Seafood allergy"> <span class="check-label">🦐 Seafood Allergy</span>
-        </label>
-      </div>
       <div class="field">
-        <label>Other dietary needs <span class="opt">(optional)</span></label>
-        <textarea id="allergenOther" placeholder="Describe any other dietary requirements or allergies…"></textarea>
+        <textarea id="allergenOther" placeholder="e.g. Vegetarian, nut allergy, gluten-free…" style="min-height:90px;"></textarea>
       </div>
     </div>
 
@@ -467,10 +442,7 @@
   // Country code map for auto-sync
   const countryCodeMap = {
     'Australia': '+61', 'South Korea': '+82', 'Pakistan': '+92',
-    'India': '+91', 'USA': '+1', 'United Kingdom': '+44',
-    'New Zealand': '+64', 'Singapore': '+65', 'Malaysia': '+60',
-    'Indonesia': '+62', 'Japan': '+81', 'Germany': '+49',
-    'UAE': '+971',
+    'India': '+91', 'USA': '+1',
   };
 
   function syncCountryCode(country) {
@@ -484,7 +456,14 @@
 
   function handleCountryChange(sel) {
     document.getElementById('otherCountryWrap').classList.toggle('visible', sel.value === 'Others');
-    syncCountryCode(sel.value);
+    if (sel.value === 'Others') {
+      // When Others selected, don't auto-sync — let user pick manually
+      // Show the country code picker label hint
+      document.getElementById('ccHint').style.display = 'block';
+    } else {
+      document.getElementById('ccHint').style.display = 'none';
+      syncCountryCode(sel.value);
+    }
   }
 
   async function loadBPIDetails() {
