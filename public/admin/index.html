@@ -60,24 +60,15 @@
   .tab-content.active{display:block;}
 
   /* STATS */
-  .stats-row{display:grid;gap:12px;margin-bottom:18px;}
-  .stats-row.local-stats{grid-template-columns:repeat(6,1fr);}
-  .stats-row.intl-stats{grid-template-columns:repeat(4,1fr);}
-  .stat-card{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);}
-  .stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
-  .stat-val{font-family:'Bebas Neue';font-size:32px;letter-spacing:0.02em;line-height:1;}
-  .stat-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+  /* TILES — merged count + payment */
+  .tiles-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+  .tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}
+  .tile{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);}
+  .tile-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+  .tile-count{font-family:'Bebas Neue';font-size:36px;letter-spacing:0.02em;line-height:1;margin-bottom:4px;}
+  .tile-amount{font-size:13px;font-weight:700;margin-bottom:2px;}
+  .tile-sub{font-size:11px;color:var(--muted);line-height:1.4;}
   .c-total{color:var(--dark);}.c-green{color:var(--green);}.c-amber{color:var(--amber);}.c-blue{color:var(--sky);}.c-red{color:var(--red);}.c-gold{color:var(--gold);}
-
-  /* REVENUE */
-  .revenue-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
-  .rev-card{background:var(--card-bg);border-radius:12px;padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;}
-  .rev-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  .rev-icon-green{background:var(--green-light);}.rev-icon-amber{background:var(--amber-light);}
-  .rev-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
-  .rev-val{font-family:'Bebas Neue';font-size:24px;line-height:1;}
-  .rev-green .rev-val{color:var(--green);}.rev-amber .rev-val{color:var(--amber);}
-  .rev-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 
   /* FILTERS */
   .filters-bar{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--shadow);}
@@ -142,14 +133,14 @@
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
 
   /* MOBILE */
-  @media(max-width:1100px){.stats-row.local-stats{grid-template-columns:repeat(3,1fr);}.stats-row.intl-stats{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:1100px){.tiles-row{grid-template-columns:repeat(2,1fr);}.tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}}
   @media(max-width:768px){
     .login-card{width:calc(100vw - 40px);padding:32px 24px;}
     .topbar{padding:0 16px;height:auto;flex-wrap:wrap;gap:8px;padding-top:10px;padding-bottom:10px;}
     .topbar-sub,.ts{display:none;}
     .main{padding:16px;}
-    .stats-row.local-stats,.stats-row.intl-stats{grid-template-columns:repeat(2,1fr);gap:10px;}
-    .revenue-row{grid-template-columns:1fr;}
+    .tiles-row{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .tiles-row.intl-tiles{grid-template-columns:repeat(2,1fr);}
     .tab-btn{padding:10px 16px;font-size:13px;}
     .filters-bar{flex-direction:column;padding:14px;gap:10px;}
     .filter-group{width:100%;}
@@ -213,17 +204,33 @@
 
     <!-- PH TAB -->
     <div class="tab-content active" id="content-ph">
-      <div class="stats-row local-stats">
-        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val c-total" id="ph-total">–</div></div>
-        <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="ph-confirmed">–</div></div>
-        <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="ph-review">–</div></div>
-        <div class="stat-card"><div class="stat-label">Awaiting Payment</div><div class="stat-val c-red" id="ph-awaiting">–</div></div>
-        <div class="stat-card"><div class="stat-label">Students</div><div class="stat-val c-blue" id="ph-students">–</div></div>
-        <div class="stat-card"><div class="stat-label">Non-Students</div><div class="stat-val c-gold" id="ph-nonstudents">–</div></div>
-      </div>
-      <div class="revenue-row">
-        <div class="rev-card rev-green"><div class="rev-icon rev-icon-green">✅</div><div><div class="rev-label">Confirmed Revenue</div><div class="rev-val" id="ph-rev-confirmed">₱0</div><div class="rev-sub">Verified payments</div></div></div>
-        <div class="rev-card rev-amber"><div class="rev-icon rev-icon-amber">🕐</div><div><div class="rev-label">Pending Revenue</div><div class="rev-val" id="ph-rev-pending">₱0</div><div class="rev-sub">Awaiting verification</div></div></div>
+      <div class="tiles-row">
+        <!-- Total -->
+        <div class="tile">
+          <div class="tile-label">Total</div>
+          <div class="tile-count c-total" id="ph-total">–</div>
+          <div class="tile-sub" id="ph-breakdown">–</div>
+        </div>
+        <!-- Confirmed Payment -->
+        <div class="tile">
+          <div class="tile-label">Confirmed Payment</div>
+          <div class="tile-count c-green" id="ph-confirmed">–</div>
+          <div class="tile-amount c-green" id="ph-rev-confirmed">₱0</div>
+          <div class="tile-sub">Verified payments</div>
+        </div>
+        <!-- Pending Review -->
+        <div class="tile">
+          <div class="tile-label">Pending Review</div>
+          <div class="tile-count c-amber" id="ph-review">–</div>
+          <div class="tile-amount c-amber" id="ph-rev-pending">₱0</div>
+          <div class="tile-sub">Submitted, awaiting verification</div>
+        </div>
+        <!-- Awaiting Payment -->
+        <div class="tile">
+          <div class="tile-label">Awaiting Payment</div>
+          <div class="tile-count c-red" id="ph-awaiting">–</div>
+          <div class="tile-sub">No payment submitted yet</div>
+        </div>
       </div>
       <div class="filters-bar">
         <div class="filter-group"><label>Search</label><input type="text" id="ph-search" placeholder="Name, email, church…" oninput="applyFilters('ph')"></div>
@@ -265,15 +272,28 @@
 
     <!-- INTERNATIONAL TAB -->
     <div class="tab-content" id="content-intl">
-      <div class="stats-row intl-stats">
-        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val c-total" id="intl-total">–</div></div>
-        <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-val c-green" id="intl-confirmed">–</div></div>
-        <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val c-amber" id="intl-review">–</div></div>
-        <div class="stat-card"><div class="stat-label">Awaiting Verification</div><div class="stat-val c-red" id="intl-awaiting">–</div></div>
-      </div>
-      <div class="revenue-row">
-        <div class="rev-card rev-green"><div class="rev-icon rev-icon-green">✅</div><div><div class="rev-label">Confirmed Revenue</div><div class="rev-val" id="intl-rev-confirmed">$0</div><div class="rev-sub">Verified payments (USD)</div></div></div>
-        <div class="rev-card rev-amber"><div class="rev-icon rev-icon-amber">🕐</div><div><div class="rev-label">Pending Revenue</div><div class="rev-val" id="intl-rev-pending">$0</div><div class="rev-sub">Awaiting verification (USD)</div></div></div>
+      <div class="tiles-row intl-tiles">
+        <!-- Total -->
+        <div class="tile">
+          <div class="tile-label">Total</div>
+          <div class="tile-count c-total" id="intl-total">–</div>
+          <div class="tile-amount c-total" id="intl-rev-total">$0</div>
+          <div class="tile-sub">Total collected (USD)</div>
+        </div>
+        <!-- Confirmed Payment -->
+        <div class="tile">
+          <div class="tile-label">Confirmed Payment</div>
+          <div class="tile-count c-green" id="intl-confirmed">–</div>
+          <div class="tile-amount c-green" id="intl-rev-confirmed">$0</div>
+          <div class="tile-sub">Verified payments (USD)</div>
+        </div>
+        <!-- Pending Review -->
+        <div class="tile">
+          <div class="tile-label">Pending Review</div>
+          <div class="tile-count c-amber" id="intl-review">–</div>
+          <div class="tile-amount c-amber" id="intl-rev-pending">$0</div>
+          <div class="tile-sub">Submitted, awaiting verification</div>
+        </div>
       </div>
       <div class="filters-bar">
         <div class="filter-group"><label>Search</label><input type="text" id="intl-search" placeholder="Name, email, country…" oninput="applyFilters('intl')"></div>
@@ -376,22 +396,21 @@
 
   function renderStats(ph, intl) {
     if (!ph || !intl) return;
-    // PH
+    // PH tiles
     document.getElementById('ph-total').textContent       = ph.total;
+    document.getElementById('ph-breakdown').innerHTML     = `${ph.students} Student${ph.students!==1?'s':''}<br>${ph.non_students} Non-Student${ph.non_students!==1?'s':''}`;
     document.getElementById('ph-confirmed').textContent   = ph.confirmed;
-    document.getElementById('ph-review').textContent      = ph.pending_review;
-    document.getElementById('ph-awaiting').textContent    = ph.awaiting_payment;
-    document.getElementById('ph-students').textContent    = ph.students;
-    document.getElementById('ph-nonstudents').textContent = ph.non_students;
     document.getElementById('ph-rev-confirmed').textContent = '₱' + (ph.confirmed_revenue||0).toLocaleString();
-    document.getElementById('ph-rev-pending').textContent   = '₱' + (ph.pending_revenue||0).toLocaleString();
-    // Intl
+    document.getElementById('ph-review').textContent      = ph.pending_review;
+    document.getElementById('ph-rev-pending').textContent = '₱' + (ph.pending_revenue||0).toLocaleString();
+    document.getElementById('ph-awaiting').textContent    = ph.awaiting_payment;
+    // Intl tiles
     document.getElementById('intl-total').textContent       = intl.total;
+    document.getElementById('intl-rev-total').textContent    = '$' + ((intl.confirmed_revenue||0) + (intl.pending_revenue||0)).toLocaleString();
     document.getElementById('intl-confirmed').textContent   = intl.confirmed;
-    document.getElementById('intl-review').textContent      = intl.pending_review;
-    document.getElementById('intl-awaiting').textContent    = intl.awaiting_payment;
     document.getElementById('intl-rev-confirmed').textContent = '$' + (intl.confirmed_revenue||0).toLocaleString();
-    document.getElementById('intl-rev-pending').textContent   = '$' + (intl.pending_revenue||0).toLocaleString();
+    document.getElementById('intl-review').textContent      = intl.pending_review;
+    document.getElementById('intl-rev-pending').textContent = '$' + (intl.pending_revenue||0).toLocaleString();
   }
 
   function populateFilters() {
