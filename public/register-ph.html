@@ -568,10 +568,6 @@
               <span class="gcash-detail-lbl">Mobile No.:</span>
               <span class="gcash-detail-val" id="gcashMobile"></span>
             </div>
-            <div class="gcash-detail-row">
-              <span class="gcash-detail-lbl">User ID:</span>
-              <span class="gcash-detail-val" id="gcashUserId"></span>
-            </div>
           </div>
         </div>
 
@@ -677,7 +673,7 @@
       document.getElementById('gcashAcctName').textContent   = d.accountName   || 'CCSGM';
       document.getElementById('gcashAcctHolder').textContent = d.accountHolder || '';
       document.getElementById('gcashMobile').textContent     = d.mobile        || '';
-      document.getElementById('gcashUserId').textContent     = d.userId        || '';
+
     })
     .catch(() => {
       document.getElementById('gcashAcctName').textContent = 'CCSGM';
