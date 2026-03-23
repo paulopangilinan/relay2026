@@ -71,20 +71,46 @@
   .field-msg.show-ok { color: var(--green); display: block; }
 
   /* Mobile with country code */
-  .mobile-wrap { display: flex; }
-  .country-select {
+  .mobile-wrap { display: flex; position: relative; }
+  .mobile-wrap input[type=tel] { border-radius: 0 8px 8px 0; flex: 1; border-left: 1px solid var(--border); width: auto; }
+
+  /* Custom country code picker */
+  .cc-picker { position: relative; flex-shrink: 0; }
+  .cc-trigger {
+    display: flex; align-items: center; gap: 5px;
     background: var(--input-bg); border: 1.5px solid var(--border);
     border-right: none; border-radius: 8px 0 0 8px;
-    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
-    padding: 11px 8px 11px 12px; outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    -webkit-appearance: none; appearance: none; cursor: pointer;
-    flex-shrink: 0; width: auto;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B8A9A'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px;
+    padding: 11px 10px 11px 12px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--text);
+    white-space: nowrap; height: 100%; min-width: 82px;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
   }
-  .country-select:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); z-index:1; position:relative; }
-  .mobile-wrap input[type=tel] { border-radius: 0 8px 8px 0; flex: 1; border-left: 1px solid var(--border); width: auto; }
+  .cc-trigger:hover { background: #edf4f8; }
+  .cc-trigger.open { border-color: var(--sky); background: #fff; z-index: 101; position: relative; }
+  .cc-trigger .cc-flag { font-size: 18px; line-height: 1; }
+  .cc-trigger .cc-code { font-size: 12px; color: var(--muted); }
+  .cc-trigger .cc-arrow { font-size: 9px; color: var(--muted); margin-left: 2px; transition: transform 0.2s; }
+  .cc-trigger.open .cc-arrow { transform: rotate(180deg); }
+
+  .cc-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(26,58,82,0.15); z-index: 200;
+    min-width: 170px; max-height: 280px; overflow-y: auto;
+    padding: 4px;
+  }
+  .cc-dropdown.open { display: block; }
+  .cc-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 7px; cursor: pointer;
+    font-size: 13px; transition: background 0.1s;
+  }
+  .cc-option:hover { background: var(--sky-light); }
+  .cc-option.selected { background: var(--sky-light); color: var(--sky); font-weight: 600; }
+  .cc-option .opt-flag { font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .cc-option .opt-name { flex: 1; color: var(--text); font-size: 12px; }
+  .cc-option .opt-code { color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; }
 
   /* Select wrapper */
   .select-wrap { position: relative; }
@@ -251,30 +277,37 @@
         <div class="field">
           <label>Mobile Number <span class="req">*</span></label>
           <div class="mobile-wrap">
-            <select class="country-select" id="countryCode">
-              <option value="+61">🇦🇺 +61</option>
-              <option value="+82">🇰🇷 +82</option>
-              <option value="+92">🇵🇰 +92</option>
-              <option value="+91">🇮🇳 +91</option>
-              <option value="+1">🇺🇸 +1</option>
-              <option value="+63">🇵🇭 +63</option>
-              <option value="+44">🇬🇧 +44</option>
-              <option value="+64">🇳🇿 +64</option>
-              <option value="+65">🇸🇬 +65</option>
-              <option value="+60">🇲🇾 +60</option>
-              <option value="+62">🇮🇩 +62</option>
-              <option value="+66">🇹🇭 +66</option>
-              <option value="+81">🇯🇵 +81</option>
-              <option value="+49">🇩🇪 +49</option>
-              <option value="+971">🇦🇪 +971</option>
-              <option value="+86">🇨🇳 +86</option>
-              <option value="+55">🇧🇷 +55</option>
-              <option value="+27">🇿🇦 +27</option>
-            </select>
+            <input type="hidden" id="countryCode" value="+61">
+            <div class="cc-picker" id="ccPicker">
+              <div class="cc-trigger" id="ccTrigger" onclick="toggleCCDropdown()">
+                <span class="cc-flag" id="ccFlag">🇦🇺</span>
+                <span class="cc-code" id="ccCode">+61</span>
+                <span class="cc-arrow">▾</span>
+              </div>
+              <div class="cc-dropdown" id="ccDropdown">
+                <div class="cc-option selected" data-code="+61" data-flag="🇦🇺" data-name="Australia" onclick="selectCC(this)"><span class="opt-flag">🇦🇺</span><span class="opt-name">Australia</span><span class="opt-code">+61</span></div>
+                <div class="cc-option" data-code="+82" data-flag="🇰🇷" data-name="South Korea" onclick="selectCC(this)"><span class="opt-flag">🇰🇷</span><span class="opt-name">South Korea</span><span class="opt-code">+82</span></div>
+                <div class="cc-option" data-code="+92" data-flag="🇵🇰" data-name="Pakistan" onclick="selectCC(this)"><span class="opt-flag">🇵🇰</span><span class="opt-name">Pakistan</span><span class="opt-code">+92</span></div>
+                <div class="cc-option" data-code="+91" data-flag="🇮🇳" data-name="India" onclick="selectCC(this)"><span class="opt-flag">🇮🇳</span><span class="opt-name">India</span><span class="opt-code">+91</span></div>
+                <div class="cc-option" data-code="+1" data-flag="🇺🇸" data-name="USA" onclick="selectCC(this)"><span class="opt-flag">🇺🇸</span><span class="opt-name">USA</span><span class="opt-code">+1</span></div>
+                <div class="cc-option" data-code="+63" data-flag="🇵🇭" data-name="Philippines" onclick="selectCC(this)"><span class="opt-flag">🇵🇭</span><span class="opt-name">Philippines</span><span class="opt-code">+63</span></div>
+                <div class="cc-option" data-code="+44" data-flag="🇬🇧" data-name="United Kingdom" onclick="selectCC(this)"><span class="opt-flag">🇬🇧</span><span class="opt-name">United Kingdom</span><span class="opt-code">+44</span></div>
+                <div class="cc-option" data-code="+64" data-flag="🇳🇿" data-name="New Zealand" onclick="selectCC(this)"><span class="opt-flag">🇳🇿</span><span class="opt-name">New Zealand</span><span class="opt-code">+64</span></div>
+                <div class="cc-option" data-code="+65" data-flag="🇸🇬" data-name="Singapore" onclick="selectCC(this)"><span class="opt-flag">🇸🇬</span><span class="opt-name">Singapore</span><span class="opt-code">+65</span></div>
+                <div class="cc-option" data-code="+60" data-flag="🇲🇾" data-name="Malaysia" onclick="selectCC(this)"><span class="opt-flag">🇲🇾</span><span class="opt-name">Malaysia</span><span class="opt-code">+60</span></div>
+                <div class="cc-option" data-code="+62" data-flag="🇮🇩" data-name="Indonesia" onclick="selectCC(this)"><span class="opt-flag">🇮🇩</span><span class="opt-name">Indonesia</span><span class="opt-code">+62</span></div>
+                <div class="cc-option" data-code="+66" data-flag="🇹🇭" data-name="Thailand" onclick="selectCC(this)"><span class="opt-flag">🇹🇭</span><span class="opt-name">Thailand</span><span class="opt-code">+66</span></div>
+                <div class="cc-option" data-code="+81" data-flag="🇯🇵" data-name="Japan" onclick="selectCC(this)"><span class="opt-flag">🇯🇵</span><span class="opt-name">Japan</span><span class="opt-code">+81</span></div>
+                <div class="cc-option" data-code="+49" data-flag="🇩🇪" data-name="Germany" onclick="selectCC(this)"><span class="opt-flag">🇩🇪</span><span class="opt-name">Germany</span><span class="opt-code">+49</span></div>
+                <div class="cc-option" data-code="+971" data-flag="🇦🇪" data-name="UAE" onclick="selectCC(this)"><span class="opt-flag">🇦🇪</span><span class="opt-name">UAE</span><span class="opt-code">+971</span></div>
+                <div class="cc-option" data-code="+86" data-flag="🇨🇳" data-name="China" onclick="selectCC(this)"><span class="opt-flag">🇨🇳</span><span class="opt-name">China</span><span class="opt-code">+86</span></div>
+                <div class="cc-option" data-code="+55" data-flag="🇧🇷" data-name="Brazil" onclick="selectCC(this)"><span class="opt-flag">🇧🇷</span><span class="opt-name">Brazil</span><span class="opt-code">+55</span></div>
+                <div class="cc-option" data-code="+27" data-flag="🇿🇦" data-name="South Africa" onclick="selectCC(this)"><span class="opt-flag">🇿🇦</span><span class="opt-name">South Africa</span><span class="opt-code">+27</span></div>
+              </div>
+            </div>
             <input type="tel" id="mobile" placeholder="Enter mobile number" required oninput="validateMobileField()">
           </div>
           <div class="field-msg" id="mobileMsg"></div>
-          <div id="ccHint" style="display:none;font-size:11px;color:var(--sky);margin-top:2px;">↑ Please select your country's calling code above</div>
           <div id="ccHint" style="display:none;font-size:11px;color:var(--sky);margin-top:2px;">↑ Please select your country's calling code above</div>
         </div>
         <div class="field">
@@ -475,9 +508,8 @@
   function syncCountryCode(country) {
     const code = countryCodeMap[country];
     if (code) {
-      const sel = document.getElementById('countryCode');
-      const opt = [...sel.options].find(o => o.value === code);
-      if (opt) sel.value = code;
+      const opt = document.querySelector(`#ccDropdown [data-code="${code}"]`);
+      if (opt) selectCC(opt);
     }
   }
 
@@ -634,6 +666,37 @@
     t.style.display = 'block';
     setTimeout(() => t.style.display = 'none', 5500);
   }
+
+  // ── Custom country code picker ─────────────────────────────────────────
+  function toggleCCDropdown() {
+    const trigger  = document.getElementById('ccTrigger');
+    const dropdown = document.getElementById('ccDropdown');
+    const isOpen   = dropdown.classList.contains('open');
+    trigger.classList.toggle('open', !isOpen);
+    dropdown.classList.toggle('open', !isOpen);
+  }
+
+  function selectCC(el) {
+    const code = el.dataset.code;
+    const flag = el.dataset.flag;
+    document.getElementById('countryCode').value = code;
+    document.getElementById('ccFlag').textContent = flag;
+    document.getElementById('ccCode').textContent = code;
+    // Update selected state
+    document.querySelectorAll('#ccDropdown .cc-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    // Close
+    document.getElementById('ccTrigger').classList.remove('open');
+    document.getElementById('ccDropdown').classList.remove('open');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', e => {
+    if (!document.getElementById('ccPicker').contains(e.target)) {
+      document.getElementById('ccTrigger').classList.remove('open');
+      document.getElementById('ccDropdown').classList.remove('open');
+    }
+  });
 </script>
 </body>
 </html>
