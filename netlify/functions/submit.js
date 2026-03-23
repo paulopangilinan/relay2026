@@ -163,7 +163,7 @@ function adminPaymentEmail({ name, email, age, mobile, studentStatus, churchName
              ['Church',churchName],['Fee',fee])}
       <hr>
       ${receiptUrl ? `<p style="font-size:13px;margin-bottom:16px;">📎 <a href="${receiptUrl}" style="color:#3A8BBF;font-weight:600;">View payment screenshot</a></p>` : ''}
-      <div class="note">Check your BPI/GCash app to confirm payment was received, then click the button below to send the registrant their confirmation email.</div>
+      <div class="note">Check your GCash app to confirm payment was received, then click the button below to send the registrant their confirmation email.</div>
       <div style="text-align:center;margin-top:24px;">
         <a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a>
       </div>
@@ -199,6 +199,7 @@ function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }) {
       ${rows(['Church',churchName],['Status',studentStatus==='student'?'Student':'Non-Student'],['Fee',fee])}
       <hr>
       <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly. For questions, reply to this email.</div>
+      ${studentStatus==='student' ? '<div class="note" style="margin-top:8px;">🪪 Your submitted school ID will also be reviewed to confirm your student discount.</div>' : ''}
       <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
@@ -252,7 +253,8 @@ function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, site
 
       ${rows(['Your Status', studentStatus==='student'?'Student':'Non-Student'],['Amount Due', `<strong>${fee}</strong>`])}
 
-      <div class="note" style="margin-top:16px;">After paying, click the button below to attach your GCash receipt screenshot and confirm your registration.</div>
+      ${studentStatus==='student' ? '<div class="note" style="margin-top:16px;">🪪 Your submitted school ID will also be reviewed to confirm your student discount.</div>' : ''}
+      <div class="note" style="margin-top:8px;">After paying, click the button below to attach your GCash receipt screenshot and confirm your registration.</div>
       <div style="text-align:center;margin-top:20px;">
         <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
       </div>

@@ -24,8 +24,8 @@
   }
   @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
 
-  .hero { width: 100%; display: block; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; }
+  .hero { width: 100%; display: block; line-height: 0; max-height: 180px; overflow: hidden; }
+  .hero img { width: 100%; height: 180px; object-fit: cover; object-position: center; display: block; }
 
   .page-wrap {
     max-width: 600px; margin: 0 auto; padding: 40px 20px 80px;
@@ -117,7 +117,7 @@
     <div class="card">
       <div class="section-label">What Happens Next</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text">Our team will <strong>verify your payment</strong> in your BPI/GCash app.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text">Our team will <strong>verify your GCash payment</strong> and send you a confirmation email shortly.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">You'll receive a <strong>confirmation email</strong> once your slot is officially reserved.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text"><strong>See you in Tagaytay</strong> on September 23–26, 2026! 🙌</div></div>
       </div>
@@ -140,7 +140,7 @@
     <div class="card">
       <div class="section-label">Complete Your Registration</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text">Check your email for <strong>BPI payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
       </div>
