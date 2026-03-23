@@ -154,6 +154,7 @@
         <div class="gcash-detail-row">
           <span class="gcash-detail-lbl">Mobile No.:</span>
           <span class="gcash-detail-val" id="gcashMobile"></span>
+          <button type="button" onclick="copyGCashNumber()" title="Copy to clipboard" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:#0070E0;font-size:15px;line-height:1;margin-left:2px;" id="clipBtn">📋</button>
         </div>
       </div>
     </div>
@@ -276,6 +277,18 @@
       showToast('❌ Error: ' + e.message, true);
       btn.textContent = 'Submit Payment Receipt'; btn.disabled = false;
     }
+  }
+
+  function copyGCashNumber() {
+    const mobile = document.getElementById('gcashMobile')?.textContent?.trim();
+    if (!mobile) { showToast('Number not loaded yet.', true); return; }
+    navigator.clipboard.writeText(mobile).then(() => {
+      const btn = document.getElementById('clipBtn');
+      btn.textContent = '✅';
+      setTimeout(() => btn.textContent = '📋', 2000);
+    }).catch(() => {
+      showToast('Copied: ' + mobile, false);
+    });
   }
 
   function showToast(msg, isError = false) {
