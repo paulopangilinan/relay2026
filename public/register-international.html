@@ -645,7 +645,12 @@
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (!res.ok || json.error) throw new Error(json.error || 'Submission failed');
+      if (res.status === 409) {
+        showToast('⚠️ ' + json.message, true);
+        btn.textContent = 'Submit Registration + Payment'; btn.disabled = false;
+        return;
+      }
+      if (!res.ok || json.error) throw new Error(json.message || json.error || 'Submission failed');
       window.location.href = 'thank-you.html?type=paid&form=intl';
     } catch (err) {
       showToast('❌ Error: ' + err.message, true);

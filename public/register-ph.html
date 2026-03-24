@@ -882,8 +882,14 @@
       });
       const json = await res.json();
 
+      if (res.status === 409) {
+        showToast('⚠️ ' + json.message, true);
+        btn.textContent = origText; btn.disabled = false;
+        return;
+      }
+
       if (!res.ok || json.error) {
-        throw new Error(json.error || 'Submission failed');
+        throw new Error(json.message || json.error || 'Submission failed');
       }
 
       // Redirect to thank-you page
@@ -905,8 +911,22 @@
   }
 
   function openGCash() {
-    // Opens GCash app on mobile devices that have it installed
-    window.location.href = 'gcash://';
+    const ua = navigator.userAgent || '';
+    const isAndroid = /android/i.test(ua);
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+
+    if (isAndroid) {
+      // Android: intent URI — opens GCash if installed, Play Store if not
+      window.location.href = 'intent://main#Intent;scheme=gcash;package=com.globe.gcash.android;end';
+    } else if (isIOS) {
+      // iOS: try gcash:// first, fall back to App Store after 1.5s if not installed
+      window.location.href = 'gcash://';
+      setTimeout(() => {
+        window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+      }, 1500);
+    } else {
+      showToast('Open GCash on your phone to pay.', false);
+    }
   }
 
   function copyGCashNumber() {
