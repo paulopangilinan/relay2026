@@ -140,16 +140,16 @@
     padding: 14px 14px; text-align: center;
     transition: border-color 0.15s, background 0.15s; height: 100%;
   }
-  .participant-option input:checked ~ .participant-card { border-color: var(--sky); background: var(--sky-light); }
+  .participant-card.selected-card { border-color: var(--sky); background: var(--sky-light); }
   .p-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
   .p-price { display: flex; align-items: baseline; gap: 5px; justify-content: center; margin-bottom: 5px; }
   .p-original { font-size: 11px; color: var(--muted); text-decoration: line-through; }
   .p-discounted { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 0.04em; color: var(--sky); line-height: 1; }
-  .participant-option input:checked ~ .participant-card .p-discounted { color: var(--dark); }
+  .participant-card.selected-card .p-discounted { color: var(--dark); }
   .p-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 50px; letter-spacing: 0.04em; }
   .p-badge-green { background: #E6F5EC; color: var(--green); }
   .p-badge-sky { background: var(--sky-light); color: var(--sky); }
-  .participant-option input:checked ~ .participant-card .p-badge-sky { background: rgba(58,139,191,0.15); }
+  .participant-card.selected-card .p-badge-sky { background: rgba(58,139,191,0.15); }
   .p-sub { font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
 
 
@@ -467,26 +467,29 @@
         </span>
       </div>
       <div class="participant-wrap">
-        <label class="participant-option">
-          <input type="radio" name="studentStatus" id="isStudent" value="student">
-          <div class="participant-card">
-            <div class="p-title">🎓 Student
-              <span class="tooltip-wrap">
-                <span class="tooltip-icon">?</span>
-                <span class="tooltip-box">Must present valid school ID</span>
-              </span>
-            </div>
+        <!-- Student -->
+        <div class="participant-option" onclick="selectParticipant('student')" id="opt-student">
+          <input type="radio" name="studentStatus" id="isStudent" value="student" style="display:none;">
+          <div class="participant-card" id="card-student">
+            <div class="p-title">🎓 Student</div>
             <div class="p-price">
               <span class="p-original">₱6,000</span>
               <span class="p-discounted">₱3,000</span>
             </div>
             <div class="p-sub">High School and College Students</div>
-            <div style="margin-top:6px;"><span class="p-badge p-badge-green">50% Off</span></div>
+            <div style="margin-top:6px;">
+              <span class="p-badge p-badge-green">50% Off</span>
+              <span class="tooltip-wrap" style="margin-left:4px;" onclick="event.stopPropagation()">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Must present valid school ID</span>
+              </span>
+            </div>
           </div>
-        </label>
-        <label class="participant-option">
-          <input type="radio" name="studentStatus" id="notStudent" value="non-student">
-          <div class="participant-card">
+        </div>
+        <!-- Non-Student -->
+        <div class="participant-option" onclick="selectParticipant('non-student')" id="opt-nonstudent">
+          <input type="radio" name="studentStatus" id="notStudent" value="non-student" style="display:none;">
+          <div class="participant-card" id="card-nonstudent">
             <div class="p-title">💼 Non-Student</div>
             <div class="p-price">
               <span class="p-original">₱6,000</span>
@@ -494,7 +497,7 @@
             </div>
             <div style="margin-top:10px;"><span class="p-badge p-badge-sky">25% Off</span></div>
           </div>
-        </label>
+        </div>
       </div>
       <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
         <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
@@ -730,11 +733,20 @@
       });
   });
 
-  document.querySelectorAll('input[name="studentStatus"]').forEach(r => {
-    r.addEventListener('change', function() {
-      document.getElementById('schoolIdWrap').classList.toggle('visible', this.value === 'student');
-    });
-  });
+  function selectParticipant(value) {
+    // Set radio
+    document.getElementById(value === 'student' ? 'isStudent' : 'notStudent').checked = true;
+    // Update card styles
+    document.getElementById('card-student').classList.toggle('selected-card', value === 'student');
+    document.getElementById('card-nonstudent').classList.toggle('selected-card', value === 'non-student');
+    // Show/hide school ID upload
+    const wrap = document.getElementById('schoolIdWrap');
+    if (value === 'student') {
+      wrap.classList.add('visible');
+    } else {
+      wrap.classList.remove('visible');
+    }
+  }
 
   function handleChurchChange(sel) {
     document.getElementById('other-church-wrap').classList.toggle('visible', sel.value === 'others');
@@ -972,10 +984,7 @@
     <div style="font-size:32px;margin-bottom:12px;">🌐</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">For the best experience, open this in your browser.</div>
     <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">Some features may not work in this app's browser.</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>
-    </div>
+    <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 </div>
 
