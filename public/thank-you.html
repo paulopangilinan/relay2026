@@ -217,24 +217,40 @@
   const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
   const modal = document.getElementById('iabModal');
-  if (modal) { modal.style.display = 'flex'; }
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  const isAndroid = /android/i.test(ua);
+  const btns = document.getElementById('iabButtons');
+  if (!btns) return;
+
+  if (isAndroid) {
+    // Android: Open in Browser (primary) + Continue Anyway
+    btns.innerHTML = `
+      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
+      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>`;
+  } else {
+    // iOS: Continue Anyway (primary) + Copy URL
+    btns.innerHTML = `
+      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Continue Anyway</button>
+      <button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>`;
+  }
 })();
 
 function openInBrowser() {
   const url = window.location.href;
-  const ua  = navigator.userAgent || '';
-  const isAndroid = /android/i.test(ua);
-  if (isAndroid) {
-    window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+}
+
+function copyURL() {
+  const url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = 'Copy URL', 2000); }
+    });
   } else {
-    // iOS — copy URL and instruct user
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Link copied! Open Safari or Chrome and paste it in the address bar.');
-      });
-    } else {
-      alert('Copy this link and open it in Safari or Chrome:\n\n' + url);
-    }
+    prompt('Copy this link and open it in Safari:', url);
   }
 }
 </script>
