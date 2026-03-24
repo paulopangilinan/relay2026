@@ -110,7 +110,7 @@
     <div class="error-state">
       <div class="error-icon">❌</div>
       <h2>Link Not Found</h2>
-      <p>This payment link is invalid or has expired.<br>Please contact us at ccsgmprojects@gmail.com</p>
+      <p>This payment link is invalid or has expired.<br>Please contact us at <a id="contactEmailLink" href="mailto:ccsgmprojects@gmail.com" style="color:var(--sky);">ccsgmprojects@gmail.com</a></p>
     </div>
   </div>
 
@@ -191,6 +191,15 @@
     if (!registrationId) { showError(); return; }
 
     // Load GCash details
+    fetch('/.netlify/functions/contact-info')
+      .then(r => r.json())
+      .then(d => {
+        if (d.email) {
+          const el = document.getElementById('contactEmailLink');
+          if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
+        }
+      }).catch(() => {});
+
     fetch('/.netlify/functions/gcash-details')
       .then(r => r.json())
       .then(d => {
@@ -297,6 +306,46 @@
     t.style.display = 'block';
     setTimeout(() => t.style.display = 'none', 5500);
   }
+</script>
+<!-- IAB Detection Modal -->
+<div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🌐</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">For the best experience, open this in your browser.</div>
+    <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">Some features may not work in this app's browser.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
+      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function detectIAB() {
+  const ua = navigator.userAgent || '';
+  const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  if (!isIAB) return;
+  const modal = document.getElementById('iabModal');
+  if (modal) { modal.style.display = 'flex'; }
+})();
+
+function openInBrowser() {
+  const url = window.location.href;
+  const ua  = navigator.userAgent || '';
+  const isAndroid = /android/i.test(ua);
+  if (isAndroid) {
+    window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  } else {
+    // iOS — copy URL and instruct user
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied! Open Safari or Chrome and paste it in the address bar.');
+      });
+    } else {
+      alert('Copy this link and open it in Safari or Chrome:\n\n' + url);
+    }
+  }
+}
 </script>
 </body>
 </html>

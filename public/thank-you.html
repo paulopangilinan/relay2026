@@ -140,7 +140,7 @@
     <div class="card">
       <div class="section-label">Complete Your Registration</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from <span class="contact-email">ccsgmprojects@gmail.com</span>.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
       </div>
@@ -154,7 +154,7 @@
     </div>
 
     <div class="note" style="margin-bottom:24px;">
-      Can't find the email? Check your spam/junk folder or contact us at <strong>ccsgmprojects@gmail.com</strong>
+      Can't find the email? Check your spam/junk folder or contact us at <strong><a id="contactEmailLink2" href="mailto:ccsgmprojects@gmail.com" style="color:inherit;">ccsgmprojects@gmail.com</a></strong>
     </div>
   </div>
 
@@ -171,15 +171,72 @@
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
   document.getElementById('backBtn').href = isIntl ? 'register-international.html' : 'register-ph.html';
 
+  // Populate contact email from ENV
+  fetch('/.netlify/functions/contact-info')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.email) return;
+      document.querySelectorAll('.contact-email').forEach(el => {
+        el.textContent = d.email;
+      });
+      const link = document.getElementById('contactEmailLink2');
+      if (link) { link.href = 'mailto:' + d.email; link.textContent = d.email; }
+      // Also update the dynamically swapped intl text
+      if (isIntl) {
+        const payStep = document.getElementById('payInstructStep');
+        if (payStep) payStep.innerHTML = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="contact-email">' + d.email + '</span>.';
+      }
+    }).catch(() => {});
+
   // Swap payment method wording for international (BPI) vs PH (GCash)
   if (isIntl) {
     const verifyStep = document.getElementById('verifyStep');
     const payStep    = document.getElementById('payInstructStep');
     const subtitle   = document.getElementById('paidSubtitle');
     if (verifyStep) verifyStep.innerHTML = 'Our team will <strong>verify your BPI transfer</strong> and send you a confirmation email shortly.';
-    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from ccsgmprojects@gmail.com.';
+    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="contact-email">ccsgmprojects@gmail.com</span>.';
     if (subtitle)   subtitle.innerHTML  = 'Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment receipt and will verify it shortly.';
   }
+</script>
+<!-- IAB Detection Modal -->
+<div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🌐</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">For the best experience, open this in your browser.</div>
+    <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">Some features may not work in this app's browser.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
+      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function detectIAB() {
+  const ua = navigator.userAgent || '';
+  const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  if (!isIAB) return;
+  const modal = document.getElementById('iabModal');
+  if (modal) { modal.style.display = 'flex'; }
+})();
+
+function openInBrowser() {
+  const url = window.location.href;
+  const ua  = navigator.userAgent || '';
+  const isAndroid = /android/i.test(ua);
+  if (isAndroid) {
+    window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  } else {
+    // iOS — copy URL and instruct user
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied! Open Safari or Chrome and paste it in the address bar.');
+      });
+    } else {
+      alert('Copy this link and open it in Safari or Chrome:\n\n' + url);
+    }
+  }
+}
 </script>
 </body>
 </html>

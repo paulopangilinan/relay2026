@@ -349,10 +349,7 @@
     .grid-2 { grid-template-columns: 1fr; gap: 10px; }
 
     /* Student toggle: stack vertically on very small screens */
-    .toggle-wrap { flex-direction: column; }
-    .toggle-wrap label { padding: 12px; border-bottom: 1px solid var(--border); }
-    .toggle-wrap label:last-of-type { border-bottom: none; }
-    .toggle-wrap input[type=radio]:checked + label { border-color: transparent; }
+    .participant-wrap { flex-direction: column; }
 
     /* Upload area */
     .upload-area { padding: 16px 12px; }
@@ -393,7 +390,7 @@
     .section-label { font-size: 9px; }
 
     /* Fee note */
-    .fee-note { font-size: 11px; }
+
   }
 
   @media (max-width: 380px) {
@@ -458,18 +455,43 @@
       </div>
     </div>
 
-    <!-- STUDENT STATUS -->
+    <!-- PARTICIPANT CATEGORY -->
     <div class="card">
-      <div class="section-label">Student Status</div>
-      <div class="toggle-wrap">
-        <input type="radio" name="studentStatus" id="isStudent" value="student">
-        <label for="isStudent">🎓 Student (PHP 3,000)</label>
-        <input type="radio" name="studentStatus" id="notStudent" value="non-student">
-        <label for="notStudent">💼 Non-Student (PHP 4,500)</label>
+      <div class="section-label">Participant Category
+        <span class="tooltip-wrap" style="margin-left:0;">
+          <span class="tooltip-icon" style="background:var(--sky);">?</span>
+          <span class="tooltip-box">Full price per pax is ₱6,000<br>(3 nights full board with meals at CCT Tagaytay)</span>
+        </span>
       </div>
-      <div class="fee-note">
-        <strong>Students get 50% off</strong> — must present valid school ID.<br>
-        <strong>Non-students get 25% off.</strong> CCT full board (3 nights) is PHP 6,000.
+      <div class="participant-wrap">
+        <label class="participant-option">
+          <input type="radio" name="studentStatus" id="isStudent" value="student">
+          <div class="participant-card">
+            <div class="p-title">🎓 Student
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Must present valid school ID</span>
+              </span>
+            </div>
+            <div class="p-price">
+              <span class="p-original">₱6,000</span>
+              <span class="p-discounted">₱3,000</span>
+            </div>
+            <div class="p-sub">High School and College Students</div>
+            <div style="margin-top:6px;"><span class="p-badge p-badge-green">50% Off</span></div>
+          </div>
+        </label>
+        <label class="participant-option">
+          <input type="radio" name="studentStatus" id="notStudent" value="non-student">
+          <div class="participant-card">
+            <div class="p-title">💼 Non-Student</div>
+            <div class="p-price">
+              <span class="p-original">₱6,000</span>
+              <span class="p-discounted">₱4,500</span>
+            </div>
+            <div style="margin-top:10px;"><span class="p-badge p-badge-sky">25% Off</span></div>
+          </div>
+        </label>
       </div>
       <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
         <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
@@ -940,6 +962,62 @@
       showToast('Copied: ' + mobile, false);
     });
   }
+</script>
+<!-- IAB Detection Modal -->
+<div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🌐</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">For the best experience, open this in your browser.</div>
+    <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">Some features may not work in this app's browser.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
+      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function detectIAB() {
+  const ua = navigator.userAgent || '';
+  const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  if (!isIAB) return;
+  const modal = document.getElementById('iabModal');
+  if (modal) { modal.style.display = 'flex'; }
+})();
+
+function openInBrowser() {
+  const url = window.location.href;
+  const ua  = navigator.userAgent || '';
+  const isAndroid = /android/i.test(ua);
+  if (isAndroid) {
+    window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  } else {
+    // iOS — copy URL and instruct user
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied! Open Safari or Chrome and paste it in the address bar.');
+      });
+    } else {
+      alert('Copy this link and open it in Safari or Chrome:\n\n' + url);
+    }
+  }
+}
+</script>
+
+<!-- FOOTER -->
+<div style="max-width:560px;margin:0 auto;padding:32px 20px 48px;text-align:center;">
+  <div style="font-size:13px;font-weight:700;color:#2A3D4A;margin-bottom:6px;">Got questions? We're here for you.</div>
+  <div style="font-size:12px;color:#6B8A9A;line-height:1.6;">Reach out to us at <a id="footerEmail" href="mailto:ccsgmprojects@gmail.com" style="color:#3A8BBF;font-weight:600;">ccsgmprojects@gmail.com</a> and we'll get back to you as soon as we can.</div>
+</div>
+
+<script>
+  fetch('/.netlify/functions/contact-info')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.email) return;
+      const el = document.getElementById('footerEmail');
+      if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
+    }).catch(() => {});
 </script>
 </body>
 </html>

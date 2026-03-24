@@ -29,6 +29,7 @@ export const handler = async (event) => {
     const siteUrl = process.env.SITE_URL;
     const qrUrl = `${siteUrl}/assets/images/qr/gcash-qr.png`;
     const heroUrl = `${siteUrl}/assets/images/hero-email.jpg`;
+    const contactEmail = process.env.CONTACT_EMAIL || process.env.GMAIL_USER || 'ccsgmprojects@gmail.com';
 
     // 0. Check for duplicate email
     const { data: existing, error: dupErr } = await supabase
@@ -36,6 +37,8 @@ export const handler = async (event) => {
       .select("id, payment_verified")
       .eq("email", email.toLowerCase().trim())
       .maybeSingle();
+
+    console.log("Duplicate check — email:", email.toLowerCase().trim(), "| existing:", JSON.stringify(existing), "| error:", dupErr?.message);
 
     if (existing) {
       if (existing.payment_verified) {
@@ -102,7 +105,7 @@ export const handler = async (event) => {
         from: `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: "RELAY 2026 — We received your registration!",
-        html: registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }),
+        html: registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl, contactEmail }),
       });
     // 4b. Pay later
     } else {
@@ -122,6 +125,7 @@ export const handler = async (event) => {
           gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
           gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
           gcashMobile:        process.env.GCASH_MOBILE,
+          contactEmail,
         }),
       });
     }
@@ -202,7 +206,7 @@ function adminAwaitingEmail({ name, email, age, mobile, studentStatus, churchNam
 }
 
 // ── Registrant: acknowledgement (paid) ───────────────────────────────────────
-function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }) {
+function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl, contactEmail }) {
   return emailShell({
     heroUrl,
     headerBg: 'linear-gradient(135deg,#1C2B38,#2E7048)',
@@ -212,7 +216,7 @@ function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }) {
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${name}</strong>, thank you for registering for RELAY 2026! 🎉</p>
       ${rows(['Church',churchName],['Status',studentStatus==='student'?'Student':'Non-Student'],['Fee',fee])}
       <hr>
-      <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly. For questions, reply to this email.</div>
+      <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly. For questions, contact us at <a href="mailto:${contactEmail}" style="color:var(--sky);">${contactEmail}</a>.</div>
       ${studentStatus==='student' ? '<div class="note" style="margin-top:8px;">🪪 Your submitted school ID will also be reviewed to confirm your student discount.</div>' : ''}
       <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center<br>
@@ -224,7 +228,7 @@ function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }) {
 }
 
 // ── Registrant: pay later (GCash QR + upload link) ───────────────────────────
-function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, siteUrl, registrationId, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, siteUrl, registrationId, gcashAccountName, gcashAccountHolder, gcashMobile, contactEmail }) {
   const uploadLink = `${siteUrl}/upload-receipt.html?id=${registrationId}`;
   return emailShell({
     heroUrl,
