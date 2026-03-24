@@ -719,12 +719,14 @@
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
+  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
-    btns.innerHTML = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>' +
-      '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+    btns.innerHTML = openBtn + closeBtn;
   } else {
-    btns.innerHTML = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>' +
-      '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+    btns.innerHTML = continueBtn + copyBtn;
   }
 })();
 function openInBrowser() {
