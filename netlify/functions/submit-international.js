@@ -32,7 +32,7 @@ export const handler = async (event) => {
       .from("registrations")
       .select("id, payment_verified")
       .eq("email", email.toLowerCase().trim())
-      .single();
+      .maybeSingle();
 
     if (existing) {
       if (existing.payment_verified) {

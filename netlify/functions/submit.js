@@ -30,18 +30,17 @@ export const handler = async (event) => {
     const qrUrl = `${siteUrl}/assets/images/qr/gcash-qr.png`;
     const heroUrl = `${siteUrl}/assets/images/hero-email.jpg`;
 
-    // 0. Check for duplicate confirmed email
-    const { data: existing } = await supabase
+    // 0. Check for duplicate email
+    const { data: existing, error: dupErr } = await supabase
       .from("registrations")
-      .select("id, status, payment_verified")
+      .select("id, payment_verified")
       .eq("email", email.toLowerCase().trim())
-      .single();
+      .maybeSingle();
 
     if (existing) {
       if (existing.payment_verified) {
         return { statusCode: 409, headers, body: JSON.stringify({ error: "already_confirmed", message: "This email has already been registered and confirmed. Please contact us if you need help." }) };
       }
-      // Has a pending registration — still block to avoid duplicates
       return { statusCode: 409, headers, body: JSON.stringify({ error: "already_registered", message: "This email already has a pending registration. Check your inbox for payment instructions, or contact us for help." }) };
     }
 

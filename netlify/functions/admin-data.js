@@ -75,6 +75,7 @@ export const handler = async (event) => {
         awaiting_payment:  awaitingPay.length,
         confirmed_revenue: confirmed.reduce((s, r) => s + feeFor(r), 0),
         pending_revenue:   pendingReview.reduce((s, r) => s + feeFor(r), 0),
+        awaiting_revenue:  awaitingPay.reduce((s, r) => s + feeFor(r), 0),
         by_church:         subset.reduce((acc, r) => { acc[r.church] = (acc[r.church]||0)+1; return acc; }, {}),
         // Local-only
         students:          subset.filter(r => r.student_status === "student").length,

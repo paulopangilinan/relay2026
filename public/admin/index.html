@@ -23,7 +23,7 @@
   #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1C2B38,#2A3D4A);}
   .login-card{background:#fff;border-radius:16px;padding:40px;width:360px;box-shadow:0 16px 48px rgba(0,0,0,0.2);text-align:center;overflow:hidden;position:relative;}
   .login-bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);position:absolute;top:0;left:0;right:0;}
-  .login-logo{width:52px;height:52px;border-radius:10px;object-fit:cover;margin-bottom:12px;}
+  .login-logo{height:52px;width:auto;border-radius:0;object-fit:contain;margin-bottom:12px;}
   .login-card h1{font-family:'Bebas Neue';font-size:28px;color:var(--dark);margin-bottom:4px;letter-spacing:0.06em;}
   .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;}
   .login-card input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;color:var(--text);background:#f7fafb;}
@@ -37,7 +37,7 @@
   /* TOPBAR */
   .topbar{background:var(--dark);color:#fff;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.15);position:relative;}
   .topbar-left{display:flex;align-items:center;gap:12px;}
-  .topbar-logo{width:32px;height:32px;border-radius:6px;object-fit:cover;flex-shrink:0;}
+  .topbar-logo{height:32px;width:auto;border-radius:0;object-fit:contain;flex-shrink:0;}
   .topbar-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:0.05em;}
   .topbar-sub{font-size:11px;color:rgba(255,255,255,0.4);font-family:'DM Mono';}
   .topbar-right{display:flex;align-items:center;gap:10px;}
@@ -247,7 +247,11 @@
         <!-- Awaiting Payment -->
         <div class="tile" id="ph-tile-awaiting" onclick="tileFilter('ph','awaiting_payment')">
           <div class="tile-label">Awaiting Payment</div>
-          <div class="tile-count c-red" id="ph-awaiting">–</div>
+          <div class="tile-main">
+            <span class="tile-count c-red" id="ph-awaiting">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-red" id="ph-rev-awaiting">₱0</span>
+          </div>
           <div class="tile-sub">No payment submitted yet</div>
         </div>
       </div>
@@ -436,7 +440,7 @@
       document.getElementById('badge-ph').textContent   = localData.length;
       document.getElementById('badge-intl').textContent = intlData.length;
 
-      const ph  = json.stats_local  || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, students:0, non_students:0, confirmed_revenue:0, pending_revenue:0, by_church:{} };
+      const ph  = json.stats_local  || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, students:0, non_students:0, confirmed_revenue:0, pending_revenue:0, awaiting_revenue:0, by_church:{} };
       const intl = json.stats_intl || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, confirmed_revenue:0, pending_revenue:0, by_country:{}, by_church:{} };
       renderStats(ph, intl);
       populateFilters();
@@ -458,6 +462,7 @@
     document.getElementById('ph-review').textContent      = ph.pending_review;
     document.getElementById('ph-rev-pending').textContent = '₱' + (ph.pending_revenue||0).toLocaleString();
     document.getElementById('ph-awaiting').textContent    = ph.awaiting_payment;
+    document.getElementById('ph-rev-awaiting').textContent = '₱' + (ph.awaiting_revenue||0).toLocaleString();
     // Intl tiles
     document.getElementById('intl-total').textContent       = intl.total;
     document.getElementById('intl-rev-total').textContent    = '$' + ((intl.confirmed_revenue||0) + (intl.pending_revenue||0)).toLocaleString();
