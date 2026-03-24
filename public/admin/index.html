@@ -63,7 +63,9 @@
   /* TILES — merged count + payment */
   .tiles-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
   .tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}
-  .tile{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);}
+  .tile{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
+  .tile:hover{border-color:var(--sky);box-shadow:0 2px 16px rgba(58,139,191,0.15);}
+  .tile.tile-active{border-color:var(--sky);box-shadow:0 2px 16px rgba(58,139,191,0.2);background:var(--sky-light);}
   .tile-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
   .tile-main{display:flex;align-items:baseline;gap:8px;}
   .tile-count{font-family:'Bebas Neue';font-size:36px;letter-spacing:0.02em;line-height:1;}
@@ -102,6 +104,10 @@
   .badge-blue{background:var(--sky-light);color:var(--sky);}
   .badge-red{background:var(--red-light);color:var(--red);}
   .receipt-link{color:var(--sky);text-decoration:none;font-size:12px;font-weight:600;}
+  .church-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+  .church-opt:hover{background:var(--sky-light);}
+  .church-opt.selected{background:var(--sky-light);font-weight:600;color:var(--sky);}
+  .church-group-hdr{padding:6px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
   .receipt-link:hover{text-decoration:underline;}
   .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .btn-confirm-row:hover{background:var(--green-bright);}
@@ -122,6 +128,11 @@
 
   /* MODAL */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center;}
+  .img-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+  .img-modal-overlay.visible{display:flex;}
+  .img-modal-overlay img{max-width:90vw;max-height:80vh;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+  .img-modal-close{color:#fff;font-size:13px;font-weight:600;cursor:pointer;padding:8px 20px;background:rgba(255,255,255,0.15);border-radius:50px;border:1px solid rgba(255,255,255,0.3);}
+  .img-modal-close:hover{background:rgba(255,255,255,0.25);}
   .modal-overlay.visible{display:flex;}
   .modal{background:#fff;border-radius:14px;padding:28px;max-width:380px;width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.2);}
   .modal h3{font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;}
@@ -208,13 +219,13 @@
     <div class="tab-content active" id="content-ph">
       <div class="tiles-row">
         <!-- Total -->
-        <div class="tile">
+        <div class="tile" id="ph-tile-total" onclick="tileFilter('ph','')">
           <div class="tile-label">Total</div>
           <div class="tile-count c-total" id="ph-total">–</div>
           <div class="tile-sub" id="ph-breakdown">–</div>
         </div>
         <!-- Confirmed Payment -->
-        <div class="tile">
+        <div class="tile" id="ph-tile-confirmed" onclick="tileFilter('ph','confirmed')">
           <div class="tile-label">Confirmed Payment</div>
           <div class="tile-main">
             <span class="tile-count c-green" id="ph-confirmed">–</span>
@@ -224,7 +235,7 @@
           <div class="tile-sub">Verified payments</div>
         </div>
         <!-- Pending Review -->
-        <div class="tile">
+        <div class="tile" id="ph-tile-review" onclick="tileFilter('ph','payment_pending_review')">
           <div class="tile-label">Pending Review</div>
           <div class="tile-main">
             <span class="tile-count c-amber" id="ph-review">–</span>
@@ -234,7 +245,7 @@
           <div class="tile-sub">Submitted, awaiting verification</div>
         </div>
         <!-- Awaiting Payment -->
-        <div class="tile">
+        <div class="tile" id="ph-tile-awaiting" onclick="tileFilter('ph','awaiting_payment')">
           <div class="tile-label">Awaiting Payment</div>
           <div class="tile-count c-red" id="ph-awaiting">–</div>
           <div class="tile-sub">No payment submitted yet</div>
@@ -257,7 +268,16 @@
             <option value="non-student">💼 Non-Student</option>
           </select>
         </div>
-        <div class="filter-group"><label>Church</label><select id="ph-church" onchange="applyFilters('ph')"><option value="">All Churches</option></select></div>
+        <div class="filter-group" style="position:relative;">
+          <label>Church</label>
+          <div id="ph-church-trigger" onclick="toggleChurchDropdown()" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:180px;user-select:none;">
+            <span id="ph-church-label">All Churches</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="ph-church-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:240px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllChurches()" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Churches</div>
+            <div id="ph-church-list"></div>
+          </div>
+        </div>
         <div class="filter-actions">
           <button class="btn-reset" onclick="resetFilters('ph')">Reset</button>
           <button class="btn-export" onclick="exportCSV('ph')">⬇ Export CSV</button>
@@ -267,14 +287,14 @@
         <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Church</th><th>Status</th><th>Type</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
-            <tbody id="ph-body"><tr><td colspan="11" class="loading">Loading…</td></tr></tbody>
+            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Church</th><th>Status</th><th>Type</th><th>School ID</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <tbody id="ph-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
       <div class="bottom-row">
         <div class="church-card"><div class="church-card-header">📊 By Church</div><div id="ph-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
-        <div class="church-card"><div class="church-card-header">👥 Student Breakdown</div><div id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">👥 Participant Breakdown</div><div id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
       </div>
     </div>
 
@@ -282,7 +302,7 @@
     <div class="tab-content" id="content-intl">
       <div class="tiles-row intl-tiles">
         <!-- Total -->
-        <div class="tile">
+        <div class="tile" id="ph-tile-total" onclick="tileFilter('ph','')">
           <div class="tile-label">Total</div>
           <div class="tile-main">
             <span class="tile-count c-total" id="intl-total">–</span>
@@ -292,7 +312,7 @@
           <div class="tile-sub">Total collected (USD)</div>
         </div>
         <!-- Confirmed Payment -->
-        <div class="tile">
+        <div class="tile" id="intl-tile-confirmed" onclick="tileFilter('intl','confirmed')">
           <div class="tile-label">Confirmed Payment</div>
           <div class="tile-main">
             <span class="tile-count c-green" id="intl-confirmed">–</span>
@@ -302,7 +322,7 @@
           <div class="tile-sub">Verified payments (USD)</div>
         </div>
         <!-- Pending Review -->
-        <div class="tile">
+        <div class="tile" id="intl-tile-review" onclick="tileFilter('intl','payment_pending_review')">
           <div class="tile-label">Pending Review</div>
           <div class="tile-main">
             <span class="tile-count c-amber" id="intl-review">–</span>
@@ -345,6 +365,12 @@
   </div>
 </div>
 
+<!-- IMAGE PREVIEW MODAL -->
+<div class="img-modal-overlay" id="imgModal" onclick="closeImgModal()">
+  <img id="imgModalSrc" src="" alt="Preview">
+  <div class="img-modal-close" onclick="closeImgModal()">✕ Close</div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
@@ -360,6 +386,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── GeoIP Guard — admin for local users only ────────────────────────
+  (async function() {
+    try {
+      const r = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2500) });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.country_code && d.country_code !== 'PH') {
+        window.location.replace('../register-international.html');
+      }
+    } catch(e) { /* fail open */ }
+  })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
   let adminPassword = '', pendingConfirmId = null, activeTab = 'ph';
 
@@ -430,12 +467,28 @@
     document.getElementById('intl-rev-pending').textContent = '$' + (intl.pending_revenue||0).toLocaleString();
   }
 
+  // Multi-select church state
+  let selectedChurches = new Set();
+
   function populateFilters() {
-    // PH church filter
+    // PH church multi-select — grouped
     const phChurches = [...new Set(localData.map(r => r.church))].sort();
-    const phSel = document.getElementById('ph-church');
-    phSel.innerHTML = '<option value="">All Churches</option>';
-    phChurches.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; phSel.appendChild(o); });
+    const list = document.getElementById('ph-church-list');
+    // Group: CCSGM churches vs others
+    const ccsgm = phChurches.filter(c => c.startsWith('CCSGM'));
+    const others = phChurches.filter(c => !c.startsWith('CCSGM'));
+    let listHTML = '';
+    if (ccsgm.length) {
+      listHTML += `<div class="church-group-hdr">⛪ CCSGM <button onclick="selectGroup(event,ccsgmChurches)" style="background:var(--sky);color:#fff;border:none;border-radius:4px;font-size:9px;padding:2px 6px;cursor:pointer;font-weight:700;margin-left:6px;">Select All</button></div>`;
+      ccsgm.forEach(c => { listHTML += `<div class="church-opt" id="copt-${btoa(c).replace(/=/g,'')}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
+    }
+    if (others.length) {
+      listHTML += `<div class="church-group-hdr" style="margin-top:6px;">🏛 Others</div>`;
+      others.forEach(c => { listHTML += `<div class="church-opt" id="copt-${btoa(c).replace(/=/g,'')}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
+    }
+    list.innerHTML = listHTML;
+    window.ccsgmChurches = ccsgm;
+
     // Intl country filter
     const countries = [...new Set(intlData.map(r => r.country).filter(Boolean))].sort();
     const intlSel = document.getElementById('intl-country');
@@ -443,17 +496,74 @@
     countries.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; intlSel.appendChild(o); });
   }
 
+  function toggleChurchDropdown() {
+    const dd = document.getElementById('ph-church-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleChurch(church) {
+    const id = 'copt-' + btoa(church).replace(/=/g,'');
+    const el = document.getElementById(id);
+    if (selectedChurches.has(church)) {
+      selectedChurches.delete(church);
+      if (el) { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }
+    } else {
+      selectedChurches.add(church);
+      if (el) { el.classList.add('selected'); el.textContent = el.textContent.replace('☐','☑'); }
+    }
+    updateChurchLabel();
+    applyFilters('ph');
+  }
+
+  function selectAllChurches() {
+    selectedChurches.clear();
+    document.querySelectorAll('.church-opt').forEach(el => {
+      el.classList.remove('selected');
+      el.textContent = el.textContent.replace('☑','☐');
+    });
+    updateChurchLabel();
+    applyFilters('ph');
+    document.getElementById('ph-church-dropdown').style.display = 'none';
+  }
+
+  function selectGroup(e, churches) {
+    e.stopPropagation();
+    churches.forEach(c => {
+      selectedChurches.add(c);
+      const id = 'copt-' + btoa(c).replace(/=/g,'');
+      const el = document.getElementById(id);
+      if (el) { el.classList.add('selected'); el.textContent = el.textContent.replace('☐','☑'); }
+    });
+    updateChurchLabel();
+    applyFilters('ph');
+  }
+
+  function updateChurchLabel() {
+    const lbl = document.getElementById('ph-church-label');
+    if (selectedChurches.size === 0) lbl.textContent = 'All Churches';
+    else if (selectedChurches.size === 1) lbl.textContent = [...selectedChurches][0];
+    else lbl.textContent = selectedChurches.size + ' churches selected';
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', e => {
+    const trigger = document.getElementById('ph-church-trigger');
+    const dd = document.getElementById('ph-church-dropdown');
+    if (dd && trigger && !trigger.contains(e.target) && !dd.contains(e.target)) {
+      dd.style.display = 'none';
+    }
+  });
+
   function applyFilters(tab) {
     if (tab === 'ph') {
       const s = document.getElementById('ph-search').value.toLowerCase();
       const st = document.getElementById('ph-status').value;
       const stu = document.getElementById('ph-student').value;
-      const ch = document.getElementById('ph-church').value;
       filteredPH = localData.filter(r => {
         if (s && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (stu && r.student_status !== stu) return false;
-        if (ch && r.church !== ch) return false;
+        if (selectedChurches.size > 0 && !selectedChurches.has(r.church)) return false;
         return true;
       });
       renderTable('ph', filteredPH);
@@ -489,7 +599,8 @@
         <td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.church)}</td>
         <td>${statusBadge(r.status)}</td>
         ${isPH ? `<td>${r.student_status==='student'?'<span class="badge badge-blue">🎓 Student</span>':'<span class="badge badge-amber">💼 Non-Student</span>'}</td>` : `<td style="font-size:11px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.allergens||'')}">${r.allergens ? esc(r.allergens.substring(0,30)) + (r.allergens.length>30?'…':'') : '—'}</td>`}
-        <td>${r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
+        ${isPH ? `<td>${r.school_id_url ? `<a href="#" onclick="openImgModal('${r.school_id_url}');return false;" class="receipt-link">🪪 View</a>` : (r.student_status==='student' ? '<span style="color:#E05050;font-size:12px;">Missing</span>' : '<span style="color:#ccc;font-size:12px;">—</span>')}</td>` : ''}
+        <td>${r.receipt_url ? `<a href="#" onclick="openImgModal('${r.receipt_url}');return false;" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
         <td>${r.payment_verified ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>' : `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}')">Mark Paid</button>`}</td>
       </tr>
@@ -501,31 +612,75 @@
   }
 
   function renderBreakdowns(ph, intl) {
-    // PH church
-    renderBarList('ph-church-breakdown', ph.by_church);
-    // PH student
+    // PH church — exact fees from actual registrant data
+    const phChurchFees = {};
+    localData.forEach(r => {
+      if (!phChurchFees[r.church]) phChurchFees[r.church] = {count:0, fee:0};
+      phChurchFees[r.church].count++;
+      phChurchFees[r.church].fee += r.student_status === 'student' ? 3000 : 4500;
+    });
+    renderBarListExact('ph-church-breakdown', phChurchFees, '₱');
+    // PH participant breakdown
     const phTotal = ph.total || 1;
-    const sPct = Math.round(ph.students/phTotal*100);
+    const sPct  = Math.round(ph.students/phTotal*100);
+    const nsPct = Math.round(ph.non_students/phTotal*100);
     document.getElementById('ph-student-breakdown').innerHTML = `
-      <div class="church-row"><span class="church-name">🎓 Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div><span class="church-count">${ph.students} (${sPct}%)</span></div>
-      <div class="church-row"><span class="church-name">💼 Non-Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${100-sPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div><span class="church-count">${ph.non_students} (${100-sPct}%)</span></div>
+      <div class="church-row"><span class="church-name">🎓 Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div><span class="church-count">${ph.students} <span style="color:var(--muted);font-size:11px;">| ₱${(ph.students*3000).toLocaleString()}</span></span></div>
+      <div class="church-row"><span class="church-name">💼 Non-Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${nsPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div><span class="church-count">${ph.non_students} <span style="color:var(--muted);font-size:11px;">| ₱${(ph.non_students*4500).toLocaleString()}</span></span></div>
       <div style="padding:14px 20px;background:#f7fafb;border-top:1px solid var(--border);">
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:700;margin-bottom:4px;">Total Potential</div>
         <div style="font-family:'Bebas Neue';font-size:26px;color:var(--dark);">₱${((ph.students*3000)+(ph.non_students*4500)).toLocaleString()}</div>
       </div>`;
-    // Intl country
-    renderBarList('intl-country-breakdown', intl.by_country);
-    // Intl church
-    renderBarList('intl-church-breakdown', intl.by_church);
+    // Intl country + church — $300 per head
+    renderBarList('intl-country-breakdown', intl.by_country, {symbol:'$', amount:300});
+    renderBarList('intl-church-breakdown', intl.by_church, {symbol:'$', amount:300});
   }
 
-  function renderBarList(id, obj) {
+  function renderBarListExact(id, obj, symbol) {
+    const sorted = Object.entries(obj || {}).sort((a,b)=>b[1].count-a[1].count);
+    const max = sorted[0]?.[1].count || 1;
+    document.getElementById(id).innerHTML = sorted.length
+      ? sorted.map(([k,v]) =>
+          `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v.count/max*100)}%"></div></div><span class="church-count">${v.count} <span style="color:var(--muted);font-size:11px;">| ${symbol}${v.fee.toLocaleString()}</span></span></div>`
+        ).join('')
+      : '<div class="empty">No data yet</div>';
+  }
+
+  function renderBarList(id, obj, feePerHead) {
     const sorted = Object.entries(obj || {}).sort((a,b)=>b[1]-a[1]);
     const max = sorted[0]?.[1]||1;
     document.getElementById(id).innerHTML = sorted.length
-      ? sorted.map(([k,v]) => `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v/max*100)}%"></div></div><span class="church-count">${v}</span></div>`).join('')
+      ? sorted.map(([k,v]) => {
+          const amtStr = feePerHead ? ` <span style="color:var(--muted);font-size:11px;">| ${feePerHead.symbol}${(v*feePerHead.amount).toLocaleString()}</span>` : '';
+          return `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v/max*100)}%"></div></div><span class="church-count">${v}${amtStr}</span></div>`;
+        }).join('')
       : '<div class="empty">No data yet</div>';
   }
+
+  // ── Tile click filter ─────────────────────────────────────────────────
+  function tileFilter(tab, status) {
+    const statusEl = document.getElementById(tab + '-status');
+    if (statusEl) statusEl.value = status;
+    applyFilters(tab);
+    // Highlight active tile
+    document.querySelectorAll(`#content-${tab} .tile`).forEach(t => t.classList.remove('tile-active'));
+    const tileMap = {'':'total','confirmed':'confirmed','payment_pending_review':'review','awaiting_payment':'awaiting'};
+    const tileKey = tileMap[status] || 'total';
+    const el = document.getElementById(`${tab}-tile-${tileKey}`);
+    if (el) el.classList.add('tile-active');
+  }
+
+  // ── Image preview modal ────────────────────────────────────────────────
+  function openImgModal(url) {
+    document.getElementById('imgModalSrc').src = url;
+    document.getElementById('imgModal').classList.add('visible');
+  }
+  function closeImgModal() {
+    document.getElementById('imgModal').classList.remove('visible');
+    document.getElementById('imgModalSrc').src = '';
+  }
+  // Close on Escape key
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgModal(); });
 
   function switchTab(tab) {
     activeTab = tab;
@@ -579,7 +734,7 @@
   }
 
   function resetFilters(tab) {
-    if (tab === 'ph') { ['ph-search','ph-status','ph-student','ph-church'].forEach(id => document.getElementById(id).value=''); }
+    if (tab === 'ph') { ['ph-search','ph-status','ph-student'].forEach(id => document.getElementById(id).value=''); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
     else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value=''); }
     applyFilters(tab);
   }
