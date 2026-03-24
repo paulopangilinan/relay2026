@@ -170,9 +170,13 @@
   .btn-gold:hover { transform: translateY(-1px); }
 
   /* Speakers */
-  .speakers-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  @media (max-width: 560px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
-  .speaker-card { text-align: center; }
+  .speakers-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  @media (max-width: 600px) { .speakers-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 400px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
+  .speaker-card { text-align: center; position: relative; padding-top: 0; }
+  .speaker-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 50px; letter-spacing: 0.08em; white-space: nowrap; }
+  .speaker-tag-blue { background: #E8F4FF; color: #3A8BBF; }
+  .speaker-tag-purple { background: #F0E6FA; color: #7B4FA6; }
   .speaker-photo { width: 90px; height: 90px; border-radius: 50%; overflow: hidden; margin: 0 auto 10px; border: 3px solid var(--border); box-shadow: 0 4px 14px rgba(58,139,191,0.15); }
   .speaker-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
   .speaker-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
@@ -396,41 +400,47 @@
 
   </form>
 
-  <!-- SPEAKERS -->
+  <!-- SPEAKERS & WORSHIP -->
   <div class="card" style="margin-top:32px;">
-    <div class="section-label">Speakers</div>
-    <div class="speakers-grid">
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
-        <div class="speaker-name">Dave Taylor</div>
-        <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+    <div class="section-label">Speakers &amp; Worship</div>
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+      <div style="flex:4;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;">
+          <span style="display:inline-block;background:#E8F4FF;color:#3A8BBF;font-size:10px;font-weight:700;padding:4px 20px;border-radius:50px;letter-spacing:0.1em;">🎤 SPEAKERS</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          <div class="speaker-card">
+            <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
+            <div class="speaker-name">Dave Taylor</div>
+            <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+          </div>
+          <div class="speaker-card">
+            <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
+            <div class="speaker-name">Riley Spring</div>
+            <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+          </div>
+          <div class="speaker-card">
+            <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
+            <div class="speaker-name">Jared Mellinger</div>
+            <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
+          </div>
+          <div class="speaker-card">
+            <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
+            <div class="speaker-name">Walt Alexander</div>
+            <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
+          </div>
+        </div>
       </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
-        <div class="speaker-name">Riley Spring</div>
-        <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
-      </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
-        <div class="speaker-name">Jared Mellinger</div>
-        <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
-      </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
-        <div class="speaker-name">Walt Alexander</div>
-        <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- WORSHIP -->
-  <div class="card">
-    <div class="section-label">Worship</div>
-    <div class="worship-card">
-      <div class="worship-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
-      <div>
-        <div class="worship-name">David Zimmer</div>
-        <div class="worship-org">Sovereign Grace Music</div>
+      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px;"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;">
+          <span style="display:inline-block;background:#F0E6FA;color:#7B4FA6;font-size:10px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:0.1em;">🎵 WORSHIP</span>
+        </div>
+        <div class="speaker-card">
+          <div class="speaker-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
+          <div class="speaker-name">David Zimmer</div>
+          <div class="speaker-role">Sovereign Grace Music</div>
+        </div>
       </div>
     </div>
   </div>

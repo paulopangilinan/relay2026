@@ -158,8 +158,8 @@
     background: rgba(46,112,72,0.15);
   }
   .p-price-line { margin: 6px 0 2px; }
-  .p-strike { text-decoration: line-through; color: var(--muted); font-size: 11px; font-weight: 400; margin-right: 4px; }
-  .p-amount { font-family: 'Bebas Neue'; font-size: 22px; color: var(--sky); letter-spacing: 0.04em; }
+  .p-strike { text-decoration: line-through; color: var(--muted); font-size: 13px; font-weight: 400; margin-right: 4px; }
+  .p-amount { font-family: 'DM Sans'; font-size: 18px; font-weight: 600; color: var(--sky); letter-spacing: 0.01em; }
   .p-amount-green { color: var(--green); }
   .toggle-wrap input[type=radio]:checked + label .p-amount-green { color: var(--green); }
   .p-sub-label { font-size: 10px; color: var(--muted); font-weight: 400; }
@@ -269,13 +269,19 @@
 
   /* SPEAKERS */
   .speakers-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   }
-  @media (max-width: 560px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .speakers-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 400px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
 
-  .speaker-card {
-    text-align: center;
+  .speaker-card { text-align: center; position: relative; padding-top: 14px; }
+  .speaker-tag {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 50px;
+    letter-spacing: 0.08em; white-space: nowrap; z-index: 1;
   }
+  .speaker-tag-blue { background: #E8F4FF; color: #3A8BBF; }
+  .speaker-tag-purple { background: #F0E6FA; color: #7B4FA6; }
   .speaker-photo {
     width: 90px; height: 90px;
     border-radius: 50%; overflow: hidden;
@@ -307,6 +313,9 @@
   .worship-org { font-size: 12px; color: var(--muted); }
 
   /* DIRECTIONS */
+  .map-embed { border-radius:12px;overflow:hidden;margin-bottom:16px;border:1px solid var(--border); }
+  .map-embed iframe { width:100%;height:250px;border:0;display:block; }
+  @media(max-width:520px){ .map-embed iframe { height:200px; } }
   .directions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
   @media (max-width: 520px) { .directions-grid { grid-template-columns: 1fr; } }
   .dir-card {
@@ -616,48 +625,83 @@
 
   </form>
 
-  <!-- SPEAKERS -->
+  <!-- SPEAKERS & WORSHIP -->
   <div class="card" style="margin-top:32px;">
-    <div class="section-label">Speakers</div>
-    <div class="speakers-grid">
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
-        <div class="speaker-name">Dave Taylor</div>
-        <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+    <div class="section-label">Speakers &amp; Worship</div>
+    <!-- One SPEAKERS tag spanning 4 speakers, WORSHIP tag above David Zimmer -->
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+
+      <!-- Left group: 4 speakers with one shared tag -->
+      <div style="flex:4;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;">
+          <span style="display:inline-block;background:#E8F4FF;color:#3A8BBF;font-size:10px;font-weight:700;padding:4px 20px;border-radius:50px;letter-spacing:0.1em;">🎤 SPEAKERS</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
+            <div class="speaker-name">Dave Taylor</div>
+            <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+          </div>
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
+            <div class="speaker-name">Riley Spring</div>
+            <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+          </div>
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
+            <div class="speaker-name">Jared Mellinger</div>
+            <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
+          </div>
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
+            <div class="speaker-name">Walt Alexander</div>
+            <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
+          </div>
+        </div>
       </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
-        <div class="speaker-name">Riley Spring</div>
-        <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+
+      <!-- Right: David Zimmer with his own tag -->
+      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px;"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;">
+          <span style="display:inline-block;background:#F0E6FA;color:#7B4FA6;font-size:10px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:0.1em;">🎵 WORSHIP</span>
+        </div>
+        <div class="speaker-card" style="padding-top:0;">
+          <div class="speaker-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
+          <div class="speaker-name">David Zimmer</div>
+          <div class="speaker-role">Sovereign Grace Music</div>
+        </div>
       </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
-        <div class="speaker-name">Jared Mellinger</div>
-        <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
-      </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
-        <div class="speaker-name">Walt Alexander</div>
-        <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
-      </div>
+
     </div>
   </div>
 
-  <!-- WORSHIP -->
+  <!-- VENUE -->
   <div class="card">
-    <div class="section-label">Worship</div>
-    <div class="worship-card">
-      <div class="worship-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
-      <div>
-        <div class="worship-name">David Zimmer</div>
-        <div class="worship-org">Sovereign Grace Music</div>
-      </div>
-    </div>
-  </div>
+    <div class="section-label">Venue</div>
 
-  <!-- HOW TO GET THERE -->
-  <div class="card">
-    <div class="section-label">How to Get There</div>
+    <!-- Venue name + details -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+        📍 CCT Tagaytay Retreat &amp; Training Center
+        <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--sky);text-decoration:none;background:var(--sky-light);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 9px;white-space:nowrap;">
+          View in Maps ↗
+        </a>
+      </div>
+      <div style="font-size:13px;color:var(--muted);">Km 58, Tagaytay–Nasugbu Highway, Tagaytay City, Cavite</div>
+    </div>
+
+    <!-- Embedded Google Map -->
+    <div class="map-embed">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3869.9!2d120.9423!3d14.1074!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd6f5b2b2b2b2b%3A0x0!2sCCT+Tagaytay+Retreat+and+Training+Center!5e0!3m2!1sen!2sph!4v1"
+        width="100%" height="250" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+
+    <!-- How to Get There subsection -->
+    <div class="section-label" style="margin-top:4px;">How to Get There</div>
     <div class="directions-grid">
       <div class="dir-card">
         <div class="dir-icon">🚗</div>
@@ -679,11 +723,6 @@
         <div class="dir-title">From the Airport</div>
         <div class="dir-text">From <strong>NAIA</strong>, take Skyway → SLEX → Sta. Rosa exit, then follow Tagaytay Road. By Grab/taxi: approx. <strong>₱800–₱1,200</strong>. Travel time: <strong>~2 hrs</strong>.</div>
       </div>
-    </div>
-    <div style="text-align:center;">
-      <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" class="map-link-btn">
-        🗺 Open in Google Maps
-      </a>
     </div>
   </div>
 
