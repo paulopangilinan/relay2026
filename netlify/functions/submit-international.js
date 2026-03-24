@@ -26,7 +26,6 @@ export const handler = async (event) => {
     const transporter = getTransporter();
     const siteUrl     = process.env.SITE_URL;
     const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg`;
-    const contactEmail = process.env.CONTACT_EMAIL || process.env.GMAIL_USER || 'ccsgmprojects@gmail.com';
 
     // 0. Check for duplicate email
     const { data: existing } = await supabase
@@ -184,7 +183,7 @@ function registrantEmail({ name, country, church, allergenSummary, bpiName, bpiN
         <div class="bpi-row"><span class="bpi-lbl">Account Type</span><span class="bpi-val">${bpiType}</span></div>
         <div class="bpi-row"><span class="bpi-lbl">Amount</span><span class="bpi-val" style="color:#3A8BBF;">USD $300</span></div>
       </div>
-      <div class="note">Please use your full name as the payment reference. Our team will verify your transfer and send a confirmation email once your slot is confirmed. For questions, contact us at <a href="mailto:${contactEmail}" style="color:var(--sky);">${contactEmail}</a>.</div>
+      <div class="note">Please use your full name as the payment reference. Our team will verify your transfer and send a confirmation email once your slot is confirmed. For questions, reply to this email.</div>
       <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center, Philippines<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>

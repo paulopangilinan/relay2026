@@ -131,28 +131,40 @@
   .mobile-wrap input[type=tel] { border-radius: 0 8px 8px 0; flex: 1; border-left: 1px solid var(--border); width: auto; }
   .mobile-wrap input[type=tel]:focus { z-index: 1; position: relative; }
 
-  /* Participant Category cards */
-  .participant-wrap { display: flex; gap: 10px; margin-bottom: 4px; }
-  .participant-option { cursor: pointer; flex: 1; }
-  .participant-option input[type=radio] { display: none; }
-  .participant-card {
-    border: 1.5px solid var(--border); border-radius: 10px;
-    padding: 14px 14px; text-align: center;
-    transition: border-color 0.15s, background 0.15s; height: 100%;
+  .toggle-wrap { display: flex; gap: 12px; }
+  .toggle-wrap input[type=radio] { display: none; }
+  .toggle-wrap label {
+    flex: 1; text-align: center; padding: 16px 12px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 12px;
+    background: #fff; transition: all 0.2s; margin-bottom: 0;
+    display: block; line-height: 1.5;
   }
-  .participant-card.selected-card { border-color: var(--sky); background: var(--sky-light); }
-  .p-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
-  .p-price { display: flex; align-items: baseline; gap: 5px; justify-content: center; margin-bottom: 5px; }
-  .p-original { font-size: 11px; color: var(--muted); text-decoration: line-through; }
-  .p-discounted { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 0.04em; color: var(--sky); line-height: 1; }
-  .participant-card.selected-card .p-discounted { color: var(--dark); }
-  .p-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 50px; letter-spacing: 0.04em; }
+  .toggle-wrap label:hover { border-color: var(--sky); }
+  .toggle-wrap input[type=radio]:checked + label {
+    border-color: var(--sky); background: var(--sky-light); color: var(--text);
+  }
+  .p-badge-inline {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 50px; letter-spacing: 0.04em;
+    background: var(--sky-light); color: var(--sky); margin-left: 4px;
+    vertical-align: middle;
+  }
   .p-badge-green { background: #E6F5EC; color: var(--green); }
-  .p-badge-sky { background: var(--sky-light); color: var(--sky); }
-  .participant-card.selected-card .p-badge-sky { background: rgba(58,139,191,0.15); }
-  .p-sub { font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+  .toggle-wrap input[type=radio]:checked + label .p-badge-inline {
+    background: rgba(58,139,191,0.2);
+  }
+  .toggle-wrap input[type=radio]:checked + label .p-badge-green {
+    background: rgba(46,112,72,0.15);
+  }
+  .p-price-line { margin: 6px 0 2px; }
+  .p-strike { text-decoration: line-through; color: var(--muted); font-size: 11px; font-weight: 400; margin-right: 4px; }
+  .p-amount { font-family: 'Bebas Neue'; font-size: 22px; color: var(--sky); letter-spacing: 0.04em; }
+  .p-amount-green { color: var(--green); }
+  .toggle-wrap input[type=radio]:checked + label .p-amount-green { color: var(--green); }
+  .p-sub-label { font-size: 10px; color: var(--muted); font-weight: 400; }
 
-
+  .upload-area {
     border: 2px dashed var(--border); border-radius: 10px; padding: 20px;
     text-align: center; cursor: pointer; transition: all 0.2s;
     background: var(--input-bg); position: relative;
@@ -174,6 +186,12 @@
   .slide-panel.visible { display: block; }
   @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
 
+  .fee-note {
+    background: var(--gold-bg); border-left: 3px solid var(--gold-light);
+    border-radius: 0 8px 8px 0; padding: 10px 14px;
+    font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 12px;
+  }
+  .fee-note strong { color: #9A6F10; }
 
   .pay-option { cursor: pointer; margin-bottom: 10px; }
   .pay-option:last-child { margin-bottom: 0; }
@@ -352,7 +370,8 @@
     .grid-2 { grid-template-columns: 1fr; gap: 10px; }
 
     /* Student toggle: stack vertically on very small screens */
-    .participant-wrap { flex-direction: column; }
+    .toggle-wrap { flex-direction: column; }
+    .toggle-wrap label { padding: 14px 12px; }
 
     /* Upload area */
     .upload-area { padding: 16px 12px; }
@@ -393,7 +412,7 @@
     .section-label { font-size: 9px; }
 
     /* Fee note */
-
+    .fee-note { font-size: 11px; }
   }
 
   @media (max-width: 380px) {
@@ -460,51 +479,25 @@
 
     <!-- PARTICIPANT CATEGORY -->
     <div class="card">
-      <div class="section-label">Participant Category
-        <span class="tooltip-wrap" style="margin-left:0;">
-          <span class="tooltip-icon" style="background:var(--sky);">?</span>
-          <span class="tooltip-box">Full price per pax is ₱6,000<br>(3 nights full board with meals at CCT Tagaytay)</span>
-        </span>
+      <div class="section-label">Participant Category</div>
+      <div class="toggle-wrap">
+        <input type="radio" name="studentStatus" id="isStudent" value="student">
+        <label for="isStudent">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
+          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
+          <div class="p-sub-label">High School and College Students</div>
+        </label>
+        <input type="radio" name="studentStatus" id="notStudent" value="non-student">
+        <label for="notStudent">💼 Non-Student <span class="p-badge-inline">25% Off</span>
+          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
+        </label>
       </div>
-      <div class="participant-wrap">
-        <!-- Student -->
-        <div class="participant-option" onclick="selectParticipant('student')" id="opt-student">
-          <input type="radio" name="studentStatus" id="isStudent" value="student" style="display:none;">
-          <div class="participant-card" id="card-student">
-            <div class="p-title">🎓 Student</div>
-            <div class="p-price">
-              <span class="p-original">₱6,000</span>
-              <span class="p-discounted">₱3,000</span>
-            </div>
-            <div class="p-sub">High School and College Students</div>
-            <div style="margin-top:6px;">
-              <span class="p-badge p-badge-green">50% Off</span>
-              <span class="tooltip-wrap" style="margin-left:4px;" onclick="event.stopPropagation()">
-                <span class="tooltip-icon">?</span>
-                <span class="tooltip-box">Must present valid school ID</span>
-              </span>
-            </div>
-          </div>
-        </div>
-        <!-- Non-Student -->
-        <div class="participant-option" onclick="selectParticipant('non-student')" id="opt-nonstudent">
-          <input type="radio" name="studentStatus" id="notStudent" value="non-student" style="display:none;">
-          <div class="participant-card" id="card-nonstudent">
-            <div class="p-title">💼 Non-Student</div>
-            <div class="p-price">
-              <span class="p-original">₱6,000</span>
-              <span class="p-discounted">₱4,500</span>
-            </div>
-            <div style="margin-top:10px;"><span class="p-badge p-badge-sky">25% Off</span></div>
-          </div>
-        </div>
-      </div>
+
       <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
         <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
         <div class="upload-area">
           <input type="file" id="schoolIdFile" accept="image/*,.pdf" onchange="handleIdUpload(this)">
           <div class="upload-icon">🪪</div>
-          <div class="upload-text"><strong>Click to upload</strong> your school ID<br>PNG, JPG, or PDF</div>
+          <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
         </div>
         <div class="upload-preview" id="idPreview"></div>
       </div>
@@ -733,20 +726,11 @@
       });
   });
 
-  function selectParticipant(value) {
-    // Set radio
-    document.getElementById(value === 'student' ? 'isStudent' : 'notStudent').checked = true;
-    // Update card styles
-    document.getElementById('card-student').classList.toggle('selected-card', value === 'student');
-    document.getElementById('card-nonstudent').classList.toggle('selected-card', value === 'non-student');
-    // Show/hide school ID upload
-    const wrap = document.getElementById('schoolIdWrap');
-    if (value === 'student') {
-      wrap.classList.add('visible');
-    } else {
-      wrap.classList.remove('visible');
-    }
-  }
+  document.querySelectorAll('input[name="studentStatus"]').forEach(r => {
+    r.addEventListener('change', function() {
+      document.getElementById('schoolIdWrap').classList.toggle('visible', this.value === 'student');
+    });
+  });
 
   function handleChurchChange(sel) {
     document.getElementById('other-church-wrap').classList.toggle('visible', sel.value === 'others');
@@ -978,6 +962,7 @@
     });
   }
 </script>
+
 <!-- IAB Detection Modal -->
 <div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
   <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
@@ -987,65 +972,54 @@
     <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 </div>
-
 <script>
 (function detectIAB() {
-  const ua = navigator.userAgent || '';
-  const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  var ua = navigator.userAgent || '';
+  var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
-  const modal = document.getElementById('iabModal');
+  var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
-
-  const isAndroid = /android/i.test(ua);
-  const btns = document.getElementById('iabButtons');
+  var isAndroid = /android/i.test(ua);
+  var btns = document.getElementById('iabButtons');
   if (!btns) return;
-
   if (isAndroid) {
-    // Android: Open in Browser (primary) + Continue Anyway
-    btns.innerHTML = `
-      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>`;
+    btns.innerHTML = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>' +
+      '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
   } else {
-    // iOS: Continue Anyway (primary) + Copy URL
-    btns.innerHTML = `
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Continue Anyway</button>
-      <button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>`;
+    btns.innerHTML = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>' +
+      '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
   }
 })();
-
 function openInBrowser() {
-  const url = window.location.href;
+  var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
 }
-
 function copyURL() {
-  const url = window.location.href;
+  var url = window.location.href;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('copyUrlBtn');
-      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = 'Copy URL', 2000); }
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
     });
   } else {
     prompt('Copy this link and open it in Safari:', url);
   }
 }
 </script>
-
 <!-- FOOTER -->
 <div style="max-width:560px;margin:0 auto;padding:32px 20px 48px;text-align:center;">
   <div style="font-size:13px;font-weight:700;color:#2A3D4A;margin-bottom:6px;">Got questions? We're here for you.</div>
   <div style="font-size:12px;color:#6B8A9A;line-height:1.6;">Reach out to us at <a id="footerEmail" href="mailto:ccsgmprojects@gmail.com" style="color:#3A8BBF;font-weight:600;">ccsgmprojects@gmail.com</a> and we'll get back to you as soon as we can.</div>
 </div>
-
 <script>
   fetch('/.netlify/functions/contact-info')
-    .then(r => r.json())
-    .then(d => {
+    .then(function(r){ return r.json(); })
+    .then(function(d){
       if (!d.email) return;
-      const el = document.getElementById('footerEmail');
+      var el = document.getElementById('footerEmail');
       if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
-    }).catch(() => {});
+    }).catch(function(){});
 </script>
 </body>
 </html>
