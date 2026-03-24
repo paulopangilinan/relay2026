@@ -470,6 +470,11 @@
   // Multi-select church state
   let selectedChurches = new Set();
 
+  // Safe ID from church name (handles em dashes, special chars)
+  function churchId(name) {
+    return 'copt-' + name.replace(/[^a-zA-Z0-9]/g, '_');
+  }
+
   function populateFilters() {
     // PH church multi-select — grouped
     const phChurches = [...new Set(localData.map(r => r.church))].sort();
@@ -480,11 +485,11 @@
     let listHTML = '';
     if (ccsgm.length) {
       listHTML += `<div class="church-group-hdr">⛪ CCSGM <button onclick="selectGroup(event,ccsgmChurches)" style="background:var(--sky);color:#fff;border:none;border-radius:4px;font-size:9px;padding:2px 6px;cursor:pointer;font-weight:700;margin-left:6px;">Select All</button></div>`;
-      ccsgm.forEach(c => { listHTML += `<div class="church-opt" id="copt-${btoa(c).replace(/=/g,'')}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
+      ccsgm.forEach(c => { listHTML += `<div class="church-opt" id="${churchId(c)}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
     }
     if (others.length) {
       listHTML += `<div class="church-group-hdr" style="margin-top:6px;">🏛 Others</div>`;
-      others.forEach(c => { listHTML += `<div class="church-opt" id="copt-${btoa(c).replace(/=/g,'')}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
+      others.forEach(c => { listHTML += `<div class="church-opt" id="${churchId(c)}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
     }
     list.innerHTML = listHTML;
     window.ccsgmChurches = ccsgm;
@@ -502,7 +507,7 @@
   }
 
   function toggleChurch(church) {
-    const id = 'copt-' + btoa(church).replace(/=/g,'');
+    const id = churchId(church);
     const el = document.getElementById(id);
     if (selectedChurches.has(church)) {
       selectedChurches.delete(church);
@@ -530,7 +535,7 @@
     e.stopPropagation();
     churches.forEach(c => {
       selectedChurches.add(c);
-      const id = 'copt-' + btoa(c).replace(/=/g,'');
+      const id = churchId(c);
       const el = document.getElementById(id);
       if (el) { el.classList.add('selected'); el.textContent = el.textContent.replace('☐','☑'); }
     });
