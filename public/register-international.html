@@ -177,6 +177,15 @@
   .speaker-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 50px; letter-spacing: 0.08em; white-space: nowrap; }
   .speaker-tag-blue { background: #E8F4FF; color: #3A8BBF; }
   .speaker-tag-purple { background: #F0E6FA; color: #7B4FA6; }
+  .speakers-worship-wrap { display:flex; gap:16px; align-items:flex-start; }
+  .speakers-worship-divider { width:1px; background:var(--border); align-self:stretch; margin:0 4px; flex-shrink:0; }
+  .map-embed { border-radius:12px;overflow:hidden;margin-bottom:16px;border:1px solid var(--border); }
+  .map-embed iframe { width:100%;height:250px;border:0;display:block; }
+  @media(max-width:560px) {
+    .speakers-worship-wrap { flex-direction:column; }
+    .speakers-worship-divider { width:100%; height:1px; margin:8px 0; }
+    .map-embed iframe { height:200px; }
+  }
   .speaker-photo { width: 90px; height: 90px; border-radius: 50%; overflow: hidden; margin: 0 auto 10px; border: 3px solid var(--border); box-shadow: 0 4px 14px rgba(58,139,191,0.15); }
   .speaker-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
   .speaker-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
@@ -403,7 +412,7 @@
   <!-- SPEAKERS & WORSHIP -->
   <div class="card" style="margin-top:32px;">
     <div class="section-label">Speakers &amp; Worship</div>
-    <div style="display:flex;gap:16px;align-items:flex-start;">
+    <div class="speakers-worship-wrap">
       <div style="flex:4;display:flex;flex-direction:column;gap:12px;">
         <div style="text-align:center;">
           <span style="display:inline-block;background:#E8F4FF;color:#3A8BBF;font-size:10px;font-weight:700;padding:4px 20px;border-radius:50px;letter-spacing:0.1em;">🎤 SPEAKERS</span>
@@ -431,12 +440,10 @@
           </div>
         </div>
       </div>
-      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px;"></div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
-        <div style="text-align:center;">
-          <span style="display:inline-block;background:#F0E6FA;color:#7B4FA6;font-size:10px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:0.1em;">🎵 WORSHIP</span>
-        </div>
-        <div class="speaker-card">
+      <div class="speakers-worship-divider"></div>
+      <div style="flex:1;text-align:center;">
+        <span style="display:inline-block;background:#F0E6FA;color:#7B4FA6;font-size:10px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:0.1em;margin-bottom:12px;">🎵 WORSHIP</span>
+        <div class="speaker-card" style="padding-top:0;max-width:140px;margin:0 auto;">
           <div class="speaker-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
           <div class="speaker-name">David Zimmer</div>
           <div class="speaker-role">Sovereign Grace Music</div>
@@ -445,9 +452,21 @@
     </div>
   </div>
 
-  <!-- HOW TO GET THERE -->
+  <!-- VENUE -->
   <div class="card">
-    <div class="section-label">How to Get There</div>
+    <div class="section-label">Venue</div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:4px;">📍 CCT Tagaytay Retreat &amp; Training Center</div>
+      <div style="font-size:13px;color:var(--muted);">Km 58, Tagaytay–Nasugbu Highway, Tagaytay City, Cavite</div>
+    </div>
+    <div class="map-embed">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3869.0372049125863!2d120.99400620321268!3d14.133909695983661!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7a220ed6d8a7%3A0x23b93e6e24f47ea2!2sCCT%20Tagaytay%20Retreat%20and%20Training%20Center!5e0!3m2!1sen!2sph!4v1774401484819!5m2!1sen!2sph"
+        width="100%" height="250" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+    <div class="section-label" style="margin-top:4px;">How to Get There</div>
     <div class="directions-grid">
       <div class="dir-card">
         <div class="dir-icon">✈️</div>
@@ -469,9 +488,6 @@
         <div class="dir-title">Need Help?</div>
         <div class="dir-text">Email us at <strong>ccsgmprojects@gmail.com</strong> for assistance with travel arrangements or directions from your point of arrival.</div>
       </div>
-    </div>
-    <div style="text-align:center;">
-      <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" class="map-link-btn">🗺 Open in Google Maps</a>
     </div>
   </div>
 
