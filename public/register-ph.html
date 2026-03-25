@@ -313,6 +313,12 @@
   .worship-org { font-size: 12px; color: var(--muted); }
 
   /* DIRECTIONS */
+  .speakers-worship-wrap { display:flex; gap:16px; align-items:flex-start; }
+  .speakers-worship-divider { width:1px; background:var(--border); align-self:stretch; margin:0 4px; flex-shrink:0; }
+  @media(max-width:560px) {
+    .speakers-worship-wrap { flex-direction:column; }
+    .speakers-worship-divider { width:100%; height:1px; margin:8px 0; }
+  }
   .map-embed { border-radius:12px;overflow:hidden;margin-bottom:16px;border:1px solid var(--border); }
   .map-embed iframe { width:100%;height:250px;border:0;display:block; }
   @media(max-width:520px){ .map-embed iframe { height:200px; } }
@@ -629,7 +635,7 @@
   <div class="card" style="margin-top:32px;">
     <div class="section-label">Speakers &amp; Worship</div>
     <!-- One SPEAKERS tag spanning 4 speakers, WORSHIP tag above David Zimmer -->
-    <div style="display:flex;gap:16px;align-items:flex-start;">
+    <div class="speakers-worship-wrap">
 
       <!-- Left group: 4 speakers with one shared tag -->
       <div style="flex:4;display:flex;flex-direction:column;gap:12px;">
@@ -661,7 +667,7 @@
       </div>
 
       <!-- Right: David Zimmer with his own tag -->
-      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px;"></div>
+      <div class="speakers-worship-divider"></div>
       <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
         <div style="text-align:center;">
           <span style="display:inline-block;background:#F0E6FA;color:#7B4FA6;font-size:10px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:0.1em;">🎵 WORSHIP</span>
@@ -682,19 +688,14 @@
 
     <!-- Venue name + details -->
     <div style="margin-bottom:16px;">
-      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:4px;display:flex;align-items:center;gap:8px;">
-        📍 CCT Tagaytay Retreat &amp; Training Center
-        <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--sky);text-decoration:none;background:var(--sky-light);border:1px solid rgba(58,139,191,0.2);border-radius:50px;padding:3px 9px;white-space:nowrap;">
-          View in Maps ↗
-        </a>
-      </div>
+      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:4px;">📍 CCT Tagaytay Retreat &amp; Training Center</div>
       <div style="font-size:13px;color:var(--muted);">Km 58, Tagaytay–Nasugbu Highway, Tagaytay City, Cavite</div>
     </div>
 
     <!-- Embedded Google Map -->
     <div class="map-embed">
       <iframe
-        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3869.9!2d120.9423!3d14.1074!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd6f5b2b2b2b2b%3A0x0!2sCCT+Tagaytay+Retreat+and+Training+Center!5e0!3m2!1sen!2sph!4v1"
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3869.0372049125863!2d120.99400620321268!3d14.133909695983661!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7a220ed6d8a7%3A0x23b93e6e24f47ea2!2sCCT%20Tagaytay%20Retreat%20and%20Training%20Center!5e0!3m2!1sen!2sph!4v1774401484819!5m2!1sen!2sph"
         width="100%" height="250" style="border:0;display:block;" allowfullscreen="" loading="lazy"
         referrerpolicy="no-referrer-when-downgrade">
       </iframe>
