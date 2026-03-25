@@ -140,7 +140,7 @@
     <div class="card">
       <div class="section-label">Complete Your Registration</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from <span class="contact-email">ccsgmprojects@gmail.com</span>.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
       </div>
@@ -154,11 +154,11 @@
     </div>
 
     <div class="note" style="margin-bottom:24px;">
-      Can't find the email? Check your spam/junk folder or contact us at <strong><a id="contactEmailLink2" href="mailto:ccsgmprojects@gmail.com" style="color:inherit;">ccsgmprojects@gmail.com</a></strong>
+      Can't find the email? Check your spam/junk folder or contact us at <strong>ccsgmprojects@gmail.com</strong>
     </div>
   </div>
 
-  <a id="backBtn" href="register-ph.html" class="btn-back">← Back to Registration</a>
+  <a id="backBtn" href="/register-ph" class="btn-back">← Back to Registration</a>
 </div>
 
 <script>
@@ -169,24 +169,7 @@
   const isIntl = form === 'intl';
 
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
-  document.getElementById('backBtn').href = isIntl ? 'register-international.html' : 'register-ph.html';
-
-  // Populate contact email from ENV
-  fetch('/.netlify/functions/contact-info')
-    .then(r => r.json())
-    .then(d => {
-      if (!d.email) return;
-      document.querySelectorAll('.contact-email').forEach(el => {
-        el.textContent = d.email;
-      });
-      const link = document.getElementById('contactEmailLink2');
-      if (link) { link.href = 'mailto:' + d.email; link.textContent = d.email; }
-      // Also update the dynamically swapped intl text
-      if (isIntl) {
-        const payStep = document.getElementById('payInstructStep');
-        if (payStep) payStep.innerHTML = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="contact-email">' + d.email + '</span>.';
-      }
-    }).catch(() => {});
+  document.getElementById('backBtn').href = isIntl ? '/register-international' : '/register-ph';
 
   // Swap payment method wording for international (BPI) vs PH (GCash)
   if (isIntl) {
@@ -194,10 +177,11 @@
     const payStep    = document.getElementById('payInstructStep');
     const subtitle   = document.getElementById('paidSubtitle');
     if (verifyStep) verifyStep.innerHTML = 'Our team will <strong>verify your BPI transfer</strong> and send you a confirmation email shortly.';
-    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="contact-email">ccsgmprojects@gmail.com</span>.';
+    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from ccsgmprojects@gmail.com.';
     if (subtitle)   subtitle.innerHTML  = 'Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment receipt and will verify it shortly.';
   }
 </script>
+
 <!-- IAB Detection Modal -->
 <div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
   <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
@@ -207,44 +191,37 @@
     <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 </div>
-
 <script>
 (function detectIAB() {
-  const ua = navigator.userAgent || '';
-  const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  var ua = navigator.userAgent || '';
+  var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
-  const modal = document.getElementById('iabModal');
+  var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
-
-  const isAndroid = /android/i.test(ua);
-  const btns = document.getElementById('iabButtons');
+  var isAndroid = /android/i.test(ua);
+  var btns = document.getElementById('iabButtons');
   if (!btns) return;
-
+  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
-    // Android: Open in Browser (primary) + Continue Anyway
-    btns.innerHTML = `
-      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>`;
+    btns.innerHTML = openBtn + closeBtn;
   } else {
-    // iOS: Continue Anyway (primary) + Copy URL
-    btns.innerHTML = `
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Continue Anyway</button>
-      <button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>`;
+    btns.innerHTML = continueBtn + copyBtn;
   }
 })();
-
 function openInBrowser() {
-  const url = window.location.href;
+  var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
 }
-
 function copyURL() {
-  const url = window.location.href;
+  var url = window.location.href;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('copyUrlBtn');
-      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = 'Copy URL', 2000); }
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
     });
   } else {
     prompt('Copy this link and open it in Safari:', url);

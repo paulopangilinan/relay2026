@@ -131,28 +131,40 @@
   .mobile-wrap input[type=tel] { border-radius: 0 8px 8px 0; flex: 1; border-left: 1px solid var(--border); width: auto; }
   .mobile-wrap input[type=tel]:focus { z-index: 1; position: relative; }
 
-  /* Participant Category cards */
-  .participant-wrap { display: flex; gap: 10px; margin-bottom: 4px; }
-  .participant-option { cursor: pointer; flex: 1; }
-  .participant-option input[type=radio] { display: none; }
-  .participant-card {
-    border: 1.5px solid var(--border); border-radius: 10px;
-    padding: 14px 14px; text-align: center;
-    transition: border-color 0.15s, background 0.15s; height: 100%;
+  .toggle-wrap { display: flex; gap: 12px; }
+  .toggle-wrap input[type=radio] { display: none; }
+  .toggle-wrap label {
+    flex: 1; text-align: center; padding: 16px 12px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 12px;
+    background: #fff; transition: all 0.2s; margin-bottom: 0;
+    display: block; line-height: 1.5;
   }
-  .participant-card.selected-card { border-color: var(--sky); background: var(--sky-light); }
-  .p-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; }
-  .p-price { display: flex; align-items: baseline; gap: 5px; justify-content: center; margin-bottom: 5px; }
-  .p-original { font-size: 11px; color: var(--muted); text-decoration: line-through; }
-  .p-discounted { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 0.04em; color: var(--sky); line-height: 1; }
-  .participant-card.selected-card .p-discounted { color: var(--dark); }
-  .p-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 50px; letter-spacing: 0.04em; }
+  .toggle-wrap label:hover { border-color: var(--sky); }
+  .toggle-wrap input[type=radio]:checked + label {
+    border-color: var(--sky); background: var(--sky-light); color: var(--text);
+  }
+  .p-badge-inline {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 50px; letter-spacing: 0.04em;
+    background: var(--sky-light); color: var(--sky); margin-left: 4px;
+    vertical-align: middle;
+  }
   .p-badge-green { background: #E6F5EC; color: var(--green); }
-  .p-badge-sky { background: var(--sky-light); color: var(--sky); }
-  .participant-card.selected-card .p-badge-sky { background: rgba(58,139,191,0.15); }
-  .p-sub { font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+  .toggle-wrap input[type=radio]:checked + label .p-badge-inline {
+    background: rgba(58,139,191,0.2);
+  }
+  .toggle-wrap input[type=radio]:checked + label .p-badge-green {
+    background: rgba(46,112,72,0.15);
+  }
+  .p-price-line { margin: 6px 0 2px; }
+  .p-strike { text-decoration: line-through; color: var(--muted); font-size: 13px; font-weight: 400; margin-right: 4px; }
+  .p-amount { font-family: 'DM Sans'; font-size: 18px; font-weight: 600; color: var(--sky); letter-spacing: 0.01em; }
+  .p-amount-green { color: var(--green); }
+  .toggle-wrap input[type=radio]:checked + label .p-amount-green { color: var(--green); }
+  .p-sub-label { font-size: 10px; color: var(--muted); font-weight: 400; }
 
-
+  .upload-area {
     border: 2px dashed var(--border); border-radius: 10px; padding: 20px;
     text-align: center; cursor: pointer; transition: all 0.2s;
     background: var(--input-bg); position: relative;
@@ -174,6 +186,12 @@
   .slide-panel.visible { display: block; }
   @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
 
+  .fee-note {
+    background: var(--gold-bg); border-left: 3px solid var(--gold-light);
+    border-radius: 0 8px 8px 0; padding: 10px 14px;
+    font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 12px;
+  }
+  .fee-note strong { color: #9A6F10; }
 
   .pay-option { cursor: pointer; margin-bottom: 10px; }
   .pay-option:last-child { margin-bottom: 0; }
@@ -251,13 +269,19 @@
 
   /* SPEAKERS */
   .speakers-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
   }
-  @media (max-width: 560px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .speakers-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 400px) { .speakers-grid { grid-template-columns: repeat(2, 1fr); } }
 
-  .speaker-card {
-    text-align: center;
+  .speaker-card { text-align: center; position: relative; padding-top: 14px; }
+  .speaker-tag {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 50px;
+    letter-spacing: 0.08em; white-space: nowrap; z-index: 1;
   }
+  .speaker-tag-blue { background: #E8F4FF; color: #3A8BBF; }
+  .speaker-tag-purple { background: #F0E6FA; color: #7B4FA6; }
   .speaker-photo {
     width: 90px; height: 90px;
     border-radius: 50%; overflow: hidden;
@@ -289,6 +313,16 @@
   .worship-org { font-size: 12px; color: var(--muted); }
 
   /* DIRECTIONS */
+  .speakers-worship-wrap { display:flex; gap:16px; align-items:flex-start; }
+  .speakers-worship-divider { width:1px; background:var(--border); align-self:stretch; margin:0 4px; flex-shrink:0; }
+  @media(max-width:560px) {
+    .speakers-worship-wrap { flex-direction:column; }
+    .speakers-worship-divider { width:100%; height:1px; margin:8px 0; }
+    .worship-mobile-center { text-align:center; }
+  }
+  .map-embed { border-radius:12px;overflow:hidden;margin-bottom:16px;border:1px solid var(--border); }
+  .map-embed iframe { width:100%;height:250px;border:0;display:block; }
+  @media(max-width:520px){ .map-embed iframe { height:200px; } }
   .directions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
   @media (max-width: 520px) { .directions-grid { grid-template-columns: 1fr; } }
   .dir-card {
@@ -352,7 +386,8 @@
     .grid-2 { grid-template-columns: 1fr; gap: 10px; }
 
     /* Student toggle: stack vertically on very small screens */
-    .participant-wrap { flex-direction: column; }
+    .toggle-wrap { flex-direction: column; }
+    .toggle-wrap label { padding: 14px 12px; }
 
     /* Upload area */
     .upload-area { padding: 16px 12px; }
@@ -393,7 +428,7 @@
     .section-label { font-size: 9px; }
 
     /* Fee note */
-
+    .fee-note { font-size: 11px; }
   }
 
   @media (max-width: 380px) {
@@ -460,51 +495,25 @@
 
     <!-- PARTICIPANT CATEGORY -->
     <div class="card">
-      <div class="section-label">Participant Category
-        <span class="tooltip-wrap" style="margin-left:0;">
-          <span class="tooltip-icon" style="background:var(--sky);">?</span>
-          <span class="tooltip-box">Full price per pax is ₱6,000<br>(3 nights full board with meals at CCT Tagaytay)</span>
-        </span>
+      <div class="section-label">Participant Category</div>
+      <div class="toggle-wrap">
+        <input type="radio" name="studentStatus" id="isStudent" value="student">
+        <label for="isStudent">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
+          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
+          <div class="p-sub-label">High School and College Students</div>
+        </label>
+        <input type="radio" name="studentStatus" id="notStudent" value="non-student">
+        <label for="notStudent">💼 Non-Student <span class="p-badge-inline">25% Off</span>
+          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
+        </label>
       </div>
-      <div class="participant-wrap">
-        <!-- Student -->
-        <div class="participant-option" onclick="selectParticipant('student')" id="opt-student">
-          <input type="radio" name="studentStatus" id="isStudent" value="student" style="display:none;">
-          <div class="participant-card" id="card-student">
-            <div class="p-title">🎓 Student</div>
-            <div class="p-price">
-              <span class="p-original">₱6,000</span>
-              <span class="p-discounted">₱3,000</span>
-            </div>
-            <div class="p-sub">High School and College Students</div>
-            <div style="margin-top:6px;">
-              <span class="p-badge p-badge-green">50% Off</span>
-              <span class="tooltip-wrap" style="margin-left:4px;" onclick="event.stopPropagation()">
-                <span class="tooltip-icon">?</span>
-                <span class="tooltip-box">Must present valid school ID</span>
-              </span>
-            </div>
-          </div>
-        </div>
-        <!-- Non-Student -->
-        <div class="participant-option" onclick="selectParticipant('non-student')" id="opt-nonstudent">
-          <input type="radio" name="studentStatus" id="notStudent" value="non-student" style="display:none;">
-          <div class="participant-card" id="card-nonstudent">
-            <div class="p-title">💼 Non-Student</div>
-            <div class="p-price">
-              <span class="p-original">₱6,000</span>
-              <span class="p-discounted">₱4,500</span>
-            </div>
-            <div style="margin-top:10px;"><span class="p-badge p-badge-sky">25% Off</span></div>
-          </div>
-        </div>
-      </div>
+
       <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
         <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
         <div class="upload-area">
           <input type="file" id="schoolIdFile" accept="image/*,.pdf" onchange="handleIdUpload(this)">
           <div class="upload-icon">🪪</div>
-          <div class="upload-text"><strong>Click to upload</strong> your school ID<br>PNG, JPG, or PDF</div>
+          <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
         </div>
         <div class="upload-preview" id="idPreview"></div>
       </div>
@@ -623,48 +632,76 @@
 
   </form>
 
-  <!-- SPEAKERS -->
+  <!-- SPEAKERS & WORSHIP -->
   <div class="card" style="margin-top:32px;">
-    <div class="section-label">Speakers</div>
-    <div class="speakers-grid">
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
-        <div class="speaker-name">Dave Taylor</div>
-        <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+    <div class="section-label">Speakers &amp; Worship</div>
+    <!-- One SPEAKERS tag spanning 4 speakers, WORSHIP tag above David Zimmer -->
+    <div class="speakers-worship-wrap">
+
+      <!-- Left group: 4 speakers with one shared tag -->
+      <div style="flex:4;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;">
+          <span style="display:inline-block;background:#E8F4FF;color:#3A8BBF;font-size:10px;font-weight:700;padding:4px 20px;border-radius:50px;letter-spacing:0.1em;">🎤 SPEAKERS</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/dave-taylor.png" alt="Dave Taylor"></div>
+            <div class="speaker-name">Dave Taylor</div>
+            <div class="speaker-role">Lead Pastor, SGC Wahroonga<br>Global Missions Director</div>
+          </div>
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
+            <div class="speaker-name">Riley Spring</div>
+            <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+          </div>
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
+            <div class="speaker-name">Jared Mellinger</div>
+            <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
+          </div>
+          <div class="speaker-card" style="padding-top:0;">
+            <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
+            <div class="speaker-name">Walt Alexander</div>
+            <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
+          </div>
+        </div>
       </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/riley-spring.png" alt="Riley Spring"></div>
-        <div class="speaker-name">Riley Spring</div>
-        <div class="speaker-role">Lead Pastor, SGC Parramatta<br>Area Leader for Oceania</div>
+
+      <!-- Right: David Zimmer with his own tag -->
+      <div class="speakers-worship-divider"></div>
+      <div style="flex:1;text-align:center;">
+        <span style="display:inline-block;background:#F0E6FA;color:#7B4FA6;font-size:10px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:0.1em;margin-bottom:12px;">🎵 WORSHIP</span>
+        <div class="speaker-card" style="padding-top:0;max-width:140px;margin:0 auto;">
+          <div class="speaker-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
+          <div class="speaker-name">David Zimmer</div>
+          <div class="speaker-role">Sovereign Grace Music</div>
+        </div>
       </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/jared-mellinger.png" alt="Jared Mellinger"></div>
-        <div class="speaker-name">Jared Mellinger</div>
-        <div class="speaker-role">Lead Pastor, Covenant Fellowship<br>Leadership Team Member</div>
-      </div>
-      <div class="speaker-card">
-        <div class="speaker-photo"><img src="assets/images/speakers/walt-alexander.png" alt="Walt Alexander"></div>
-        <div class="speaker-name">Walt Alexander</div>
-        <div class="speaker-role">Lead Pastor, Trinity Grace<br>Director of Leadership Development</div>
-      </div>
+
     </div>
   </div>
 
-  <!-- WORSHIP -->
+  <!-- VENUE -->
   <div class="card">
-    <div class="section-label">Worship</div>
-    <div class="worship-card">
-      <div class="worship-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
-      <div>
-        <div class="worship-name">David Zimmer</div>
-        <div class="worship-org">Sovereign Grace Music</div>
-      </div>
-    </div>
-  </div>
+    <div class="section-label">Venue</div>
 
-  <!-- HOW TO GET THERE -->
-  <div class="card">
-    <div class="section-label">How to Get There</div>
+    <!-- Venue name + details -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:4px;">📍 CCT Tagaytay Retreat &amp; Training Center</div>
+      <div style="font-size:13px;color:var(--muted);">Km 58, Tagaytay–Nasugbu Highway, Tagaytay City, Cavite</div>
+    </div>
+
+    <!-- Embedded Google Map -->
+    <div class="map-embed">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3869.0372049125863!2d120.99400620321268!3d14.133909695983661!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7a220ed6d8a7%3A0x23b93e6e24f47ea2!2sCCT%20Tagaytay%20Retreat%20and%20Training%20Center!5e0!3m2!1sen!2sph!4v1774401484819!5m2!1sen!2sph"
+        width="100%" height="250" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+
+    <!-- How to Get There subsection -->
+    <div class="section-label" style="margin-top:4px;">How to Get There</div>
     <div class="directions-grid">
       <div class="dir-card">
         <div class="dir-icon">🚗</div>
@@ -687,11 +724,6 @@
         <div class="dir-text">From <strong>NAIA</strong>, take Skyway → SLEX → Sta. Rosa exit, then follow Tagaytay Road. By Grab/taxi: approx. <strong>₱800–₱1,200</strong>. Travel time: <strong>~2 hrs</strong>.</div>
       </div>
     </div>
-    <div style="text-align:center;">
-      <a href="https://maps.app.goo.gl/nn4pnhQ6f6gjuyPr7" target="_blank" class="map-link-btn">
-        🗺 Open in Google Maps
-      </a>
-    </div>
   </div>
 
 </div><!-- /page-wrap -->
@@ -709,7 +741,7 @@
       if (country && country !== 'PH') {
         // International user — redirect to international form
         const name = encodeURIComponent(data.country_name || '');
-        window.location.replace('register-international.html' + (name ? '?country=' + name : ''));
+        window.location.replace('/register-international' + (name ? '?country=' + name : ''));
       }
     } catch(e) {
       // Detection failed — let them through rather than block
@@ -733,20 +765,11 @@
       });
   });
 
-  function selectParticipant(value) {
-    // Set radio
-    document.getElementById(value === 'student' ? 'isStudent' : 'notStudent').checked = true;
-    // Update card styles
-    document.getElementById('card-student').classList.toggle('selected-card', value === 'student');
-    document.getElementById('card-nonstudent').classList.toggle('selected-card', value === 'non-student');
-    // Show/hide school ID upload
-    const wrap = document.getElementById('schoolIdWrap');
-    if (value === 'student') {
-      wrap.classList.add('visible');
-    } else {
-      wrap.classList.remove('visible');
-    }
-  }
+  document.querySelectorAll('input[name="studentStatus"]').forEach(r => {
+    r.addEventListener('change', function() {
+      document.getElementById('schoolIdWrap').classList.toggle('visible', this.value === 'student');
+    });
+  });
 
   function handleChurchChange(sel) {
     document.getElementById('other-church-wrap').classList.toggle('visible', sel.value === 'others');
@@ -951,9 +974,15 @@
     const ua = navigator.userAgent || '';
     const isAndroid = /android/i.test(ua);
     const isIOS = /iphone|ipad|ipod/i.test(ua);
+    const isAndroidIAB = isAndroid && /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
 
-    if (isAndroid) {
-      // Android: intent URI — opens GCash if installed, Play Store if not
+    if (isAndroidIAB) {
+      // Android IAB (Messenger, Instagram etc) — escape to Chrome first
+      // Chrome will then be able to open GCash via intent://
+      const url = window.location.href;
+      window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    } else if (isAndroid) {
+      // Android Chrome/browser — open GCash directly
       window.location.href = 'intent://main#Intent;scheme=gcash;package=com.globe.gcash.android;end';
     } else if (isIOS) {
       // iOS: try gcash:// first, fall back to App Store after 1.5s if not installed
@@ -978,6 +1007,7 @@
     });
   }
 </script>
+
 <!-- IAB Detection Modal -->
 <div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
   <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
@@ -987,65 +1017,56 @@
     <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 </div>
-
 <script>
 (function detectIAB() {
-  const ua = navigator.userAgent || '';
-  const isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  var ua = navigator.userAgent || '';
+  var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
-  const modal = document.getElementById('iabModal');
+  var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
-
-  const isAndroid = /android/i.test(ua);
-  const btns = document.getElementById('iabButtons');
+  var isAndroid = /android/i.test(ua);
+  var btns = document.getElementById('iabButtons');
   if (!btns) return;
-
+  var closeBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+  var continueBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
-    // Android: Open in Browser (primary) + Continue Anyway
-    btns.innerHTML = `
-      <button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Open in Browser</button>
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>`;
+    btns.innerHTML = openBtn + closeBtn;
   } else {
-    // iOS: Continue Anyway (primary) + Copy URL
-    btns.innerHTML = `
-      <button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.08em;cursor:pointer;">Continue Anyway</button>
-      <button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>`;
+    btns.innerHTML = continueBtn + copyBtn;
   }
 })();
-
 function openInBrowser() {
-  const url = window.location.href;
+  var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
 }
-
 function copyURL() {
-  const url = window.location.href;
+  var url = window.location.href;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('copyUrlBtn');
-      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = 'Copy URL', 2000); }
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
     });
   } else {
     prompt('Copy this link and open it in Safari:', url);
   }
 }
 </script>
-
 <!-- FOOTER -->
 <div style="max-width:560px;margin:0 auto;padding:32px 20px 48px;text-align:center;">
   <div style="font-size:13px;font-weight:700;color:#2A3D4A;margin-bottom:6px;">Got questions? We're here for you.</div>
   <div style="font-size:12px;color:#6B8A9A;line-height:1.6;">Reach out to us at <a id="footerEmail" href="mailto:ccsgmprojects@gmail.com" style="color:#3A8BBF;font-weight:600;">ccsgmprojects@gmail.com</a> and we'll get back to you as soon as we can.</div>
 </div>
-
 <script>
   fetch('/.netlify/functions/contact-info')
-    .then(r => r.json())
-    .then(d => {
+    .then(function(r){ return r.json(); })
+    .then(function(d){
       if (!d.email) return;
-      const el = document.getElementById('footerEmail');
+      var el = document.getElementById('footerEmail');
       if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
-    }).catch(() => {});
+    }).catch(function(){});
 </script>
 </body>
 </html>
