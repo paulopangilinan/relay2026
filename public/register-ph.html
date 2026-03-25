@@ -741,7 +741,7 @@
       if (country && country !== 'PH') {
         // International user — redirect to international form
         const name = encodeURIComponent(data.country_name || '');
-        window.location.replace('register-international.html' + (name ? '?country=' + name : ''));
+        window.location.replace('/register-international' + (name ? '?country=' + name : ''));
       }
     } catch(e) {
       // Detection failed — let them through rather than block

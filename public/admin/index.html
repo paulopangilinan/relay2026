@@ -397,7 +397,7 @@
       if (!r.ok) return;
       const d = await r.json();
       if (d.country_code && d.country_code !== 'PH') {
-        window.location.replace('../register-international.html');
+        window.location.replace('/register-international');
       }
     } catch(e) { /* fail open */ }
   })();

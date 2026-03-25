@@ -158,7 +158,7 @@
     </div>
   </div>
 
-  <a id="backBtn" href="register-ph.html" class="btn-back">← Back to Registration</a>
+  <a id="backBtn" href="/register-ph" class="btn-back">← Back to Registration</a>
 </div>
 
 <script>
@@ -169,7 +169,7 @@
   const isIntl = form === 'intl';
 
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
-  document.getElementById('backBtn').href = isIntl ? 'register-international.html' : 'register-ph.html';
+  document.getElementById('backBtn').href = isIntl ? '/register-international' : '/register-ph';
 
   // Swap payment method wording for international (BPI) vs PH (GCash)
   if (isIntl) {

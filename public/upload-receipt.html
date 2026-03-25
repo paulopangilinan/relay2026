@@ -272,7 +272,7 @@
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
-      window.location.href = 'thank-you.html?type=paid&form=ph';
+      window.location.href = '/thank-you?type=paid&form=ph';
     } catch(e) {
       showToast('❌ Error: ' + e.message, true);
       btn.textContent = 'Submit Payment Receipt'; btn.disabled = false;

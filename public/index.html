@@ -33,11 +33,11 @@
     <h2>RELAY Conference 2026</h2>
     <p>Please select the registration form that applies to you.</p>
     <div class="choose-btns">
-      <a href="register-ph.html" class="choose-btn choose-btn-ph">
+      <a href="/register-ph" class="choose-btn choose-btn-ph">
         🇵🇭 Philippine Attendee
         <sub>Local registration · PHP pricing</sub>
       </a>
-      <a id="intlBtn" href="register-international.html" class="choose-btn choose-btn-intl">
+      <a id="intlBtn" href="/register-international" class="choose-btn choose-btn-intl">
         🌏 International Attendee
         <sub>Outside Philippines · USD $300</sub>
       </a>
@@ -45,8 +45,8 @@
   </div>
 </div>
 <script>
-  const PH_FORM   = 'register-ph.html';
-  const INTL_FORM = 'register-international.html';
+  const PH_FORM   = '/register-ph';
+  const INTL_FORM = '/register-international';
   const TIMEOUT_MS = 3000;
 
   async function detectAndRedirect() {
