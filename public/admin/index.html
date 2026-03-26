@@ -92,7 +92,13 @@
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
   table{width:100%;border-collapse:collapse;}
-  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;}
+  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;position:relative;user-select:none;}
+  thead th.sortable{cursor:pointer;}
+  thead th.sortable:hover{background:#edf4f8;color:var(--sky);}
+  thead th.sort-asc::after{content:' ↑';color:var(--sky);}
+  thead th.sort-desc::after{content:' ↓';color:var(--sky);}
+  thead th .col-resize{position:absolute;right:0;top:0;bottom:0;width:4px;cursor:col-resize;background:transparent;}
+  thead th .col-resize:hover,thead th .col-resize.resizing{background:var(--sky);}
   tbody tr{border-bottom:1px solid #eef3f6;transition:background 0.1s;}
   tbody tr:last-child{border-bottom:none;}
   tbody tr:hover{background:#f7fafb;}
@@ -291,7 +297,7 @@
         <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Church</th><th>Status</th><th>Type</th><th>School ID</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Action</th></tr></thead>
             <tbody id="ph-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -355,7 +361,7 @@
         <div class="table-header"><h2>International Registrations</h2><span class="table-count" id="intl-count">–</span></div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Country</th><th>Church</th><th>Status</th><th>Allergens</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th></tr></thead>
             <tbody id="intl-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -448,6 +454,7 @@
       applyFilters('intl');
       renderBreakdowns(ph, intl);
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      initSortableHeaders();
       return true;
     } catch (e) { showToast('Error: ' + e.message); return false; }
   }
@@ -596,12 +603,14 @@
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
     const cols = isPH ? 11 : 12;
+    const { col, dir } = sortState[tab];
+    rows = sortData(rows, col, dir);
     const tbody = document.getElementById(`${tab}-body`);
     if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">No registrations match your filters.</td></tr>`; return; }
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
         <td class="mono">${i+1}</td>
-        <td><strong>${esc(r.name)}</strong></td>
+        <td><strong>${esc(r.name)}</strong>${r.group_id ? ` <span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:50px;background:#EDE9FE;color:#6D28D9;letter-spacing:0.05em;vertical-align:middle;">👥 GROUP</span>` : ''}</td>
         <td>${r.age}</td>
         <td class="mono" style="font-size:12px;">${esc(r.mobile)}</td>
         <td class="mono" style="font-size:12px;">${esc(r.email)}</td>
@@ -612,7 +621,7 @@
         ${isPH ? `<td>${r.school_id_url ? `<a href="#" onclick="openImgModal('${r.school_id_url}');return false;" class="receipt-link">🪪 View</a>` : (r.student_status==='student' ? '<span style="color:#E05050;font-size:12px;">Missing</span>' : '<span style="color:#ccc;font-size:12px;">—</span>')}</td>` : ''}
         <td>${r.receipt_url ? `<a href="#" onclick="openImgModal('${r.receipt_url}');return false;" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
-        <td>${r.payment_verified ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>' : `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}')">Mark Paid</button>`}</td>
+        <td>${r.payment_verified ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>' : `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark Paid</button>`}</td>
       </tr>
     `).join('');
   }
@@ -700,12 +709,15 @@
     document.getElementById(`content-${tab}`).classList.add('active');
   }
 
-  function openModal(id, name) {
+  let pendingGroupId = null;
+  function openModal(id, name, groupId) {
     pendingConfirmId = id;
-    document.getElementById('modalName').textContent = name;
+    pendingGroupId = groupId || null;
+    const label = groupId ? `${name} (Group)` : name;
+    document.getElementById('modalName').textContent = label;
     document.getElementById('confirmModal').classList.add('visible');
   }
-  function closeModal() { pendingConfirmId = null; document.getElementById('confirmModal').classList.remove('visible'); }
+  function closeModal() { pendingConfirmId = null; pendingGroupId = null; document.getElementById('confirmModal').classList.remove('visible'); }
 
   async function doConfirm() {
     if (!pendingConfirmId) return;
@@ -715,7 +727,7 @@
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + adminPassword, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: pendingConfirmId, action: 'confirm' }),
+        body: JSON.stringify({ id: pendingConfirmId, group_id: pendingGroupId, action: 'confirm' }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
@@ -751,6 +763,64 @@
 
   function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  // ── Sort state ─────────────────────────────────────────────────────────
+  const sortState = { ph: { col: null, dir: 'asc' }, intl: { col: null, dir: 'asc' } };
+
+  function initSortableHeaders() {
+    document.querySelectorAll('thead th.sortable').forEach(th => {
+      // Prevent duplicate listeners
+      if (th.dataset.sortInit) return;
+      th.dataset.sortInit = '1';
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        const tab = th.dataset.tab;
+        const state = sortState[tab];
+        if (state.col === col) {
+          state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.col = col;
+          state.dir = 'asc';
+        }
+        th.closest('thead').querySelectorAll('th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(state.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+        applyFilters(tab);
+      });
+    });
+    initResizableColumns();
+  }
+
+  function sortData(data, col, dir) {
+    if (!col) return data;
+    return [...data].sort((a, b) => {
+      let va = a[col] ?? '', vb = b[col] ?? '';
+      if (col === 'age') { va = parseInt(va)||0; vb = parseInt(vb)||0; }
+      else if (col === 'created_at') { va = new Date(va); vb = new Date(vb); }
+      else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+      if (va < vb) return dir === 'asc' ? -1 : 1;
+      if (va > vb) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  function initResizableColumns() {
+    document.querySelectorAll('thead th').forEach(th => {
+      if (th.querySelector('.col-resize')) return;
+      const resizer = document.createElement('div');
+      resizer.className = 'col-resize';
+      th.appendChild(resizer);
+      let startX, startW;
+      resizer.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        startX = e.pageX; startW = th.offsetWidth;
+        resizer.classList.add('resizing');
+        const onMove = e => { th.style.minWidth = Math.max(40, startW + e.pageX - startX) + 'px'; };
+        const onUp = () => { resizer.classList.remove('resizing'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });

@@ -1,6 +1,7 @@
 // netlify/functions/submit.js
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { randomUUID } from "crypto";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -14,24 +15,31 @@ function getTransporter() {
   });
 }
 
+function feeFor(studentStatus) {
+  return studentStatus === "student" ? 3000 : 4500;
+}
+function feeLabel(studentStatus) {
+  return studentStatus === "student" ? "PHP 3,000" : "PHP 4,500";
+}
+
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
-
   const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
 
   try {
     const body = JSON.parse(event.body);
-    const { name, age, mobile, email, studentStatus, church, otherChurch, paymentReady,
-            schoolIdBase64, schoolIdName, receiptBase64, receiptName } = body;
+    const { email, church, otherChurch, paymentReady, receiptBase64, receiptName,
+            registrationType, participants } = body;
 
     const churchName = church === "others" ? otherChurch : church;
     const transporter = getTransporter();
     const siteUrl = process.env.SITE_URL;
-    const qrUrl = `${siteUrl}/assets/images/qr/gcash-qr.png`;
     const heroUrl = `${siteUrl}/assets/images/hero-email.jpg`;
+    const qrUrl   = `${siteUrl}/assets/images/qr/gcash-qr.png`;
+    const isGroup = registrationType === "group";
 
-    // 0. Check for duplicate email
-    const { data: existing, error: dupErr } = await supabase
+    // Duplicate email check
+    const { data: existing } = await supabase
       .from("registrations")
       .select("id, payment_verified")
       .eq("email", email.toLowerCase().trim())
@@ -44,25 +52,12 @@ export const handler = async (event) => {
       return { statusCode: 409, headers, body: JSON.stringify({ error: "already_registered", message: "This email already has a pending registration. Check your inbox for payment instructions, or contact us for help." }) };
     }
 
-    // 1. Upload school ID
-    let schoolIdUrl = null;
-    if (studentStatus === "student" && schoolIdBase64) {
-      const ext = schoolIdName?.split(".").pop() || "jpg";
-      const path = `school-ids/${Date.now()}-${name.replace(/\s+/g, "_")}.${ext}`;
-      const buf = Buffer.from(schoolIdBase64, "base64");
-      const { error } = await supabase.storage.from("relay-uploads").upload(path, buf, { contentType: `image/${ext}` });
-      if (!error) {
-        const { data } = supabase.storage.from("relay-uploads").getPublicUrl(path);
-        schoolIdUrl = data.publicUrl;
-      }
-    }
-
-    // 2. Upload receipt
+    // Upload shared receipt (pay now)
     let receiptUrl = null;
     if (paymentReady === "now" && receiptBase64) {
-      const ext = receiptName?.split(".").pop() || "jpg";
-      const path = `receipts/${Date.now()}-${name.replace(/\s+/g, "_")}.${ext}`;
-      const buf = Buffer.from(receiptBase64, "base64");
+      const ext  = receiptName?.split(".").pop() || "jpg";
+      const path = `receipts/${Date.now()}-group.${ext}`;
+      const buf  = Buffer.from(receiptBase64, "base64");
       const { error } = await supabase.storage.from("relay-uploads").upload(path, buf, { contentType: `image/${ext}` });
       if (!error) {
         const { data } = supabase.storage.from("relay-uploads").getPublicUrl(path);
@@ -70,55 +65,84 @@ export const handler = async (event) => {
       }
     }
 
-    // 3. Insert into DB
-    const { data: reg, error: dbErr } = await supabase
-      .from("registrations")
-      .insert({
-        name, age: parseInt(age), mobile, email,
-        student_status: studentStatus,
-        church: churchName,
-        payment_ready: paymentReady === "now",
-        school_id_url: schoolIdUrl,
-        receipt_url: receiptUrl,
-        payment_verified: false,
-        status: paymentReady === "now" ? "payment_pending_review" : "awaiting_payment",
-      })
-      .select().single();
+    const group_id   = isGroup ? randomUUID() : null;
+    const group_size = isGroup ? participants.length : 1;
+    const status     = paymentReady === "now" ? "payment_pending_review" : "awaiting_payment";
 
-    if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
+    // Insert one row per participant
+    const insertedRows = [];
+    for (const p of participants) {
+      let schoolIdUrl = null;
+      if (p.studentStatus === "student" && p.schoolIdBase64) {
+        const ext  = p.schoolIdName?.split(".").pop() || "jpg";
+        const path = `school-ids/${Date.now()}-${p.name.replace(/\s+/g, "_")}.${ext}`;
+        const buf  = Buffer.from(p.schoolIdBase64, "base64");
+        const { error } = await supabase.storage.from("relay-uploads").upload(path, buf, { contentType: `image/${ext}` });
+        if (!error) {
+          const { data } = supabase.storage.from("relay-uploads").getPublicUrl(path);
+          schoolIdUrl = data.publicUrl;
+        }
+      }
 
-    const verifyLink = `${siteUrl}/.netlify/functions/verify?id=${reg.id}`;
-    const fee = studentStatus === "student" ? "PHP 3,000" : "PHP 4,500";
+      const { data: reg, error: dbErr } = await supabase
+        .from("registrations")
+        .insert({
+          name:             p.name,
+          age:              parseInt(p.age),
+          mobile:           p.mobile,
+          email:            email.toLowerCase().trim(),
+          student_status:   p.studentStatus,
+          church:           churchName,
+          payment_ready:    paymentReady === "now",
+          school_id_url:    schoolIdUrl,
+          receipt_url:      receiptUrl,
+          payment_verified: false,
+          status,
+          group_id,
+          group_size,
+        })
+        .select().single();
 
-    // 4a. With payment
+      if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
+      insertedRows.push(reg);
+    }
+
+    const primaryReg  = insertedRows[0];
+    const primaryName = participants[0].name;
+    const totalAmount = participants.reduce((sum, p) => sum + feeFor(p.studentStatus), 0);
+    const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
+    const verifyLink  = `${siteUrl}/.netlify/functions/verify?id=${primaryReg.id}${isGroup ? `&group_id=${group_id}` : ""}`;
+
+    const breakdownTable = buildBreakdownTable(participants, totalLabel);
+
     if (paymentReady === "now") {
       await transporter.sendMail({
-        from: `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to: process.env.ADMIN_EMAIL,
-        subject: `New Registration + Payment — ${name}`,
-        html: adminPaymentEmail({ name, email, age, mobile, studentStatus, churchName, fee, receiptUrl, verifyLink, heroUrl }),
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        to:      process.env.ADMIN_EMAIL,
+        subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
+        html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable }),
       });
       await transporter.sendMail({
-        from: `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to: email,
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        to:      email,
         subject: "RELAY 2026 — We received your registration!",
-        html: registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }),
+        html:    registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, participants, breakdownTable, totalLabel }),
       });
-    // 4b. Pay later
     } else {
       await transporter.sendMail({
-        from: `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to: process.env.ADMIN_EMAIL,
-        subject: `New Registration (Awaiting Payment) — ${name}`,
-        html: adminAwaitingEmail({ name, email, age, mobile, studentStatus, churchName, fee, heroUrl }),
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        to:      process.env.ADMIN_EMAIL,
+        subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
+        html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
       });
       await transporter.sendMail({
-        from: `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to: email,
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        to:      email,
         subject: "RELAY 2026 — Complete your registration",
-        html: registrantPaymentEmail({
-          name, fee, studentStatus, qrUrl, heroUrl, siteUrl,
-          registrationId: reg.id,
+        html:    registrantPaymentEmail({
+          primaryName, totalLabel, qrUrl, heroUrl, siteUrl,
+          registrationId: primaryReg.id,
+          group_id, isGroup, participants, breakdownTable,
           gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
           gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
           gcashMobile:        process.env.GCASH_MOBILE,
@@ -126,14 +150,40 @@ export const handler = async (event) => {
       });
     }
 
-    return { statusCode: 200, headers, body: JSON.stringify({ success: true, id: reg.id }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, id: primaryReg.id }) };
   } catch (err) {
     console.error(err);
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
 
-// ── Shared shell ──────────────────────────────────────────────────────────────
+function buildBreakdownTable(participants, totalLabel) {
+  const rows = participants.map(p => `
+    <tr>
+      <td style="padding:8px 12px;font-size:13px;color:#2A3D4A;">${p.name}</td>
+      <td style="padding:8px 12px;font-size:13px;color:#2A3D4A;text-align:center;">${p.studentStatus === "student" ? "Student" : "Non-Student"}</td>
+      <td style="padding:8px 12px;font-size:13px;color:#2A3D4A;text-align:right;font-weight:600;">${feeLabel(p.studentStatus)}</td>
+    </tr>`).join("");
+
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #D4E2EA;border-radius:10px;overflow:hidden;margin:16px 0;">
+      <thead>
+        <tr style="background:#f7fafb;">
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;text-align:left;letter-spacing:0.08em;">Participant</th>
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;text-align:center;letter-spacing:0.08em;">Type</th>
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;text-align:right;letter-spacing:0.08em;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr style="background:#f7fafb;border-top:2px solid #D4E2EA;">
+          <td colspan="2" style="padding:10px 12px;font-size:13px;font-weight:700;color:#2A3D4A;">Total</td>
+          <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#2E7048;text-align:right;">${totalLabel}</td>
+        </tr>
+      </tfoot>
+    </table>`;
+}
+
 function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
@@ -160,87 +210,78 @@ function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
   </div></body></html>`;
 }
 
-function rows(...items) {
-  return items.map(([l, v]) => `<div class="row"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
-}
+function r(l, v) { return `<div class="row"><div class="lbl">${l}</div><div class="val">${v}</div></div>`; }
 
-// ── Admin: payment received ───────────────────────────────────────────────────
-function adminPaymentEmail({ name, email, age, mobile, studentStatus, churchName, fee, receiptUrl, verifyLink, heroUrl }) {
+function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable }) {
+  const primaryName = participants[0].name;
   return emailShell({
     heroUrl,
     headerBg: 'linear-gradient(135deg,#1C2B38,#2A3D4A)',
-    headerTitle: 'New Registration + Payment',
+    headerTitle: isGroup ? 'New Group Registration + Payment' : 'New Registration + Payment',
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
-      ${rows(['Name',name],['Email',email],['Mobile',mobile],['Age',age],
-             ['Status', studentStatus==='student'?'Student':'Non-Student'],
-             ['Church',churchName],['Fee',fee])}
+      ${r('Contact / Registrant', primaryName)}${r('Church', churchName)}${r('Total Amount', totalLabel)}
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
       <hr>
       ${receiptUrl ? `<p style="font-size:13px;margin-bottom:16px;">📎 <a href="${receiptUrl}" style="color:#3A8BBF;font-weight:600;">View payment screenshot</a></p>` : ''}
-      <div class="note">Check your GCash app to confirm payment was received, then click the button below to send the registrant their confirmation email.</div>
+      <div class="note">Check your GCash app to confirm payment was received, then click the button below.</div>
       <div style="text-align:center;margin-top:24px;">
         <a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a>
-      </div>
-    `
+      </div>`
   });
 }
 
-// ── Admin: awaiting payment ───────────────────────────────────────────────────
-function adminAwaitingEmail({ name, email, age, mobile, studentStatus, churchName, fee, heroUrl }) {
+function adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }) {
+  const primaryName = participants[0].name;
   return emailShell({
     heroUrl,
     headerBg: 'linear-gradient(135deg,#1C2B38,#2A3D4A)',
-    headerTitle: 'New Registration (Awaiting Payment)',
+    headerTitle: isGroup ? 'New Group Registration (Awaiting Payment)' : 'New Registration (Awaiting Payment)',
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
-      ${rows(['Name',name],['Email',email],['Mobile',mobile],['Age',age],
-             ['Status', studentStatus==='student'?'Student':'Non-Student'],
-             ['Church',churchName],['Fee',fee])}
-      <div class="note">This registrant chose to pay later. Payment instructions have been sent to their email.</div>
-    `
+      ${r('Contact / Registrant', primaryName)}${r('Church', churchName)}${r('Total Amount', totalLabel)}
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
+      <div class="note">This registrant chose to pay later. Payment instructions have been sent to their email.</div>`
   });
 }
 
-// ── Registrant: acknowledgement (paid) ───────────────────────────────────────
-function registrantAckEmail({ name, fee, studentStatus, churchName, heroUrl }) {
+function registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, participants, breakdownTable }) {
   return emailShell({
     heroUrl,
     headerBg: 'linear-gradient(135deg,#1C2B38,#2E7048)',
     headerTitle: 'We received your registration!',
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
-      <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${name}</strong>, thank you for registering for RELAY 2026! 🎉</p>
-      ${rows(['Church',churchName],['Status',studentStatus==='student'?'Student':'Non-Student'],['Fee',fee])}
+      <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${primaryName}</strong>, thank you for registering for RELAY 2026! 🎉</p>
+      ${r('Church', churchName)}
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Registered Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
       <hr>
-      <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly. For questions, reply to this email.</div>
-      ${studentStatus==='student' ? '<div class="note" style="margin-top:8px;">🪪 Your submitted school ID will also be reviewed to confirm your student discount.</div>' : ''}
+      <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly.</div>
+      ${participants.some(p => p.studentStatus === 'student') ? '<div class="note" style="margin-top:8px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
       <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
         <strong>✝️ Theme:</strong> Living for Christ Alone
-      </div>
-    `
+      </div>`
   });
 }
 
-// ── Registrant: pay later (GCash QR + upload link) ───────────────────────────
-function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, siteUrl, registrationId, gcashAccountName, gcashAccountHolder, gcashMobile }) {
-  const uploadLink = `${siteUrl}/upload-receipt.html?id=${registrationId}`;
+function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, registrationId, group_id, isGroup, participants, breakdownTable, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+  const uploadLink = `${siteUrl}/upload-receipt?id=${registrationId}${isGroup && group_id ? `&group_id=${group_id}` : ''}`;
   return emailShell({
     heroUrl,
     headerBg: 'linear-gradient(135deg,#1C2B38,#3A8BBF)',
     headerTitle: 'Complete Your Registration',
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
-      <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${name}</strong>, thank you for your interest in RELAY Conference Asia Pacific 2026!</p>
-      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">To confirm your slot, scan the GCash QR below and pay <strong>${fee}</strong>, then click the button to submit your receipt.</p>
-
-      <!-- GCash card -->
+      <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>, thank you for your interest in RELAY Conference Asia Pacific 2026!</p>
+      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">To confirm your slot${isGroup ? 's' : ''}, pay <strong>${totalLabel}</strong> via GCash and submit your receipt.</p>
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Registered Participants (${participants.length})</div>${breakdownTable}` : ''}
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
         <tr><td align="center">
           <table cellpadding="0" cellspacing="0" border="0" style="background:#0A8FD9;border-radius:16px;overflow:hidden;width:100%;max-width:360px;">
-            <tr><td align="center" style="padding:0;background:#0A8FD9;line-height:0;border-radius:16px 16px 0 0;overflow:hidden;">
-              <img src="${siteUrl}/assets/images/gcash-header.png" alt="GCash" width="360" style="display:block;width:100%;height:auto;border-radius:16px 16px 0 0;">
+            <tr><td style="padding:0;line-height:0;">
+              <img src="${siteUrl}/assets/images/gcash-header.png" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
             </td></tr>
             <tr><td style="padding:0 14px 14px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">
@@ -249,13 +290,13 @@ function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, site
                 </td></tr>
                 <tr><td style="font-size:13px;color:#666;padding-bottom:14px;">Transfer fees may apply.</td></tr>
                 <tr><td style="border-top:1px solid #E0E0E0;padding-top:14px;">
-                  <div style="font-size:22px;font-weight:800;color:#0070E0;letter-spacing:0.04em;margin-bottom:4px;">${gcashAccountName || 'CCSGM'}</div>
+                  <div style="font-size:22px;font-weight:800;color:#0070E0;margin-bottom:4px;">${gcashAccountName || 'CCSGM'}</div>
                   <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">${gcashAccountHolder || ''}</div>
-                  <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;">
-                    <span style="color:#888;">Mobile No.:</span>
+                  <div style="font-size:13px;padding:4px 0;">
+                    <span style="color:#888;">Mobile No.: </span>
                     <span style="color:#444;font-weight:600;font-family:monospace;">${gcashMobile || ''}</span>
                   </div>
-                  <div style="margin-top:14px;background:#E8F4FF;border-radius:8px;padding:10px 14px;font-size:13px;color:#0070E0;text-align:center;">
+                  <div style="margin-top:14px;background:#E8F4FF;border-radius:8px;padding:10px 14px;font-size:13px;color:#0070E0;">
                     💡 <strong>Send Money</strong> in GCash using the mobile number above
                   </div>
                 </td></tr>
@@ -264,15 +305,11 @@ function registrantPaymentEmail({ name, fee, studentStatus, qrUrl, heroUrl, site
           </table>
         </td></tr>
       </table>
-
-      ${rows(['Your Status', studentStatus==='student'?'Student':'Non-Student'],['Amount Due', `<strong>${fee}</strong>`])}
-
-      ${studentStatus==='student' ? '<div class="note" style="margin-top:16px;">🪪 Your submitted school ID will also be reviewed to confirm your student discount.</div>' : ''}
-      <div class="note" style="margin-top:8px;">After paying, click the button below to attach your GCash receipt screenshot and confirm your registration.</div>
+      <div class="note">After paying, click the button below to submit your GCash receipt screenshot.</div>
+      ${participants.some(p => p.studentStatus === 'student') ? '<div class="note" style="margin-top:8px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
       <div style="text-align:center;margin-top:20px;">
         <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
       </div>
-      <p style="font-size:11px;color:#6B8A9A;text-align:center;margin-top:10px;">Or copy this link: ${uploadLink}</p>
-    `
+      <p style="font-size:11px;color:#6B8A9A;text-align:center;margin-top:10px;">Or copy this link: ${uploadLink}</p>`
   });
 }

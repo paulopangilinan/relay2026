@@ -32,13 +32,19 @@ export const handler = async (event) => {
   // ── POST: manual confirm ───────────────────────────────────────────────
   if (event.httpMethod === "POST") {
     try {
-      const { id, action } = JSON.parse(event.body);
+      const { id, action, group_id } = JSON.parse(event.body);
       const { data: reg, error: fetchErr } = await supabase.from("registrations").select("*").eq("id", id).single();
       if (fetchErr || !reg) throw new Error("Registration not found");
 
-      await supabase.from("registrations")
-        .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString() })
-        .eq("id", id);
+      if (group_id) {
+        await supabase.from("registrations")
+          .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString() })
+          .eq("group_id", group_id);
+      } else {
+        await supabase.from("registrations")
+          .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString() })
+          .eq("id", id);
+      }
 
       if (action === "confirm") {
         const isIntl = reg.registrant_type === "international";

@@ -193,6 +193,58 @@
   }
   .fee-note strong { color: #9A6F10; }
 
+  /* Registration type */
+  .reg-type-wrap { display: flex; gap: 12px; margin-bottom: 4px; }
+  .reg-type-option { flex: 1; cursor: pointer; }
+  .reg-type-option input[type=radio] { display: none; }
+  .reg-type-card {
+    display: block; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; background: #fff;
+  }
+  .reg-type-card:hover { border-color: var(--sky); }
+  .reg-type-option input:checked ~ .reg-type-card { border-color: var(--sky); background: var(--sky-light); }
+  .reg-type-icon { font-size: 22px; margin-bottom: 6px; }
+  .reg-type-title { font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 2px; }
+  .reg-type-sub { font-size: 11px; color: var(--muted); }
+
+  /* Participant slots */
+  .participant-slot {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 12px; position: relative;
+    background: #fff;
+  }
+  .participant-slot-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .participant-slot-label {
+    font-size: 12px; font-weight: 700; color: var(--sky);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .btn-remove-participant {
+    font-size: 11px; color: #E05050; background: none; border: none;
+    cursor: pointer; font-weight: 600; padding: 2px 6px;
+    border-radius: 6px; transition: background 0.15s;
+  }
+  .btn-remove-participant:hover { background: #FDECEA; }
+  .btn-add-participant {
+    width: 100%; padding: 12px; border: 1.5px dashed var(--border);
+    border-radius: 10px; background: transparent; color: var(--sky);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; margin-top: 4px;
+  }
+  .btn-add-participant:hover { border-color: var(--sky); background: var(--sky-light); }
+  .btn-add-participant:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Payment breakdown */
+  .breakdown-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+  .breakdown-table th { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  .breakdown-table td { font-size: 13px; color: var(--text); padding: 8px 10px; border-bottom: 1px solid #f0f4f7; }
+  .breakdown-table tr:last-child td { border-bottom: none; }
+  .breakdown-total td { font-weight: 700; color: var(--dark); background: #f7fafb; border-top: 2px solid var(--border) !important; }
+  .breakdown-total td:last-child { color: var(--green); font-size: 14px; }
+
   .pay-option { cursor: pointer; margin-bottom: 10px; }
   .pay-option:last-child { margin-bottom: 0; }
   .pay-option input[type=radio] { display: none; }
@@ -462,109 +514,110 @@
 
   <form id="relayForm" novalidate>
 
-    <!-- PERSONAL INFO -->
+    <!-- REGISTRATION TYPE -->
     <div class="card">
-      <div class="section-label">Personal Information</div>
-      <div class="grid-2">
-        <div class="field">
-          <label>Full Name <span class="req">*</span></label>
-          <input type="text" id="name" placeholder="Your full name" required>
-        </div>
-        <div class="field">
-          <label>Age <span class="req">*</span></label>
-          <input type="number" id="age" placeholder="e.g. 22" min="17" max="45" required>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field">
-          <label>Mobile Number <span class="req">*</span></label>
-          <div class="mobile-wrap">
-            <div class="country-code-fixed">🇵🇭 +63</div>
-            <input type="hidden" id="countryCode" value="+63">
-            <input type="tel" id="mobile" placeholder="9XX XXX XXXX" required oninput="validateMobileField()">
+      <div class="section-label">Registration Type</div>
+      <div class="reg-type-wrap">
+        <label class="reg-type-option">
+          <input type="radio" name="registrationType" value="single" checked onchange="handleRegType(this)">
+          <div class="reg-type-card">
+            <div class="reg-type-icon">🧑</div>
+            <div class="reg-type-title">Single Participant</div>
+            <div class="reg-type-sub">Registering for yourself</div>
           </div>
-          <div class="field-msg" id="mobileMsg"></div>
-        </div>
+        </label>
+        <label class="reg-type-option">
+          <input type="radio" name="registrationType" value="group" onchange="handleRegType(this)">
+          <div class="reg-type-card">
+            <div class="reg-type-icon">👥</div>
+            <div class="reg-type-title">Group Registration</div>
+            <div class="reg-type-sub">2–5 participants, one payment</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- SHARED: EMAIL + CHURCH (always visible, moved up) -->
+    <div class="card">
+      <div class="section-label">Contact & Church</div>
+      <div class="grid-2">
         <div class="field">
           <label>Email Address <span class="req">*</span></label>
           <input type="email" id="email" placeholder="you@email.com" required oninput="validateEmailField()">
           <div class="field-msg" id="emailMsg"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="emailGroupNote" style="display:none;">All confirmations will be sent to this email.</div>
+        </div>
+        <div class="field">
+          <label>Church Affiliation <span class="req">*</span></label>
+          <div class="select-wrap">
+            <select id="church" required onchange="handleChurchChange(this)">
+              <option value="" disabled selected>Select your church…</option>
+              <optgroup label="CCSGM">
+                <option>CCSGM – Kawit</option>
+                <option>CCSGM – Imus</option>
+                <option>CCSGM – Cavite City</option>
+                <option>CCSGM – Dasma</option>
+                <option>CCSGM – Carrascal</option>
+                <option>CCSGM – Maitum</option>
+                <option>CCSGM – Madrid</option>
+                <option>CCSGM – Tandag</option>
+                <option>CCSGM – Castillo</option>
+                <option>CCSGM – Agusan Del Sur</option>
+                <option>CCSGM – Cabangahan</option>
+                <option>CCSGM – Nangka</option>
+                <option>CCSGM – Gacub</option>
+                <option>CCSGM – Pili</option>
+              </optgroup>
+              <optgroup label="Other SGC Churches">
+                <option>SGC Wahroonga</option>
+                <option>SGC Parramatta</option>
+                <option>SGC Singapore</option>
+                <option>SGC Hong Kong</option>
+                <option>SGC Manila</option>
+                <option>Others (please specify)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="slide-panel" id="other-church-wrap" style="margin-top:8px;">
+            <input type="text" id="otherChurch" placeholder="Enter your church name">
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- PARTICIPANT CATEGORY -->
+    <!-- PARTICIPANTS -->
     <div class="card">
-      <div class="section-label">Participant Category</div>
-      <div class="toggle-wrap">
-        <input type="radio" name="studentStatus" id="isStudent" value="student">
-        <label for="isStudent">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
-          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
-          <div class="p-sub-label">High School and College Students</div>
-        </label>
-        <input type="radio" name="studentStatus" id="notStudent" value="non-student">
-        <label for="notStudent">💼 Non-Student <span class="p-badge-inline">25% Off</span>
-          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
-        </label>
-      </div>
-
-      <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
-        <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
-        <div class="upload-area">
-          <input type="file" id="schoolIdFile" accept="image/*,.pdf" onchange="handleIdUpload(this)">
-          <div class="upload-icon">🪪</div>
-          <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
-        </div>
-        <div class="upload-preview" id="idPreview"></div>
-      </div>
+      <div class="section-label">Participant Information</div>
+      <div id="participantSlots"></div>
+      <button type="button" class="btn-add-participant" id="addParticipantBtn" onclick="addParticipant()" style="display:none;">
+        + Add Participant
+      </button>
     </div>
 
-    <!-- CHURCH -->
-    <div class="card">
-      <div class="section-label">Church Affiliation</div>
-      <div class="field">
-        <label>Church Name <span class="req">*</span></label>
-        <div class="select-wrap">
-          <select id="church" required onchange="handleChurchChange(this)">
-            <option value="" disabled selected>Select your church…</option>
-            <optgroup label="CCSGM">
-              <option>CCSGM – Kawit</option>
-              <option>CCSGM – Imus</option>
-              <option>CCSGM – Cavite City</option>
-              <option>CCSGM – Dasma</option>
-              <option>CCSGM – Carrascal</option>
-              <option>CCSGM – Maitum</option>
-              <option>CCSGM – Madrid</option>
-              <option>CCSGM – Tandag</option>
-              <option>CCSGM – Castillo</option>
-              <option>CCSGM – Agusan Del Sur</option>
-              <option>CCSGM – Cabangahan</option>
-              <option>CCSGM – Nangka</option>
-              <option>CCSGM – Gacub</option>
-              <option>CCSGM – Pili</option>
-            </optgroup>
-            <optgroup label="His Dwelling Christian Church">
-              <option value="HDCC - Cebu City">His Dwelling Christian Church – Cebu City</option>
-              <option value="HDCC - Isabela">His Dwelling Christian Church – Isabela</option>
-            </optgroup>
-            <optgroup label="Other Churches">
-              <option>His Touch Ministries</option>
-              <option value="others">Others…</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-      <div class="slide-panel" id="other-church-wrap">
-        <div class="field" style="margin-top:12px;">
-          <label>Please specify your church <span class="req">*</span></label>
-          <input type="text" id="otherChurch" placeholder="Enter your church name">
-        </div>
-      </div>
-    </div>
 
     <!-- PAYMENT -->
     <div class="card">
       <div class="section-label">Payment</div>
+
+      <!-- Payment breakdown (shown for group, or always as summary) -->
+      <div id="paymentBreakdown" style="margin-bottom:16px;">
+        <table class="breakdown-table">
+          <thead>
+            <tr>
+              <th>Participant</th>
+              <th>Type</th>
+              <th style="text-align:right;">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="breakdownBody"></tbody>
+          <tfoot>
+            <tr class="breakdown-total">
+              <td colspan="2">Total</td>
+              <td style="text-align:right;" id="breakdownTotal">₱0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
       <!-- Pay now / pay later toggle -->
       <label class="pay-option">
@@ -749,6 +802,10 @@
   })();
   // Load GCash details from ENV VARs — wait for DOM
   window.addEventListener('DOMContentLoaded', () => {
+    // Initialize participant slots
+    renderParticipantSlots();
+
+    // Fetch GCash details
     fetch('/.netlify/functions/gcash-details')
       .then(r => r.json())
       .then(d => {
@@ -763,12 +820,9 @@
         const name = document.getElementById('gcashAcctName');
         if (name) name.textContent = 'CCSGM';
       });
-  });
 
-  document.querySelectorAll('input[name="studentStatus"]').forEach(r => {
-    r.addEventListener('change', function() {
-      document.getElementById('schoolIdWrap').classList.toggle('visible', this.value === 'student');
-    });
+    // Update breakdown when names are typed
+    document.getElementById('participantSlots').addEventListener('input', updateBreakdown);
   });
 
   function handleChurchChange(sel) {
@@ -842,36 +896,188 @@
     return ok;
   }
 
+  // ── Registration type handler ────────────────────────────────────────────
+  function handleRegType(radio) {
+    const isGroup = radio.value === 'group';
+    document.getElementById('addParticipantBtn').style.display = isGroup ? 'block' : 'none';
+    document.getElementById('emailGroupNote').style.display = isGroup ? 'block' : 'none';
+    // Re-render slots (first slot always visible, label changes)
+    renderParticipantSlots();
+    updateBreakdown();
+  }
+
+  // ── Participant slot management ──────────────────────────────────────────
+  let participantCount = 1;
+  const MAX_PARTICIPANTS = 5;
+
+  function participantSlotHTML(index) {
+    const isGroup = document.querySelector('input[name="registrationType"]:checked')?.value === 'group';
+    const label = isGroup ? (index === 0 ? 'Participant 1 (You)' : `Participant ${index + 1}`) : 'Your Information';
+    const canRemove = isGroup && index > 0;
+    return `
+      <div class="participant-slot" id="slot-${index}">
+        <div class="participant-slot-header">
+          <span class="participant-slot-label">${label}</span>
+          ${canRemove ? `<button type="button" class="btn-remove-participant" onclick="removeParticipant(${index})">✕ Remove</button>` : ''}
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="p-name-${index}" placeholder="Full name" required>
+          </div>
+          <div class="field">
+            <label>Age <span class="req">*</span></label>
+            <input type="number" id="p-age-${index}" placeholder="e.g. 22" min="17" max="45" required>
+          </div>
+        </div>
+        <div class="field">
+          <label>Mobile Number <span class="req">*</span></label>
+          <div class="mobile-wrap">
+            <div class="country-code-fixed">🇵🇭 +63</div>
+            <input type="tel" id="p-mobile-${index}" placeholder="9XX XXX XXXX" required oninput="validateParticipantMobile(${index})">
+          </div>
+          <div class="field-msg" id="p-mobileMsg-${index}"></div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <div class="section-label" style="margin-bottom:8px;">Participant Category</div>
+          <div class="toggle-wrap">
+            <input type="radio" name="p-status-${index}" id="p-student-${index}" value="student" onchange="updateBreakdown()">
+            <label for="p-student-${index}">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
+              <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
+              <div class="p-sub-label">High School and College Students</div>
+            </label>
+            <input type="radio" name="p-status-${index}" id="p-nonstudent-${index}" value="non-student" onchange="updateBreakdown()">
+            <label for="p-nonstudent-${index}">💼 Non-Student <span class="p-badge-inline">25% Off</span>
+              <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
+            </label>
+          </div>
+          <div class="slide-panel" id="p-schoolIdWrap-${index}" style="margin-top:12px;">
+            <div class="section-label" style="margin-bottom:6px;">Valid School ID <span class="req" style="color:#E05050;">*</span></div>
+            <div class="upload-area">
+              <input type="file" id="p-schoolIdFile-${index}" accept="image/*,.pdf" onchange="handleSlotIdUpload(this, ${index})">
+              <div class="upload-icon">🪪</div>
+              <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
+            </div>
+            <div class="upload-preview" id="p-idPreview-${index}"></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderParticipantSlots() {
+    const container = document.getElementById('participantSlots');
+    container.innerHTML = '';
+    for (let i = 0; i < participantCount; i++) {
+      container.insertAdjacentHTML('beforeend', participantSlotHTML(i));
+      // Re-attach student toggle listeners
+      const studentRadio = document.getElementById(`p-student-${i}`);
+      const nonStudentRadio = document.getElementById(`p-nonstudent-${i}`);
+      if (studentRadio) studentRadio.addEventListener('change', () => {
+        document.getElementById(`p-schoolIdWrap-${i}`).style.display = 'block';
+        document.getElementById(`p-schoolIdWrap-${i}`).classList.add('visible');
+        updateBreakdown();
+      });
+      if (nonStudentRadio) nonStudentRadio.addEventListener('change', () => {
+        document.getElementById(`p-schoolIdWrap-${i}`).style.display = 'none';
+        document.getElementById(`p-schoolIdWrap-${i}`).classList.remove('visible');
+        updateBreakdown();
+      });
+    }
+    document.getElementById('addParticipantBtn').disabled = participantCount >= MAX_PARTICIPANTS;
+    updateBreakdown();
+  }
+
+  function addParticipant() {
+    if (participantCount >= MAX_PARTICIPANTS) return;
+    participantCount++;
+    renderParticipantSlots();
+  }
+
+  function removeParticipant(index) {
+    // Shift data not needed since we re-render; just decrement count
+    participantCount--;
+    renderParticipantSlots();
+  }
+
+  function handleSlotIdUpload(input, index) {
+    const preview = document.getElementById(`p-idPreview-${index}`);
+    if (input.files[0]) {
+      preview.textContent = '✅ ' + input.files[0].name;
+      preview.style.display = 'block';
+    }
+  }
+
+  function validateParticipantMobile(index) {
+    const el = document.getElementById(`p-mobile-${index}`);
+    const msg = document.getElementById(`p-mobileMsg-${index}`);
+    if (!el || !msg) return true;
+    const val = el.value.trim().replace(/[\s\-().]/g, '');
+    const ok = /^9\d{9}$/.test(val);
+    el.classList.toggle('field-error', val.length > 0 && !ok);
+    el.classList.toggle('field-ok', ok);
+    msg.className = 'field-msg';
+    if (val.length > 0 && !ok) {
+      msg.textContent = 'PH mobile: 10 digits starting with 9';
+      msg.classList.add('show-error');
+    } else if (ok) {
+      msg.textContent = '✓ Looks good';
+      msg.classList.add('show-ok');
+    }
+    return ok;
+  }
+
+  // ── Payment breakdown ────────────────────────────────────────────────────
+  function updateBreakdown() {
+    const tbody = document.getElementById('breakdownBody');
+    const totalEl = document.getElementById('breakdownTotal');
+    if (!tbody) return;
+    let total = 0;
+    let rows = '';
+    for (let i = 0; i < participantCount; i++) {
+      const nameEl = document.getElementById(`p-name-${i}`);
+      const statusRadio = document.querySelector(`input[name="p-status-${i}"]:checked`);
+      const name = nameEl?.value.trim() || `Participant ${i + 1}`;
+      const isStudent = statusRadio?.value === 'student';
+      const fee = isStudent ? 3000 : 4500;
+      const label = statusRadio ? (isStudent ? 'Student' : 'Non-Student') : '—';
+      const feeStr = statusRadio ? `₱${fee.toLocaleString()}` : '—';
+      total += statusRadio ? fee : 0;
+      rows += `<tr><td>${name}</td><td>${label}</td><td style="text-align:right;">${feeStr}</td></tr>`;
+    }
+    tbody.innerHTML = rows;
+    totalEl.textContent = total > 0 ? `₱${total.toLocaleString()}` : '—';
+  }
+
   // ── Full form validation ─────────────────────────────────────────────────
   function validateBase() {
-    const name = document.getElementById('name').value.trim();
-    const age = document.getElementById('age').value;
+    const email = document.getElementById('email').value.trim();
     const church = document.getElementById('church').value;
-    const status = document.querySelector('input[name="studentStatus"]:checked');
 
-    if (!name || !age || !church || !status) {
+    if (!email || !church) {
       showToast('⚠️ Please fill in all required fields.', true); return false;
     }
-
-    // Email
     if (!validateEmailField()) {
       document.getElementById('email').focus();
       showToast('⚠️ Please enter a valid email address.', true); return false;
     }
-
-    // Mobile
-    if (!validateMobileField()) {
-      document.getElementById('mobile').focus();
-      const code = document.getElementById('countryCode').value;
-      const hint = code === '+63' ? ' (PH format: 9XXXXXXXXX)' : '';
-      showToast('⚠️ Please enter a valid mobile number' + hint + '.', true); return false;
-    }
-
     if (church === 'others' && !document.getElementById('otherChurch').value.trim()) {
       showToast('⚠️ Please specify your church name.', true); return false;
     }
-    if (status.value === 'student' && !document.getElementById('schoolIdFile').files.length) {
-      showToast('⚠️ Please upload your valid school ID.', true); return false;
+
+    // Validate each participant slot
+    for (let i = 0; i < participantCount; i++) {
+      const name = document.getElementById(`p-name-${i}`)?.value.trim();
+      const age  = document.getElementById(`p-age-${i}`)?.value;
+      const status = document.querySelector(`input[name="p-status-${i}"]:checked`);
+      if (!name || !age || !status) {
+        showToast(`⚠️ Please complete all fields for Participant ${i + 1}.`, true); return false;
+      }
+      if (!validateParticipantMobile(i)) {
+        showToast(`⚠️ Invalid mobile number for Participant ${i + 1}.`, true); return false;
+      }
+      if (status.value === 'student' && !document.getElementById(`p-schoolIdFile-${i}`)?.files.length) {
+        showToast(`⚠️ Please upload school ID for Participant ${i + 1}.`, true); return false;
+      }
     }
     return true;
   }
@@ -879,13 +1085,10 @@
   // Convert a file input to base64 string
   function fileToBase64(fileInput) {
     return new Promise((resolve, reject) => {
-      const file = fileInput.files[0];
+      const file = fileInput?.files?.[0];
       if (!file) { resolve(null); return; }
       const reader = new FileReader();
-      reader.onload = () => resolve({
-        base64: reader.result.split(',')[1],
-        name: file.name
-      });
+      reader.onload = () => resolve({ base64: reader.result.split(',')[1], name: file.name });
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -893,22 +1096,32 @@
 
   async function buildPayload(withReceipt) {
     const church = document.getElementById('church').value;
-    const schoolIdData = await fileToBase64(document.getElementById('schoolIdFile'));
+    const registrationType = document.querySelector('input[name="registrationType"]:checked').value;
     const receiptData = withReceipt ? await fileToBase64(document.getElementById('receiptFile')) : null;
 
+    const participants = [];
+    for (let i = 0; i < participantCount; i++) {
+      const status = document.querySelector(`input[name="p-status-${i}"]:checked`).value;
+      const schoolIdData = status === 'student' ? await fileToBase64(document.getElementById(`p-schoolIdFile-${i}`)) : null;
+      participants.push({
+        name:         document.getElementById(`p-name-${i}`).value.trim(),
+        age:          document.getElementById(`p-age-${i}`).value,
+        mobile:       '+63' + document.getElementById(`p-mobile-${i}`).value.trim(),
+        studentStatus: status,
+        schoolIdBase64: schoolIdData?.base64 || null,
+        schoolIdName:   schoolIdData?.name || null,
+      });
+    }
+
     return {
-      name: document.getElementById('name').value.trim(),
-      age: document.getElementById('age').value,
-      mobile: document.getElementById('countryCode').value + document.getElementById('mobile').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      studentStatus: document.querySelector('input[name="studentStatus"]:checked').value,
+      email:            document.getElementById('email').value.trim(),
       church,
-      otherChurch: document.getElementById('otherChurch')?.value.trim() || '',
-      paymentReady: withReceipt ? 'now' : 'later',
-      schoolIdBase64: schoolIdData?.base64 || null,
-      schoolIdName: schoolIdData?.name || null,
-      receiptBase64: receiptData?.base64 || null,
-      receiptName: receiptData?.name || null,
+      otherChurch:      document.getElementById('otherChurch')?.value.trim() || '',
+      registrationType,
+      participants,
+      paymentReady:     withReceipt ? 'now' : 'later',
+      receiptBase64:    receiptData?.base64 || null,
+      receiptName:      receiptData?.name || null,
     };
   }
 
