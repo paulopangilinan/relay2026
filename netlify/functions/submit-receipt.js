@@ -98,7 +98,8 @@ export const handler = async (event) => {
     for (const admin of notifyAdmins) {
       const canVerify = !!admin.permissions?.verify_payment;
       await getTransporter().sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
         to:      admin.email,
         subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
       html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>

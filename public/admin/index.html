@@ -81,6 +81,11 @@
   .filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#f7fafb;outline:none;min-width:130px;}
   .filter-group select:focus,.filter-group input:focus{border-color:var(--sky);}
   .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end;}
+  .hide-cancelled-wrap{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;}
+  .toggle-track{width:36px;height:20px;border-radius:50px;background:#D4E2EA;position:relative;transition:background 0.2s;flex-shrink:0;}
+  .toggle-track.on{background:var(--sky);}
+  .toggle-thumb{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .toggle-track.on .toggle-thumb{left:18px;}
   .btn-export{padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
   .btn-export:hover{background:#2E7AAD;}
   .btn-reset{padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer;}
@@ -344,6 +349,10 @@
           </div>
         </div>
         <div class="filter-actions">
+          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
+            Hide Cancelled
+            <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+          </label>
           <button class="btn-reset" onclick="resetFilters('ph')">Reset</button>
           <button class="btn-export" onclick="exportCSV('ph')">⬇ Export CSV</button>
         </div>
@@ -416,6 +425,10 @@
         </div>
         <div class="filter-group"><label>Country</label><select id="intl-country" onchange="applyFilters('intl')"><option value="">All Countries</option></select></div>
         <div class="filter-actions">
+          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
+            Hide Cancelled
+            <div class="toggle-track on" id="intl-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+          </label>
           <button class="btn-reset" onclick="resetFilters('intl')">Reset</button>
           <button class="btn-export" onclick="exportCSV('intl')">⬇ Export CSV</button>
         </div>
@@ -778,12 +791,22 @@
     }
   });
 
+  const hideCancelled = { ph: true, intl: true };
+
+  function toggleHideCancelled(tab) {
+    hideCancelled[tab] = !hideCancelled[tab];
+    const track = document.getElementById(`${tab}-hide-cancelled-track`);
+    if (track) track.classList.toggle('on', hideCancelled[tab]);
+    applyFilters(tab);
+  }
+
   function applyFilters(tab) {
     if (tab === 'ph') {
       const s = document.getElementById('ph-search').value.toLowerCase();
       const st = document.getElementById('ph-status').value;
       const stu = document.getElementById('ph-student').value;
       filteredPH = localData.filter(r => {
+        if (hideCancelled.ph && r.status === 'cancelled') return false;
         if (s && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (stu && r.student_status !== stu) return false;
@@ -797,6 +820,7 @@
       const st = document.getElementById('intl-status').value;
       const co = document.getElementById('intl-country').value;
       filteredIntl = intlData.filter(r => {
+        if (hideCancelled.intl && r.status === 'cancelled') return false;
         if (s && !`${r.name} ${r.email} ${r.country} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (co && r.country !== co) return false;
@@ -857,9 +881,9 @@
   }
 
   function renderBreakdowns(ph, intl) {
-    // PH church — exact fees from actual registrant data
+    // PH church — exclude cancelled
     const phChurchFees = {};
-    localData.forEach(r => {
+    localData.filter(r => r.status !== 'cancelled').forEach(r => {
       if (!phChurchFees[r.church]) phChurchFees[r.church] = {count:0, fee:0};
       phChurchFees[r.church].count++;
       phChurchFees[r.church].fee += r.student_status === 'student' ? 3000 : 4500;
@@ -1030,8 +1054,15 @@
   }
 
   function resetFilters(tab) {
-    if (tab === 'ph') { ['ph-search','ph-status','ph-student'].forEach(id => document.getElementById(id).value=''); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
-    else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value=''); }
+    if (tab === 'ph') { ['ph-search','ph-status','ph-student'].forEach(id => document.getElementById(id).value='');
+      hideCancelled.ph = true;
+      const phTrack = document.getElementById('ph-hide-cancelled-track');
+      if (phTrack) phTrack.classList.add('on'); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
+    else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value='');
+      hideCancelled.intl = true;
+      const intlTrack = document.getElementById('intl-hide-cancelled-track');
+      if (intlTrack) intlTrack.classList.add('on');
+    }
     applyFilters(tab);
   }
 
@@ -1276,6 +1307,8 @@
   window.openModal            = openModal;
   window.closeModal           = closeModal;
   window.doConfirm            = doConfirm;
+  window.toggleHideCancelled  = toggleHideCancelled;
+  window.toggleHideCancelled  = toggleHideCancelled;
   window.openCancelModal      = openCancelModal;
   window.toggleCancelNotify   = toggleCancelNotify;
   window.closeCancelModal     = closeCancelModal;

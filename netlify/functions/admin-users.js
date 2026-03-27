@@ -75,7 +75,8 @@ export const handler = async (event) => {
       // Send welcome email — non-blocking so timeout doesn't fail the invite
       const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
       getTransporter().sendMail({
-        from:    `"RELAY 2026 Admin" <${process.env.GMAIL_USER}>`,
+        from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
         to:      email,
         subject: 'RELAY 2026 — Your Admin Access',
         html: `

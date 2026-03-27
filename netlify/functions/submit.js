@@ -127,14 +127,16 @@ export const handler = async (event) => {
       for (const admin of notifyAdmins) {
         const canVerify = !!admin.permissions?.verify_payment;
         await transporter.sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
           to:      admin.email,
           subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
           html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }),
         });
       }
       await transporter.sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
         to:      email,
         subject: "RELAY 2026 — We received your registration!",
         html:    registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, participants, breakdownTable, totalLabel }),
@@ -145,14 +147,16 @@ export const handler = async (event) => {
       const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates);
       for (const admin of notifyAdmins2) {
         await transporter.sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
           to:      admin.email,
           subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
           html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
         });
       }
       await transporter.sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
         to:      email,
         subject: "RELAY 2026 — Complete your registration",
         html:    registrantPaymentEmail({

@@ -100,7 +100,8 @@ export const handler = async (event) => {
         const heroUrl   = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
 
         await getTransporter().sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
           to:      reg.email,
           subject: "RELAY 2026 — You're confirmed! 🎉",
           html:    confirmationEmail(reg, allMembers, `PHP ${totalAmt.toLocaleString()}`, heroUrl, isGroup),
@@ -142,7 +143,8 @@ export const handler = async (event) => {
           const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
           const names   = allMembers.map(m => m.name).join(', ');
           await getTransporter().sendMail({
-            from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+            from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
             to:      reg.email,
             subject: 'RELAY 2026 — Registration Cancelled',
             html: cancellationEmail(reg.name, names, allMembers.length > 1, heroUrl),
@@ -169,6 +171,7 @@ function feeFor(r) {
 
 function statsFor(subset) {
   subset = subset || [];
+  const active    = subset.filter(r => r.status !== 'cancelled');
   const confirmed     = subset.filter(r => r.status === 'confirmed');
   const pendingReview = subset.filter(r => r.status === 'payment_pending_review');
   const awaitingPay   = subset.filter(r => r.status === 'awaiting_payment');
@@ -182,10 +185,12 @@ function statsFor(subset) {
     confirmed_revenue: confirmed.reduce((s, r) => s + feeFor(r), 0),
     pending_revenue:   pendingReview.reduce((s, r) => s + feeFor(r), 0),
     awaiting_revenue:  awaitingPay.reduce((s, r) => s + feeFor(r), 0),
-    students:          subset.filter(r => r.student_status === 'student').length,
-    non_students:      subset.filter(r => r.student_status === 'non-student').length,
-    by_country:        subset.reduce((acc, r) => { if (r.country) acc[r.country] = (acc[r.country]||0)+1; return acc; }, {}),
+    students:          active.filter(r => r.student_status === 'student').length,
+    non_students:      active.filter(r => r.student_status === 'non-student').length,
+    by_country:        active.reduce((acc, r) => { if (r.country) acc[r.country] = (acc[r.country]||0)+1; return acc; }, {}),
+    by_church:         active.reduce((acc, r) => { if (r.church) acc[r.church] = (acc[r.church]||0)+1; return acc; }, {}),
   };
+}
 }
 
 function cancellationEmail(primaryName, names, isGroup, heroUrl) {
@@ -207,7 +212,7 @@ function cancellationEmail(primaryName, names, isGroup, heroUrl) {
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>,</p>
       <p style="font-size:14px;color:#2A3D4A;line-height:1.7;">Your${isGroup ? ' group' : ''} registration for RELAY 2026 has been cancelled${isGroup ? ` (${names})` : ''}. If you believe this is a mistake or would like to re-register, please reach out to us.</p>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
   </div></body></html>`;
 }
 
@@ -265,6 +270,6 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
         <strong>✝️ Theme:</strong> Living for Christ Alone
       </div>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
   </div></body></html>`;
 }
