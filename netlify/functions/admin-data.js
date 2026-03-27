@@ -38,6 +38,8 @@ export const handler = async (event) => {
       const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
+      const { data: adminsData } = await supabase.from('admins').select('email, name');
+
       const local = data.filter(r => r.registrant_type !== 'international');
       const intl  = data.filter(r => r.registrant_type === 'international');
 
@@ -47,7 +49,7 @@ export const handler = async (event) => {
           local, international: intl,
           stats_local: statsFor(local),
           stats_intl:  statsFor(intl),
-          // Pass back admin info
+          admins: adminsData || [],
           admin: { name: requester.name, permissions: requester.permissions, is_super_admin: requester.is_super_admin },
         }),
       };
@@ -71,14 +73,16 @@ export const handler = async (event) => {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to verify payment' }) };
         }
 
+        const confirmUpdate = {
+          payment_verified: true,
+          status: 'confirmed',
+          verified_at: new Date().toISOString(),
+          verified_by: requester.email,
+        };
         if (group_id) {
-          await supabase.from('registrations')
-            .update({ payment_verified: true, status: 'confirmed', verified_at: new Date().toISOString() })
-            .eq('group_id', group_id);
+          await supabase.from('registrations').update(confirmUpdate).eq('group_id', group_id);
         } else {
-          await supabase.from('registrations')
-            .update({ payment_verified: true, status: 'confirmed', verified_at: new Date().toISOString() })
-            .eq('id', id);
+          await supabase.from('registrations').update(confirmUpdate).eq('id', id);
         }
 
         // Fetch all group members for email
@@ -110,14 +114,18 @@ export const handler = async (event) => {
 
         const { notify } = body; // true/false — send email to registrant
 
+        const { reason } = body;
+        const cancelUpdate = {
+          status: 'cancelled',
+          payment_verified: false,
+          cancelled_by: requester.email,
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: reason || null,
+        };
         if (group_id) {
-          await supabase.from('registrations')
-            .update({ status: 'cancelled', payment_verified: false })
-            .eq('group_id', group_id);
+          await supabase.from('registrations').update(cancelUpdate).eq('group_id', group_id);
         } else {
-          await supabase.from('registrations')
-            .update({ status: 'cancelled', payment_verified: false })
-            .eq('id', id);
+          await supabase.from('registrations').update(cancelUpdate).eq('id', id);
         }
 
         if (notify) {
