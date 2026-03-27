@@ -188,7 +188,7 @@
     <h1>Relay Conference 2026</h1>
     <p>Admin Dashboard</p>
     <input type="email" id="emailInput" placeholder="Email address">
-    <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+    <input type="password" id="passwordInput" placeholder="Password">
     <button class="login-btn" onclick="login()">Sign In</button>
     <div class="login-err" id="loginErr"></div>
   </div>
@@ -881,7 +881,7 @@
     if (tab === 'admins') loadAdmins();
   }
 
-  let pendingGroupId = null;
+  let pendingCancelId = null, pendingCancelGroupId = null;
   function openModal(id, name, groupId) {
     pendingConfirmId = id;
     pendingGroupId = groupId || null;
@@ -1186,6 +1186,7 @@
   window.removeAdmin          = removeAdmin;
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 </script>
 </body>
 </html>
