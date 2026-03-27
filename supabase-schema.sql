@@ -108,3 +108,37 @@ ALTER TABLE registrations ADD COLUMN IF NOT EXISTS verified_by       TEXT;
 ALTER TABLE registrations ADD COLUMN IF NOT EXISTS cancelled_by      TEXT;
 ALTER TABLE registrations ADD COLUMN IF NOT EXISTS cancelled_at      TIMESTAMPTZ;
 ALTER TABLE registrations ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+
+-- ── Churches table ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS churches (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        TEXT NOT NULL,
+  group_name  TEXT NOT NULL,
+  is_archived BOOLEAN DEFAULT false,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- Seed data
+INSERT INTO churches (name, group_name) VALUES
+  ('CCSGM – Kawit',          'CCSGM'),
+  ('CCSGM – Imus',           'CCSGM'),
+  ('CCSGM – Cavite City',    'CCSGM'),
+  ('CCSGM – Dasma',          'CCSGM'),
+  ('CCSGM – Carrascal',      'CCSGM'),
+  ('CCSGM – Maitum',         'CCSGM'),
+  ('CCSGM – Madrid',         'CCSGM'),
+  ('CCSGM – Tandag',         'CCSGM'),
+  ('CCSGM – Castillo',       'CCSGM'),
+  ('CCSGM – Agusan Del Sur', 'CCSGM'),
+  ('CCSGM – Cabangahan',     'CCSGM'),
+  ('CCSGM – Nangka',         'CCSGM'),
+  ('CCSGM – Gacub',          'CCSGM'),
+  ('His Dwelling Christian Church – Cebu City', 'His Dwelling Christian Church'),
+  ('His Dwelling Christian Church – Isabela',   'His Dwelling Christian Church'),
+  ('His Touch Ministries',   'His Touch Ministries')
+ON CONFLICT DO NOTHING;
+
+-- ── Add manage_churches to existing super admins ──────────────────────────────
+UPDATE admins
+SET permissions = permissions || '{"manage_churches": true}'::jsonb
+WHERE is_super_admin = true;

@@ -269,7 +269,10 @@
       <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
         🌏 International <span class="tab-badge" id="badge-intl">0</span>
       </button>
-      <button class="tab-btn" onclick="switchTab('admins')" id="tab-admins" style="display:none;margin-left:auto;">
+      <button class="tab-btn" onclick="switchTab('churches')" id="tab-churches" style="display:none;margin-left:auto;">
+        ⛪ Churches
+      </button>
+      <button class="tab-btn" onclick="switchTab('admins')" id="tab-admins" style="display:none;">
         🛡️ Admin Users
       </button>
     </div>
@@ -448,6 +451,27 @@
       </div>
     </div>
 
+    <!-- CHURCHES TAB -->
+    <div class="tab-content" id="content-churches">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--dark);">Church List</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Manage churches shown in the registration form. Archived churches won't appear on the form.</div>
+        </div>
+        <button onclick="openAddChurchModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Church</button>
+      </div>
+      <div class="table-wrap">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>Church Name</th><th>Group</th><th>Status</th><th>Action</th>
+            </tr></thead>
+            <tbody id="churches-body"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ADMINS TAB -->
     <div class="tab-content" id="content-admins">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -462,7 +486,7 @@
           <table>
             <thead><tr>
               <th>Name</th><th>Email</th>
-              <th>Receive Updates</th><th>Verify Payment</th><th>Manage Admins</th>
+              <th>Receive Updates</th><th>Verify Payment</th><th>Manage Admins</th><th>Manage Churches</th>
               <th>Super Admin</th><th>Status</th><th>Action</th>
             </tr></thead>
             <tbody id="admins-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
@@ -471,6 +495,34 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ADD/EDIT CHURCH MODAL -->
+<div id="churchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;" id="churchModalTitle">Add Church</h3>
+      <button onclick="closeChurchModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Church Name *</label>
+        <input type="text" id="cm-name" placeholder="e.g. CCSGM – New Location" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;">
+      </div>
+      <div><label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Group *</label>
+        <select id="cm-group" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:#fff;">
+          <option value="">Select group…</option>
+          <option value="CCSGM">CCSGM</option>
+          <option value="His Dwelling Christian Church">His Dwelling Christian Church</option>
+          <option value="His Touch Ministries">His Touch Ministries</option>
+        </select>
+      </div>
+    </div>
+    <div id="cm-err" style="display:none;color:#E05050;font-size:12px;margin-top:10px;"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="saveChurch()" style="flex:1;padding:12px;background:#1C2B38;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;" id="cm-save-btn">Add Church</button>
+      <button onclick="closeChurchModal()" style="padding:12px 20px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -496,8 +548,11 @@
         <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-verify"> Verify Payment &amp; Cancel Registration
         </label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-manage"> Manage Admin Users
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-churches"> Manage Church List
         </label>
       </div>
       <div id="am-super-wrap" style="display:none;">
@@ -634,8 +689,10 @@
   }
 
   function applyPermissionUI() {
-    const adminTab = document.getElementById('tab-admins');
-    if (adminTab) adminTab.style.display = adminSession?.permissions?.manage_admins ? 'flex' : 'none';
+    const adminTab    = document.getElementById('tab-admins');
+    const churchesTab = document.getElementById('tab-churches');
+    if (adminTab)    adminTab.style.display    = adminSession?.permissions?.manage_admins    ? 'flex' : 'none';
+    if (churchesTab) churchesTab.style.display = adminSession?.permissions?.manage_churches  ? 'flex' : 'none';
   }
 
   function logout() {
@@ -652,13 +709,19 @@
 
   async function loadData() {
     try {
-      const res = await fetch('/.netlify/functions/admin-data', { headers: { 'Authorization': 'Bearer ' + adminToken } });
-      if (res.status === 401) return false;
-      const json = await res.json();
+      // Load churches and registrations in parallel
+      const [dataRes, churchRes] = await Promise.all([
+        fetch('/.netlify/functions/admin-data', { headers: { 'Authorization': 'Bearer ' + adminToken } }),
+        fetch('/.netlify/functions/churches?all=true', { headers: { 'Authorization': 'Bearer ' + adminToken } }),
+      ]);
+      if (dataRes.status === 401) return false;
+      const json       = await dataRes.json();
+      const churchJson = await churchRes.json().catch(() => ({ churches: [] }));
+      churchesList = churchJson.churches || churchesList;
 
       localData  = json.local || [];
       intlData   = json.international || [];
-      adminsList = json.admins || adminsList; // merge in admins for name lookup
+      adminsList = json.admins || adminsList;
 
       // Tab badges
       document.getElementById('badge-ph').textContent   = localData.length;
@@ -881,18 +944,32 @@
   }
 
   function renderBreakdowns(ph, intl) {
-    // PH church — exclude cancelled
-    const phChurchFees = {};
+    // PH church — exclude cancelled, split known vs others
+    const knownNames = new Set(churchesList.map(c => c.name));
+    const phKnown  = {}; // church name → {count, fee, group_name}
+    const phOthers = {}; // typed name → {count, fee}
+
     localData.filter(r => r.status !== 'cancelled').forEach(r => {
-      if (!phChurchFees[r.church]) phChurchFees[r.church] = {count:0, fee:0};
-      phChurchFees[r.church].count++;
-      phChurchFees[r.church].fee += r.student_status === 'student' ? 3000 : 4500;
+      const churchVal = (r.church || '').trim();
+      if (!churchVal) return;
+      const isOthers = !knownNames.has(churchVal);
+      if (isOthers) {
+        if (!phOthers[churchVal]) phOthers[churchVal] = { count: 0, fee: 0 };
+        phOthers[churchVal].count++;
+        phOthers[churchVal].fee += r.student_status === 'student' ? 3000 : 4500;
+      } else {
+        if (!phKnown[churchVal]) phKnown[churchVal] = { count: 0, fee: 0 };
+        phKnown[churchVal].count++;
+        phKnown[churchVal].fee += r.student_status === 'student' ? 3000 : 4500;
+      }
     });
-    renderBarListExact('ph-church-breakdown', phChurchFees, '₱');
+
+    renderBarListGrouped('ph-church-breakdown', phKnown, phOthers, '₱');
+
     // PH participant breakdown
-    const phTotal = ph.total || 1;
-    const sPct  = Math.round(ph.students/phTotal*100);
-    const nsPct = Math.round(ph.non_students/phTotal*100);
+    const phTotal = (ph.students + ph.non_students) || 1;
+    const sPct  = Math.round(ph.students / phTotal * 100);
+    const nsPct = Math.round(ph.non_students / phTotal * 100);
     document.getElementById('ph-student-breakdown').innerHTML = `
       <div class="church-row"><span class="church-name">🎓 Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div><span class="church-count">${ph.students} <span style="color:var(--muted);font-size:11px;">| ₱${(ph.students*3000).toLocaleString()}</span></span></div>
       <div class="church-row"><span class="church-name">💼 Non-Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${nsPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div><span class="church-count">${ph.non_students} <span style="color:var(--muted);font-size:11px;">| ₱${(ph.non_students*4500).toLocaleString()}</span></span></div>
@@ -900,9 +977,39 @@
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:700;margin-bottom:4px;">Total Potential</div>
         <div style="font-family:'Bebas Neue';font-size:26px;color:var(--dark);">₱${((ph.students*3000)+(ph.non_students*4500)).toLocaleString()}</div>
       </div>`;
-    // Intl country + church — $300 per head
-    renderBarList('intl-country-breakdown', intl.by_country, {symbol:'$', amount:300});
-    renderBarList('intl-church-breakdown', intl.by_church, {symbol:'$', amount:300});
+
+    // Intl church — free text, list all unique values
+    const intlChurches = {};
+    intlData.filter(r => r.status !== 'cancelled').forEach(r => {
+      const c = (r.church || '').trim();
+      if (!c) return;
+      if (!intlChurches[c]) intlChurches[c] = { count: 0, fee: 0 };
+      intlChurches[c].count++;
+      intlChurches[c].fee += 300;
+    });
+    renderBarListExact('intl-church-breakdown', intlChurches, '$');
+
+    // Intl country
+    renderBarList('intl-country-breakdown', intl.by_country, { symbol: '$', amount: 300 });
+  }
+
+  function renderBarListGrouped(id, known, others, symbol) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const allKnown = Object.entries(known).sort((a,b) => b[1].count - a[1].count);
+    const allOthers = Object.entries(others).sort((a,b) => b[1].count - a[1].count);
+    const max = Math.max(...[...allKnown, ...allOthers].map(([,v]) => v.count), 1);
+
+    const makeRow = ([k, v]) =>
+      `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v.count/max*100)}%"></div></div><span class="church-count">${v.count} <span style="color:var(--muted);font-size:11px;">| ${symbol}${v.fee.toLocaleString()}</span></span></div>`;
+
+    let html = '';
+    if (allKnown.length) html += allKnown.map(makeRow).join('');
+    if (allOthers.length) {
+      html += `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:10px 0 4px;">Other</div>`;
+      html += allOthers.map(makeRow).join('');
+    }
+    el.innerHTML = html || '<div class="empty">No data yet</div>';
   }
 
   function renderBarListExact(id, obj, symbol) {
@@ -958,6 +1065,7 @@
     document.getElementById(`tab-${tab}`).classList.add('active');
     document.getElementById(`content-${tab}`).classList.add('active');
     if (tab === 'admins') loadAdmins();
+    if (tab === 'churches') loadChurches();
   }
 
   function openModal(id, name, groupId) {
@@ -1131,6 +1239,110 @@
     });
   }
 
+  // ── Church Management ─────────────────────────────────────────────────────
+  let churchesList = [];
+  let editingChurchId = null;
+
+  async function loadChurches() {
+    try {
+      const res  = await fetch('/.netlify/functions/churches?all=true', {
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      churchesList = json.churches || [];
+      renderChurchesTable();
+    } catch(e) { showToast('Error loading churches: ' + e.message); }
+  }
+
+  function renderChurchesTable() {
+    const tbody = document.getElementById('churches-body');
+    if (!tbody) return;
+    if (!churchesList.length) { tbody.innerHTML = '<tr><td colspan="4" class="loading">No churches found.</td></tr>'; return; }
+    tbody.innerHTML = churchesList.map(c => `<tr style="${c.is_archived ? 'opacity:0.5;' : ''}">
+      <td><strong>${esc(c.name)}</strong></td>
+      <td style="font-size:12px;color:var(--muted);">${esc(c.group_name)}</td>
+      <td>${c.is_archived
+        ? '<span style="font-size:11px;color:#888;font-weight:600;">Archived</span>'
+        : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
+      <td style="white-space:nowrap;">
+        <button onclick="openEditChurchModal('${c.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
+        <button onclick="toggleArchiveChurch('${c.id}',${!c.is_archived})" style="font-size:12px;padding:4px 10px;background:${c.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${c.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-left:4px;">${c.is_archived ? 'Unarchive' : 'Archive'}</button>
+      </td>
+    </tr>`).join('');
+  }
+
+  function openAddChurchModal() {
+    editingChurchId = null;
+    document.getElementById('churchModalTitle').textContent = 'Add Church';
+    document.getElementById('cm-save-btn').textContent = 'Add Church';
+    document.getElementById('cm-name').value  = '';
+    document.getElementById('cm-group').value = '';
+    document.getElementById('cm-err').style.display = 'none';
+    document.getElementById('cm-save-btn').disabled = false;
+    document.getElementById('churchModal').style.display = 'flex';
+  }
+
+  function openEditChurchModal(id) {
+    const c = churchesList.find(x => x.id === id);
+    if (!c) return;
+    editingChurchId = id;
+    document.getElementById('churchModalTitle').textContent = 'Edit Church';
+    document.getElementById('cm-save-btn').textContent = 'Save Changes';
+    document.getElementById('cm-name').value  = c.name;
+    document.getElementById('cm-group').value = c.group_name;
+    document.getElementById('cm-err').style.display = 'none';
+    document.getElementById('cm-save-btn').disabled = false;
+    document.getElementById('churchModal').style.display = 'flex';
+  }
+
+  function closeChurchModal() {
+    document.getElementById('churchModal').style.display = 'none';
+    editingChurchId = null;
+  }
+
+  async function saveChurch() {
+    const name       = document.getElementById('cm-name').value.trim();
+    const group_name = document.getElementById('cm-group').value;
+    const errEl      = document.getElementById('cm-err');
+    const btn        = document.getElementById('cm-save-btn');
+    errEl.style.display = 'none';
+    if (!name || !group_name) { errEl.textContent = 'Name and group are required.'; errEl.style.display = 'block'; return; }
+    const isEditing = !!editingChurchId;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const body = isEditing ? { id: editingChurchId, name, group_name } : { name, group_name };
+      const res  = await fetch('/.netlify/functions/churches', {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; return; }
+      closeChurchModal();
+      showToast(isEditing ? 'Church updated.' : 'Church added.');
+      loadChurches();
+    } catch(e) {
+      errEl.textContent = e.message; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = isEditing ? 'Save Changes' : 'Add Church';
+    }
+  }
+
+  async function toggleArchiveChurch(id, archive) {
+    try {
+      const res  = await fetch('/.netlify/functions/churches', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_archived: archive }),
+      });
+      const json = await res.json();
+      if (!res.ok) { showToast('Error: ' + json.error); return; }
+      showToast(archive ? 'Church archived.' : 'Church unarchived.');
+      loadChurches();
+    } catch(e) { showToast('Error: ' + e.message); }
+  }
+
   // ── Admin Management ─────────────────────────────────────────────────────
   let editingAdminId = null;
   let adminsList = [];
@@ -1162,6 +1374,7 @@
         <td style="text-align:center;">${check(perm.receive_updates)}</td>
         <td style="text-align:center;">${check(perm.verify_payment)}</td>
         <td style="text-align:center;">${check(perm.manage_admins)}</td>
+        <td style="text-align:center;">${check(perm.manage_churches)}</td>
         <td style="text-align:center;">${a.is_super_admin ? '⭐' : '—'}</td>
         <td style="text-align:center;">${a.force_password_change ? '<span style="font-size:11px;color:#E8B830;font-weight:600;">Pending</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
         <td>
@@ -1180,7 +1393,8 @@
     document.getElementById('am-email').disabled = false;
     document.getElementById('am-perm-updates').checked = true;
     document.getElementById('am-perm-verify').checked  = false;
-    document.getElementById('am-perm-manage').checked  = false;
+    document.getElementById('am-perm-manage').checked   = false;
+    document.getElementById('am-perm-churches').checked = false;
     document.getElementById('am-super').checked = false;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
     document.getElementById('am-save-btn').disabled = false;
@@ -1200,7 +1414,8 @@
     document.getElementById('am-email').disabled = true;
     document.getElementById('am-perm-updates').checked = !!perm.receive_updates;
     document.getElementById('am-perm-verify').checked  = !!perm.verify_payment;
-    document.getElementById('am-perm-manage').checked  = !!perm.manage_admins;
+    document.getElementById('am-perm-manage').checked    = !!perm.manage_admins;
+    document.getElementById('am-perm-churches').checked  = !!perm.manage_churches;
     document.getElementById('am-super').checked = !!admin.is_super_admin;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
     document.getElementById('am-save-btn').disabled = false;
@@ -1222,9 +1437,10 @@
     if (!name || (!editingAdminId && !email)) { errEl.textContent = 'Name and email are required.'; errEl.style.display = 'block'; return; }
 
     const permissions = {
-      receive_updates: document.getElementById('am-perm-updates').checked,
-      verify_payment:  document.getElementById('am-perm-verify').checked,
-      manage_admins:   document.getElementById('am-perm-manage').checked,
+      receive_updates:  document.getElementById('am-perm-updates').checked,
+      verify_payment:   document.getElementById('am-perm-verify').checked,
+      manage_admins:    document.getElementById('am-perm-manage').checked,
+      manage_churches:  document.getElementById('am-perm-churches').checked,
     };
     const is_super_admin = document.getElementById('am-super').checked;
     const isEditing = !!editingAdminId;
@@ -1312,6 +1528,11 @@
   window.openCancelModal      = openCancelModal;
   window.toggleCancelNotify   = toggleCancelNotify;
   window.closeCancelModal     = closeCancelModal;
+  window.openAddChurchModal   = openAddChurchModal;
+  window.openEditChurchModal  = openEditChurchModal;
+  window.closeChurchModal     = closeChurchModal;
+  window.saveChurch           = saveChurch;
+  window.toggleArchiveChurch  = toggleArchiveChurch;
   window.doCancel             = doCancel;
   window.openImgModal         = openImgModal;
   window.closeImgModal        = closeImgModal;
