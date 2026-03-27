@@ -17,6 +17,9 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'DM Sans',sans-serif;background:var(--page-bg);color:var(--text);min-height:100vh;}
 
+  .hero-wrap{background:#1C2B38;width:100%;}
+  .hero{max-width:520px;margin:0 auto;display:block;line-height:0;}
+  .hero img{width:100%;height:auto;display:block;border-radius:0 0 12px 12px;}
   .confetti-bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);background-size:200%;animation:shimmer 3s linear infinite;}
   @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -94,7 +97,7 @@
 </head>
 <body>
 
-<div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div>
+<div class="hero-wrap"><div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div></div>
 <div class="confetti-bar"></div>
 
 <div class="page-wrap">
@@ -132,12 +135,30 @@
     </div>
 
     <!-- Registrant details -->
-    <div class="card">
-      <div class="section-label">Your Registration</div>
-      <div class="detail-row"><span class="lbl">Name</span><span class="val" id="regName">—</span></div>
-      <div class="detail-row"><span class="lbl">Church</span><span class="val" id="regChurch">—</span></div>
-      <div class="detail-row"><span class="lbl">Status</span><span class="val" id="regStatus">—</span></div>
-      <div class="detail-row"><span class="lbl">Amount Due</span><span class="val" id="regFee" style="color:var(--sky);font-weight:700;">—</span></div>
+    <div class="card" id="regCard">
+      <div class="section-label" id="regCardLabel">Your Registration</div>
+      <!-- Single mode -->
+      <div id="singleDetails">
+        <div class="detail-row"><span class="lbl">Name</span><span class="val" id="regName">—</span></div>
+        <div class="detail-row"><span class="lbl">Church</span><span class="val" id="regChurch">—</span></div>
+        <div class="detail-row"><span class="lbl">Status</span><span class="val" id="regStatus">—</span></div>
+        <div class="detail-row"><span class="lbl">Amount Due</span><span class="val" id="regFee" style="color:var(--sky);font-weight:700;">—</span></div>
+      </div>
+      <!-- Group mode -->
+      <div id="groupDetails" style="display:none;">
+        <div class="detail-row"><span class="lbl">Church</span><span class="val" id="regChurchGroup">—</span></div>
+        <div class="detail-row"><span class="lbl">Participants</span><span class="val" id="regGroupSize">—</span></div>
+        <table class="breakdown-table" style="margin-top:12px;">
+          <thead><tr>
+            <th>Participant</th><th>Type</th><th style="text-align:right;">Amount</th>
+          </tr></thead>
+          <tbody id="groupBreakdownBody"></tbody>
+          <tfoot><tr class="breakdown-total">
+            <td colspan="2">Total Due</td>
+            <td style="text-align:right;" id="groupBreakdownTotal">—</td>
+          </tr></tfoot>
+        </table>
+      </div>
     </div>
 
     <!-- GCash QR -->
@@ -207,11 +228,35 @@
 
       if (reg.payment_verified) { showAlreadyPaid(); return; }
 
-      // Populate details
-      document.getElementById('regName').textContent   = reg.name;
-      document.getElementById('regChurch').textContent = reg.church;
-      document.getElementById('regStatus').textContent = reg.student_status === 'student' ? '🎓 Student' : '💼 Non-Student';
-      document.getElementById('regFee').textContent    = reg.student_status === 'student' ? 'PHP 3,000' : 'PHP 4,500';
+      // Group or single display
+      if (reg.members && reg.members.length > 1) {
+        // Group mode
+        document.getElementById('singleDetails').style.display = 'none';
+        document.getElementById('groupDetails').style.display  = 'block';
+        document.getElementById('regCardLabel').textContent    = 'Group Registration';
+        document.getElementById('regChurchGroup').textContent  = reg.church;
+        document.getElementById('regGroupSize').textContent    = reg.members.length + ' participants';
+
+        let total = 0;
+        const rows = reg.members.map(m => {
+          const isStudent = m.student_status === 'student';
+          const fee = isStudent ? 3000 : 4500;
+          total += fee;
+          return `<tr>
+            <td>${m.name}</td>
+            <td>${isStudent ? '🎓 Student' : '💼 Non-Student'}</td>
+            <td style="text-align:right;font-weight:600;">₱${fee.toLocaleString()}</td>
+          </tr>`;
+        }).join('');
+        document.getElementById('groupBreakdownBody').innerHTML = rows;
+        document.getElementById('groupBreakdownTotal').textContent = `₱${total.toLocaleString()}`;
+      } else {
+        // Single mode
+        document.getElementById('regName').textContent   = reg.name;
+        document.getElementById('regChurch').textContent = reg.church;
+        document.getElementById('regStatus').textContent = reg.student_status === 'student' ? '🎓 Student' : '💼 Non-Student';
+        document.getElementById('regFee').textContent    = reg.student_status === 'student' ? '₱3,000' : '₱4,500';
+      }
 
       // Show form
       document.getElementById('loadingState').style.display = 'none';

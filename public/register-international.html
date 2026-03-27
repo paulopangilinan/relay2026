@@ -17,8 +17,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
 
-  .hero { width: 100%; display: block; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; }
+  .hero-wrap { background: #1C2B38; width: 100%; }
+  .hero { max-width: 700px; margin: 0 auto; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; border-radius: 0 0 12px 12px; }
+  .chips-outer { background: #1C2B38; width: 100%; }
 
   .chips-bar { background: var(--dark); padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 50px; padding: 5px 13px; font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -260,6 +262,8 @@
   <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
   <span class="chip chip-age">👥 Ages 17–33</span>
   <span class="chip chip-intl">🌏 International Attendees</span>
+</div>
+  </div>
 </div>
 
 <div class="confetti-bar"></div>

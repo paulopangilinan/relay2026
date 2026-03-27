@@ -29,8 +29,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
 
-  .hero { width: 100%; display: block; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; }
+  .hero-wrap { background: #1C2B38; width: 100%; }
+  .hero { max-width: 700px; margin: 0 auto; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; border-radius: 0 0 12px 12px; }
+  .chips-outer { background: #1C2B38; width: 100%; }
 
   .chips-bar {
     background: var(--dark);
@@ -615,14 +617,17 @@
 </head>
 <body>
 
-<div class="hero">
-  <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
-</div>
-
-<div class="chips-bar">
+<div class="hero-wrap">
+  <div class="hero">
+    <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
+  </div>
+  <div class="chips-outer">
+    <div class="chips-bar" style="max-width:700px;margin:0 auto;">
   <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
   <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
   <span class="chip chip-age">👥 Ages 17–33 (Young Adults &amp; Leaders)</span>
+</div>
+  </div>
 </div>
 
 <div class="confetti-bar"></div>
