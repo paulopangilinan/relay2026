@@ -147,8 +147,8 @@
   .btn-cancel{padding:9px 18px;background:transparent;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;}
   .btn-cancel:hover{border-color:var(--text);color:var(--text);}
   .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
-  .btn-cancel-row{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.7;}
-  .btn-cancel-row:hover{opacity:1;}
+  .btn-cancel-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:4px 8px;margin-left:4px;}
+  .btn-cancel-row:hover{background:#E05050;color:#fff;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
@@ -210,15 +210,19 @@
 
 <!-- CANCEL REGISTRATION MODAL -->
 <div id="cancelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
-    <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:8px;">Cancel Registration</h3>
-    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">Cancel registration for <strong id="cancelName"></strong>? This cannot be undone.</p>
-    <p style="font-size:13px;color:#2A3D4A;font-weight:600;margin-bottom:12px;">Notify the registrant via email?</p>
-    <div style="display:flex;gap:10px;margin-bottom:20px;">
-      <button onclick="doCancel(true)" style="flex:1;padding:11px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Yes, Notify & Cancel</button>
-      <button onclick="doCancel(false)" style="flex:1;padding:11px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Cancel (No Email)</button>
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;">Cancel Registration</h3>
     </div>
-    <button onclick="closeCancelModal()" style="width:100%;padding:10px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Back</button>
+    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">Are you sure you want to cancel the registration for <strong id="cancelName" style="color:#2A3D4A;"></strong>? This cannot be undone.</p>
+    <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f7fafb;border-radius:8px;border:1px solid #D4E2EA;cursor:pointer;margin-bottom:20px;">
+      <input type="checkbox" id="cancelNotifyToggle" style="width:16px;height:16px;cursor:pointer;">
+      <span style="font-size:13px;color:#2A3D4A;font-weight:600;">Notify registrant via email</span>
+    </label>
+    <div style="display:flex;gap:10px;">
+      <button onclick="doCancel(document.getElementById('cancelNotifyToggle').checked)" style="flex:1;padding:12px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Confirm Cancellation</button>
+      <button onclick="closeCancelModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">No</button>
+    </div>
   </div>
 </div>
 
@@ -786,9 +790,9 @@
           ${r.status === 'cancelled'
             ? '<span style="color:#888;font-size:12px;">Cancelled</span>'
             : r.payment_verified
-              ? `<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>${canVerify ? ` <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')" title="Cancel registration">🚫</button>` : ''}`
+              ? `<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>${canVerify ? ` <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Cancelled</button>` : ''}`
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark Paid</button> <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')" title="Cancel">🚫</button>`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Paid</button> <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Cancelled</button>`
                 : '—'
           }
         </td>
@@ -893,6 +897,7 @@
     pendingCancelId      = id;
     pendingCancelGroupId = groupId || null;
     document.getElementById('cancelName').textContent = groupId ? name + ' (Group)' : name;
+    document.getElementById('cancelNotifyToggle').checked = false;
     document.getElementById('cancelModal').style.display = 'flex';
   }
 
@@ -1063,7 +1068,6 @@
   function openAddAdminModal() {
     editingAdminId = null;
     document.getElementById('adminModalTitle').textContent = 'Add Admin';
-    document.getElementById('am-save-btn').textContent = 'Send Invite';
     document.getElementById('am-name').value  = '';
     document.getElementById('am-email').value = '';
     document.getElementById('am-email').disabled = false;
@@ -1072,6 +1076,8 @@
     document.getElementById('am-perm-manage').checked  = false;
     document.getElementById('am-super').checked = false;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
+    document.getElementById('am-save-btn').disabled = false;
+    document.getElementById('am-save-btn').textContent = 'Send Invite';
     document.getElementById('am-err').style.display = 'none';
     document.getElementById('adminModal').style.display = 'flex';
   }
@@ -1082,7 +1088,6 @@
     editingAdminId = id;
     const perm = admin.permissions || {};
     document.getElementById('adminModalTitle').textContent = 'Edit Admin';
-    document.getElementById('am-save-btn').textContent = 'Save Changes';
     document.getElementById('am-name').value  = admin.name;
     document.getElementById('am-email').value = admin.email;
     document.getElementById('am-email').disabled = true;
@@ -1091,6 +1096,8 @@
     document.getElementById('am-perm-manage').checked  = !!perm.manage_admins;
     document.getElementById('am-super').checked = !!admin.is_super_admin;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
+    document.getElementById('am-save-btn').disabled = false;
+    document.getElementById('am-save-btn').textContent = 'Save Changes';
     document.getElementById('am-err').style.display = 'none';
     document.getElementById('adminModal').style.display = 'flex';
   }
@@ -1113,12 +1120,13 @@
       manage_admins:   document.getElementById('am-perm-manage').checked,
     };
     const is_super_admin = document.getElementById('am-super').checked;
+    const isEditing = !!editingAdminId;
     const btn = document.getElementById('am-save-btn');
     btn.disabled = true; btn.textContent = 'Saving…';
 
     try {
-      const method = editingAdminId ? 'PUT' : 'POST';
-      const body   = editingAdminId
+      const method = isEditing ? 'PUT' : 'POST';
+      const body   = isEditing
         ? { id: editingAdminId, name, permissions, is_super_admin }
         : { email, name, permissions, is_super_admin };
 
@@ -1128,14 +1136,16 @@
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = editingAdminId ? 'Save Changes' : 'Send Invite'; return; }
+      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; return; }
 
       closeAdminModal();
-      showToast(editingAdminId ? 'Admin updated.' : 'Admin invited! A welcome email has been sent.');
+      showToast(isEditing ? 'Admin updated.' : 'Admin invited! A welcome email has been sent.');
       loadAdmins();
     } catch (e) {
       errEl.textContent = e.message; errEl.style.display = 'block';
+    } finally {
       btn.disabled = false;
+      btn.textContent = isEditing ? 'Save Changes' : 'Send Invite';
     }
   }
 

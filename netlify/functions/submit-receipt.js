@@ -68,7 +68,7 @@ export const handler = async (event) => {
     const isGroup    = allMembers.length > 1;
     const totalAmount = allMembers.reduce((s, r) => s + (r.student_status === "student" ? 3000 : 4500), 0);
     const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
-    const siteUrl     = process.env.SITE_URL;
+    const siteUrl     = (process.env.SITE_URL || '').replace(/\/+$/, '');
     const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg`;
     const verifyLink  = `${siteUrl}/.netlify/functions/verify?id=${id}${group_id ? `&group_id=${group_id}` : ""}`;
 
