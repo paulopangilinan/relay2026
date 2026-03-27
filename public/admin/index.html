@@ -514,7 +514,7 @@
     } catch(e) { /* fail open */ }
   })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
-  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, activeTab = 'ph';
+  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, activeTab = 'ph';
 
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
@@ -881,7 +881,6 @@
     if (tab === 'admins') loadAdmins();
   }
 
-  let pendingCancelId = null, pendingCancelGroupId = null;
   function openModal(id, name, groupId) {
     pendingConfirmId = id;
     pendingGroupId = groupId || null;
@@ -890,8 +889,6 @@
     document.getElementById('confirmModal').classList.add('visible');
   }
   function closeModal() { pendingConfirmId = null; pendingGroupId = null; document.getElementById('confirmModal').classList.remove('visible'); }
-
-  let pendingCancelId = null, pendingCancelGroupId = null;
 
   function openCancelModal(id, name, groupId) {
     pendingCancelId      = id;
