@@ -208,15 +208,15 @@
     }, 3000);
 
     try {
-      const res = await fetch('http://ip-api.com/json/?fields=countryCode,country', { signal: AbortSignal.timeout(2500) });
+      const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2500) });
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
 
       clearTimeout(timer);
       if (timedOut) return;
 
-      const countryCode = data.countryCode || '';
-      const countryName = data.country || '';
+      const countryCode = data.country_code || '';
+      const countryName = data.country_name || '';
 
       if (countryCode === 'PH' || countryCode === '') {
         // Local: show Single vs Group picker

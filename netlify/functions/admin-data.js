@@ -100,8 +100,7 @@ export const handler = async (event) => {
         const heroUrl   = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
 
         await getTransporter().sendMail({
-          from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
           to:      reg.email,
           subject: "RELAY 2026 — You're confirmed! 🎉",
           html:    confirmationEmail(reg, allMembers, `PHP ${totalAmt.toLocaleString()}`, heroUrl, isGroup),
@@ -143,8 +142,7 @@ export const handler = async (event) => {
           const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
           const names   = allMembers.map(m => m.name).join(', ');
           await getTransporter().sendMail({
-            from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+            from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
             to:      reg.email,
             subject: 'RELAY 2026 — Registration Cancelled',
             html: cancellationEmail(reg.name, names, allMembers.length > 1, heroUrl),
@@ -212,7 +210,7 @@ function cancellationEmail(primaryName, names, isGroup, heroUrl) {
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>,</p>
       <p style="font-size:14px;color:#2A3D4A;line-height:1.7;">Your${isGroup ? ' group' : ''} registration for RELAY 2026 has been cancelled${isGroup ? ` (${names})` : ''}. If you believe this is a mistake or would like to re-register, please reach out to us.</p>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }
 
@@ -270,6 +268,6 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
         <strong>✝️ Theme:</strong> Living for Christ Alone
       </div>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }

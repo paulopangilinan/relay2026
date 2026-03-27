@@ -51,8 +51,7 @@ export const handler = async (event) => {
 
     // Send one confirmation email to the shared address
     await getTransporter().sendMail({
-      from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+      from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
       to:      reg.email,
       subject: "RELAY 2026 — You're confirmed! 🎉",
       html:    confirmationEmail(reg, allMembers, totalLabel, heroUrl, isGroup),
@@ -156,6 +155,6 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
         <strong>✝️ Theme:</strong> Living for Christ Alone
       </div>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }
