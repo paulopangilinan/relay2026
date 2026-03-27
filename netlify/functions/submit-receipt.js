@@ -2,6 +2,11 @@
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
+
+async function getAdminEmails(supabase, permission) {
+  const { data } = await supabase.from('admins').select('email, name, permissions');
+  return (data || []).filter(a => a.permissions?.[permission]).map(a => a.email);
+}
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -90,7 +95,7 @@ export const handler = async (event) => {
 
     await getTransporter().sendMail({
       from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-      to:      process.env.ADMIN_EMAIL,
+      to:      (await getAdminEmails(supabase, 'receive_updates')).join(',') || process.env.ADMIN_EMAIL,
       subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
       html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
         body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}

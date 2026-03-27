@@ -3,6 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { randomUUID } from "crypto";
 
+
+async function getAdminEmails(supabase, permission) {
+  const { data } = await supabase.from('admins').select('email, name, permissions');
+  return (data || []).filter(a => a.permissions?.[permission]).map(a => a.email);
+}
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -118,7 +123,7 @@ export const handler = async (event) => {
     if (paymentReady === "now") {
       await transporter.sendMail({
         from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to:      process.env.ADMIN_EMAIL,
+        to:      (await getAdminEmails(supabase, 'receive_updates')).join(',') || process.env.ADMIN_EMAIL,
         subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
         html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable }),
       });
@@ -131,7 +136,7 @@ export const handler = async (event) => {
     } else {
       await transporter.sendMail({
         from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to:      process.env.ADMIN_EMAIL,
+        to:      (await getAdminEmails(supabase, 'receive_updates')).join(',') || process.env.ADMIN_EMAIL,
         subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
         html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
       });

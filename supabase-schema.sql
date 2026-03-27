@@ -69,3 +69,27 @@ create policy "Public read relay-uploads"
 create policy "Allow upload relay-uploads"
   on storage.objects for insert
   with check (bucket_id = 'relay-uploads');
+
+-- ── Admin Users ───────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS admins (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email                 TEXT UNIQUE NOT NULL,
+  name                  TEXT NOT NULL,
+  password_hash         TEXT NOT NULL,
+  permissions           JSONB NOT NULL DEFAULT '{"receive_updates":true,"verify_payment":false,"manage_admins":false}',
+  is_super_admin        BOOLEAN DEFAULT false,
+  force_password_change BOOLEAN DEFAULT true,
+  created_at            TIMESTAMPTZ DEFAULT now()
+);
+
+-- ── Super Admin seed (run separately after installing bcrypt) ─────────────────
+-- Use the Node script below to generate the hash, then paste it here.
+-- INSERT INTO admins (email, name, password_hash, permissions, is_super_admin, force_password_change)
+-- VALUES (
+--   'paulopangilinan@gmail.com',
+--   'Paulo Pangilinan',
+--   '<PASTE_HASH_HERE>',
+--   '{"receive_updates":true,"verify_payment":true,"manage_admins":true}',
+--   true,
+--   true
+-- );
