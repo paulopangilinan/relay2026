@@ -38,6 +38,7 @@ export const handler = async (event) => {
         token,
         force_password_change: admin.force_password_change,
         name: admin.name,
+        email: admin.email,
         permissions: admin.permissions,
         is_super_admin: admin.is_super_admin,
       }),

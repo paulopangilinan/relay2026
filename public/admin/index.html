@@ -536,6 +536,24 @@
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
   let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, activeTab = 'ph';
 
+  function restoreSession() {
+    const savedToken   = sessionStorage.getItem('adminToken');
+    const savedSession = sessionStorage.getItem('adminSession');
+    if (!savedToken || !savedSession) return;
+    try {
+      adminToken   = savedToken;
+      adminSession = JSON.parse(savedSession);
+      document.getElementById('loginScreen').style.display  = 'none';
+      document.getElementById('dashboard').style.display    = 'block';
+      document.getElementById('adminName').textContent      = adminSession.name;
+      applyPermissionUI();
+      loadData();
+    } catch(e) {
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminSession');
+    }
+  }
+
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
     const pw    = document.getElementById('passwordInput').value;
@@ -552,7 +570,9 @@
       if (!res.ok) { errEl.textContent = json.error || 'Login failed.'; errEl.style.display = 'block'; return; }
 
       adminToken   = json.token;
-      adminSession = { name: json.name, permissions: json.permissions, is_super_admin: json.is_super_admin };
+      adminSession = { name: json.name, email: json.email, permissions: json.permissions, is_super_admin: json.is_super_admin };
+      sessionStorage.setItem('adminToken', adminToken);
+      sessionStorage.setItem('adminSession', JSON.stringify(adminSession));
 
       if (json.force_password_change) {
         showChangePassword();
@@ -606,6 +626,8 @@
 
   function logout() {
     adminToken = ''; adminSession = null;
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSession');
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('changePwScreen').style.display = 'none';
@@ -946,12 +968,16 @@
   async function doCancel(notify) {
     if (notify === undefined) notify = document.getElementById('cancelNotifyToggle').value === 'true';
     if (!pendingCancelId) return;
+    // Capture before closing modal (which resets these to null)
+    const cancelId      = pendingCancelId;
+    const cancelGroupId = pendingCancelGroupId;
+    const cancelReason  = document.getElementById('cancelReason').value.trim() || null;
     closeCancelModal();
     try {
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel', id: pendingCancelId, group_id: pendingCancelGroupId, notify, reason: document.getElementById('cancelReason').value.trim() || null }),
+        body: JSON.stringify({ action: 'cancel', id: cancelId, group_id: cancelGroupId, notify, reason: cancelReason }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
@@ -1210,8 +1236,31 @@
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
   // Expose all onclick-called functions globally
+  // Restore session on page load
+  (function initSession() {
+    const savedToken   = sessionStorage.getItem('adminToken');
+    const savedSession = sessionStorage.getItem('adminSession');
+    if (savedToken && savedSession) {
+      try {
+        adminToken   = savedToken;
+        adminSession = JSON.parse(savedSession);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display   = 'block';
+        document.getElementById('adminName').textContent     = adminSession.name || '';
+        applyPermissionUI();
+        loadData();
+      } catch(e) {
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminSession');
+      }
+    }
+  })();
+
   window.login                = login;
   window.logout               = logout;
+
+  // Restore session after all functions are defined
+  restoreSession();
   window.submitNewPassword    = submitNewPassword;
   window.switchTab            = switchTab;
   window.tileFilter           = tileFilter;
