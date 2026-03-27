@@ -189,7 +189,6 @@ function statsFor(subset) {
     by_church:         active.reduce((acc, r) => { if (r.church) acc[r.church] = (acc[r.church]||0)+1; return acc; }, {}),
   };
 }
-}
 
 function cancellationEmail(primaryName, names, isGroup, heroUrl) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
