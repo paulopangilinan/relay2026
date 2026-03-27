@@ -38,6 +38,8 @@ export const handler = async (event) => {
       const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
+      const { data: adminsData } = await supabase.from('admins').select('email, name');
+
       const local = data.filter(r => r.registrant_type !== 'international');
       const intl  = data.filter(r => r.registrant_type === 'international');
 
@@ -47,7 +49,7 @@ export const handler = async (event) => {
           local, international: intl,
           stats_local: statsFor(local),
           stats_intl:  statsFor(intl),
-          // Pass back admin info
+          admins: adminsData || [],
           admin: { name: requester.name, permissions: requester.permissions, is_super_admin: requester.is_super_admin },
         }),
       };
@@ -62,8 +64,7 @@ export const handler = async (event) => {
       const body = JSON.parse(event.body);
       const { action, id, group_id } = body;
 
-      const { data: reg, error: fetchErr } = await supabase.from('registrations').select('*').eq('id', id).single();
-      if (fetchErr || !reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+      if (!action || !id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action or id' }) };
 
       // ── Confirm payment ────────────────────────────────────────────────────
       if (action === 'confirm') {
@@ -71,14 +72,20 @@ export const handler = async (event) => {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to verify payment' }) };
         }
 
+        // Fetch one row to get email/name for confirmation email
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+
+        const confirmUpdate = {
+          payment_verified: true,
+          status: 'confirmed',
+          verified_at: new Date().toISOString(),
+          verified_by: requester.email,
+        };
         if (group_id) {
-          await supabase.from('registrations')
-            .update({ payment_verified: true, status: 'confirmed', verified_at: new Date().toISOString() })
-            .eq('group_id', group_id);
+          await supabase.from('registrations').update(confirmUpdate).eq('group_id', group_id);
         } else {
-          await supabase.from('registrations')
-            .update({ payment_verified: true, status: 'confirmed', verified_at: new Date().toISOString() })
-            .eq('id', id);
+          await supabase.from('registrations').update(confirmUpdate).eq('id', id);
         }
 
         // Fetch all group members for email
@@ -93,7 +100,8 @@ export const handler = async (event) => {
         const heroUrl   = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
 
         await getTransporter().sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
           to:      reg.email,
           subject: "RELAY 2026 — You're confirmed! 🎉",
           html:    confirmationEmail(reg, allMembers, `PHP ${totalAmt.toLocaleString()}`, heroUrl, isGroup),
@@ -108,16 +116,22 @@ export const handler = async (event) => {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to cancel registrations' }) };
         }
 
-        const { notify } = body; // true/false — send email to registrant
+        // Fetch one row to get email for notification
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
+        const { notify, reason } = body;
+        const cancelUpdate = {
+          status: 'cancelled',
+          payment_verified: false,
+          cancelled_by: requester.email,
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: reason || null,
+        };
         if (group_id) {
-          await supabase.from('registrations')
-            .update({ status: 'cancelled', payment_verified: false })
-            .eq('group_id', group_id);
+          await supabase.from('registrations').update(cancelUpdate).eq('group_id', group_id);
         } else {
-          await supabase.from('registrations')
-            .update({ status: 'cancelled', payment_verified: false })
-            .eq('id', id);
+          await supabase.from('registrations').update(cancelUpdate).eq('id', id);
         }
 
         if (notify) {
@@ -129,7 +143,8 @@ export const handler = async (event) => {
           const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
           const names   = allMembers.map(m => m.name).join(', ');
           await getTransporter().sendMail({
-            from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+            from:    "RELAY 2026 <noreply@relay2026.org>",
+          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
             to:      reg.email,
             subject: 'RELAY 2026 — Registration Cancelled',
             html: cancellationEmail(reg.name, names, allMembers.length > 1, heroUrl),
@@ -156,6 +171,7 @@ function feeFor(r) {
 
 function statsFor(subset) {
   subset = subset || [];
+  const active    = subset.filter(r => r.status !== 'cancelled');
   const confirmed     = subset.filter(r => r.status === 'confirmed');
   const pendingReview = subset.filter(r => r.status === 'payment_pending_review');
   const awaitingPay   = subset.filter(r => r.status === 'awaiting_payment');
@@ -169,10 +185,12 @@ function statsFor(subset) {
     confirmed_revenue: confirmed.reduce((s, r) => s + feeFor(r), 0),
     pending_revenue:   pendingReview.reduce((s, r) => s + feeFor(r), 0),
     awaiting_revenue:  awaitingPay.reduce((s, r) => s + feeFor(r), 0),
-    students:          subset.filter(r => r.student_status === 'student').length,
-    non_students:      subset.filter(r => r.student_status === 'non-student').length,
-    by_country:        subset.reduce((acc, r) => { if (r.country) acc[r.country] = (acc[r.country]||0)+1; return acc; }, {}),
+    students:          active.filter(r => r.student_status === 'student').length,
+    non_students:      active.filter(r => r.student_status === 'non-student').length,
+    by_country:        active.reduce((acc, r) => { if (r.country) acc[r.country] = (acc[r.country]||0)+1; return acc; }, {}),
+    by_church:         active.reduce((acc, r) => { if (r.church) acc[r.church] = (acc[r.church]||0)+1; return acc; }, {}),
   };
+}
 }
 
 function cancellationEmail(primaryName, names, isGroup, heroUrl) {
@@ -194,7 +212,7 @@ function cancellationEmail(primaryName, names, isGroup, heroUrl) {
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>,</p>
       <p style="font-size:14px;color:#2A3D4A;line-height:1.7;">Your${isGroup ? ' group' : ''} registration for RELAY 2026 has been cancelled${isGroup ? ` (${names})` : ''}. If you believe this is a mistake or would like to re-register, please reach out to us.</p>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
   </div></body></html>`;
 }
 
@@ -252,6 +270,6 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
         <strong>✝️ Theme:</strong> Living for Christ Alone
       </div>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
   </div></body></html>`;
 }

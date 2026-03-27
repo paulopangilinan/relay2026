@@ -61,17 +61,17 @@
 
   /* STATS */
   /* TILES — merged count + payment */
-  .tiles-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
-  .tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}
-  .tile{background:var(--card-bg);border-radius:12px;padding:16px 18px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
+  .tiles-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;}
+  .tiles-row.intl-tiles{grid-template-columns:repeat(4,1fr);}
+  .tile{background:var(--card-bg);border-radius:10px;padding:12px 14px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s;}
   .tile:hover{border-color:var(--sky);box-shadow:0 2px 16px rgba(58,139,191,0.15);}
   .tile.tile-active{border-color:var(--sky);box-shadow:0 2px 16px rgba(58,139,191,0.2);background:var(--sky-light);}
-  .tile-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+  .tile-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
   .tile-main{display:flex;align-items:baseline;gap:8px;}
-  .tile-count{font-family:'Bebas Neue';font-size:36px;letter-spacing:0.02em;line-height:1;}
+  .tile-count{font-family:'Bebas Neue';font-size:28px;letter-spacing:0.02em;line-height:1;}
   .tile-pipe{font-size:20px;color:var(--border);font-weight:300;line-height:1;}
-  .tile-amount{font-family:'Bebas Neue';font-size:22px;letter-spacing:0.02em;line-height:1;}
-  .tile-sub{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px;}
+  .tile-amount{font-family:'Bebas Neue';font-size:16px;letter-spacing:0.02em;line-height:1;}
+  .tile-sub{font-size:10px;color:var(--muted);line-height:1.4;margin-top:3px;}
   .c-total{color:var(--dark);}.c-green{color:var(--green);}.c-amber{color:var(--amber);}.c-blue{color:var(--sky);}.c-red{color:var(--red);}.c-gold{color:var(--gold);}
 
   /* FILTERS */
@@ -81,6 +81,11 @@
   .filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#f7fafb;outline:none;min-width:130px;}
   .filter-group select:focus,.filter-group input:focus{border-color:var(--sky);}
   .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end;}
+  .hide-cancelled-wrap{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;}
+  .toggle-track{width:36px;height:20px;border-radius:50px;background:#D4E2EA;position:relative;transition:background 0.2s;flex-shrink:0;}
+  .toggle-track.on{background:var(--sky);}
+  .toggle-thumb{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .toggle-track.on .toggle-thumb{left:18px;}
   .btn-export{padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
   .btn-export:hover{background:#2E7AAD;}
   .btn-reset{padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer;}
@@ -88,6 +93,7 @@
 
   /* TABLE */
   .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
@@ -109,13 +115,14 @@
   .badge-amber{background:var(--amber-light);color:var(--amber);}
   .badge-blue{background:var(--sky-light);color:var(--sky);}
   .badge-red{background:var(--red-light);color:var(--red);}
+  .badge-gray{background:#EBEBEB;color:#888;}
   .receipt-link{color:var(--sky);text-decoration:none;font-size:12px;font-weight:600;}
   .church-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
   .church-opt:hover{background:var(--sky-light);}
   .church-opt.selected{background:var(--sky-light);font-weight:600;color:var(--sky);}
   .church-group-hdr{padding:6px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
   .receipt-link:hover{text-decoration:underline;}
-  .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;display:block;margin-bottom:4px;width:100%;text-align:center;}
   .btn-confirm-row:hover{background:var(--green-bright);}
 
   /* BOTTOM */
@@ -147,8 +154,9 @@
   .btn-cancel{padding:9px 18px;background:transparent;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;}
   .btn-cancel:hover{border-color:var(--text);color:var(--text);}
   .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
-  .btn-cancel-row{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.7;}
-  .btn-cancel-row:hover{opacity:1;}
+  .btn-cancel-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;}
+  .btn-cancel-row:hover{background:#E05050;color:#fff;}
+  .btn-actions{display:flex;flex-direction:column;gap:4px;min-width:110px;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
@@ -188,7 +196,7 @@
     <h1>Relay Conference 2026</h1>
     <p>Admin Dashboard</p>
     <input type="email" id="emailInput" placeholder="Email address">
-    <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+    <input type="password" id="passwordInput" placeholder="Password">
     <button class="login-btn" onclick="login()">Sign In</button>
     <div class="login-err" id="loginErr"></div>
   </div>
@@ -210,15 +218,26 @@
 
 <!-- CANCEL REGISTRATION MODAL -->
 <div id="cancelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
-    <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:8px;">Cancel Registration</h3>
-    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">Cancel registration for <strong id="cancelName"></strong>? This cannot be undone.</p>
-    <p style="font-size:13px;color:#2A3D4A;font-weight:600;margin-bottom:12px;">Notify the registrant via email?</p>
-    <div style="display:flex;gap:10px;margin-bottom:20px;">
-      <button onclick="doCancel(true)" style="flex:1;padding:11px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Yes, Notify & Cancel</button>
-      <button onclick="doCancel(false)" style="flex:1;padding:11px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Cancel (No Email)</button>
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;">Cancel Registration</h3>
     </div>
-    <button onclick="closeCancelModal()" style="width:100%;padding:10px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Back</button>
+    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">Are you sure you want to cancel the registration for <strong id="cancelName" style="color:#2A3D4A;"></strong>? This cannot be undone.</p>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px;">Cancellation Reason <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+      <textarea id="cancelReason" rows="3" placeholder="e.g. Registrant backed out, unable to attend…" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;color:#2A3D4A;"></textarea>
+    </div>
+    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7fafb;border-radius:8px;border:1px solid #D4E2EA;cursor:pointer;margin-bottom:20px;">
+      <span style="font-size:13px;color:#2A3D4A;font-weight:600;">Notify registrant via email</span>
+      <div onclick="toggleCancelNotify()" id="cancelToggleTrack" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <div id="cancelToggleThumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+      </div>
+    </label>
+    <input type="hidden" id="cancelNotifyToggle" value="false">
+    <div style="display:flex;gap:10px;">
+      <button onclick="doCancel()" style="flex:1;padding:12px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Confirm Cancellation</button>
+      <button onclick="closeCancelModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">No</button>
+    </div>
   </div>
 </div>
 
@@ -229,8 +248,7 @@
       <img src="../assets/images/admin-icon.jpg" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
       <div>
         <div class="topbar-title">Relay Conference 2026</div>
-      <div style="font-size:11px;color:var(--muted);" id="adminName"></div>
-        <div class="topbar-sub">Admin Dashboard</div>
+        <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.75);margin-top:2px;" id="adminName"></div>
       </div>
     </div>
     <div class="topbar-right">
@@ -251,8 +269,8 @@
       <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
         🌏 International <span class="tab-badge" id="badge-intl">0</span>
       </button>
-      <button class="tab-btn" onclick="switchTab('admins')" id="tab-admins" style="display:none;">
-        👤 Admin Users
+      <button class="tab-btn" onclick="switchTab('admins')" id="tab-admins" style="display:none;margin-left:auto;">
+        🛡️ Admin Users
       </button>
     </div>
 
@@ -331,15 +349,19 @@
           </div>
         </div>
         <div class="filter-actions">
+          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
+            Hide Cancelled
+            <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+          </label>
           <button class="btn-reset" onclick="resetFilters('ph')">Reset</button>
           <button class="btn-export" onclick="exportCSV('ph')">⬇ Export CSV</button>
         </div>
       </div>
       <div class="table-wrap">
         <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
-            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th></tr></thead>
             <tbody id="ph-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -354,7 +376,7 @@
     <div class="tab-content" id="content-intl">
       <div class="tiles-row intl-tiles">
         <!-- Total -->
-        <div class="tile" id="ph-tile-total" onclick="tileFilter('ph','')">
+        <div class="tile" id="intl-tile-total" onclick="tileFilter('intl','')">
           <div class="tile-label">Total</div>
           <div class="tile-main">
             <span class="tile-count c-total" id="intl-total">–</span>
@@ -383,6 +405,12 @@
           </div>
           <div class="tile-sub">Submitted, awaiting verification</div>
         </div>
+        <!-- Cancelled -->
+        <div class="tile" id="intl-tile-cancelled" onclick="tileFilter('intl','cancelled')">
+          <div class="tile-label">Cancelled</div>
+          <div class="tile-count" style="color:#888;" id="intl-cancelled">–</div>
+          <div class="tile-sub">Backed out registrations</div>
+        </div>
       </div>
       <div class="filters-bar">
         <div class="filter-group"><label>Search</label><input type="text" id="intl-search" placeholder="Name, email, country…" oninput="applyFilters('intl')"></div>
@@ -391,17 +419,23 @@
             <option value="">All Statuses</option>
             <option value="confirmed">✅ Confirmed</option>
             <option value="payment_pending_review">🕐 Pending Review</option>
+            <option value="awaiting_payment">💳 Awaiting Payment</option>
+            <option value="cancelled">🚫 Cancelled</option>
           </select>
         </div>
         <div class="filter-group"><label>Country</label><select id="intl-country" onchange="applyFilters('intl')"><option value="">All Countries</option></select></div>
         <div class="filter-actions">
+          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
+            Hide Cancelled
+            <div class="toggle-track on" id="intl-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+          </label>
           <button class="btn-reset" onclick="resetFilters('intl')">Reset</button>
           <button class="btn-export" onclick="exportCSV('intl')">⬇ Export CSV</button>
         </div>
       </div>
       <div class="table-wrap">
         <div class="table-header"><h2>International Registrations</h2><span class="table-count" id="intl-count">–</span></div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th></tr></thead>
             <tbody id="intl-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
@@ -424,7 +458,7 @@
         <button onclick="openAddAdminModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Admin</button>
       </div>
       <div class="table-wrap">
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr>
               <th>Name</th><th>Email</th>
@@ -514,7 +548,25 @@
     } catch(e) { /* fail open */ }
   })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
-  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, activeTab = 'ph';
+  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, activeTab = 'ph';
+
+  function restoreSession() {
+    const savedToken   = sessionStorage.getItem('adminToken');
+    const savedSession = sessionStorage.getItem('adminSession');
+    if (!savedToken || !savedSession) return;
+    try {
+      adminToken   = savedToken;
+      adminSession = JSON.parse(savedSession);
+      document.getElementById('loginScreen').style.display  = 'none';
+      document.getElementById('dashboard').style.display    = 'block';
+      document.getElementById('adminName').textContent      = adminSession.name;
+      applyPermissionUI();
+      loadData();
+    } catch(e) {
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminSession');
+    }
+  }
 
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
@@ -532,7 +584,9 @@
       if (!res.ok) { errEl.textContent = json.error || 'Login failed.'; errEl.style.display = 'block'; return; }
 
       adminToken   = json.token;
-      adminSession = { name: json.name, permissions: json.permissions, is_super_admin: json.is_super_admin };
+      adminSession = { name: json.name, email: json.email, permissions: json.permissions, is_super_admin: json.is_super_admin };
+      sessionStorage.setItem('adminToken', adminToken);
+      sessionStorage.setItem('adminSession', JSON.stringify(adminSession));
 
       if (json.force_password_change) {
         showChangePassword();
@@ -586,6 +640,8 @@
 
   function logout() {
     adminToken = ''; adminSession = null;
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSession');
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('changePwScreen').style.display = 'none';
@@ -600,8 +656,9 @@
       if (res.status === 401) return false;
       const json = await res.json();
 
-      localData = json.local || [];
-      intlData  = json.international || [];
+      localData  = json.local || [];
+      intlData   = json.international || [];
+      adminsList = json.admins || adminsList; // merge in admins for name lookup
 
       // Tab badges
       document.getElementById('badge-ph').textContent   = localData.length;
@@ -630,6 +687,7 @@
     document.getElementById('ph-review').textContent      = ph.pending_review;
     document.getElementById('ph-rev-pending').textContent = '₱' + (ph.pending_revenue||0).toLocaleString();
     document.getElementById('ph-awaiting').textContent    = ph.awaiting_payment;
+    document.getElementById('ph-cancelled').textContent   = ph.cancelled || 0;
     document.getElementById('ph-rev-awaiting').textContent = '₱' + (ph.awaiting_revenue||0).toLocaleString();
     // Intl tiles
     document.getElementById('intl-total').textContent       = intl.total;
@@ -637,6 +695,7 @@
     document.getElementById('intl-confirmed').textContent   = intl.confirmed;
     document.getElementById('intl-rev-confirmed').textContent = '$' + (intl.confirmed_revenue||0).toLocaleString();
     document.getElementById('intl-review').textContent      = intl.pending_review;
+    document.getElementById('intl-cancelled').textContent   = intl.cancelled || 0;
     document.getElementById('intl-rev-pending').textContent = '$' + (intl.pending_revenue||0).toLocaleString();
   }
 
@@ -732,12 +791,22 @@
     }
   });
 
+  const hideCancelled = { ph: true, intl: true };
+
+  function toggleHideCancelled(tab) {
+    hideCancelled[tab] = !hideCancelled[tab];
+    const track = document.getElementById(`${tab}-hide-cancelled-track`);
+    if (track) track.classList.toggle('on', hideCancelled[tab]);
+    applyFilters(tab);
+  }
+
   function applyFilters(tab) {
     if (tab === 'ph') {
       const s = document.getElementById('ph-search').value.toLowerCase();
       const st = document.getElementById('ph-status').value;
       const stu = document.getElementById('ph-student').value;
       filteredPH = localData.filter(r => {
+        if (hideCancelled.ph && r.status === 'cancelled') return false;
         if (s && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (stu && r.student_status !== stu) return false;
@@ -751,6 +820,7 @@
       const st = document.getElementById('intl-status').value;
       const co = document.getElementById('intl-country').value;
       filteredIntl = intlData.filter(r => {
+        if (hideCancelled.intl && r.status === 'cancelled') return false;
         if (s && !`${r.name} ${r.email} ${r.country} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (co && r.country !== co) return false;
@@ -783,28 +853,37 @@
         ${isPH ? `<td>${r.school_id_url ? `<a href="#" onclick="openImgModal('${r.school_id_url}');return false;" class="receipt-link">🪪 View</a>` : (r.student_status==='student' ? '<span style="color:#E05050;font-size:12px;">Missing</span>' : '<span style="color:#ccc;font-size:12px;">—</span>')}</td>` : ''}
         <td>${r.receipt_url ? `<a href="#" onclick="openImgModal('${r.receipt_url}');return false;" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
-        <td style="white-space:nowrap;">
+        <td style="font-size:11px;color:var(--muted);">${r.verified_by ? `<span title="${esc(r.verified_by)}">${adminName(r.verified_by)}</span><br><span style="font-size:10px;">${formatDate(r.verified_at)}</span>` : '—'}</td>
+        <td style="font-size:11px;color:var(--muted);">${r.cancelled_by ? `<span title="${esc(r.cancelled_by)}">${adminName(r.cancelled_by)}</span><br><span style="font-size:10px;">${formatDate(r.cancelled_at)}</span>${r.cancellation_reason ? `<br><span style="font-size:10px;font-style:italic;">${esc(r.cancellation_reason)}</span>` : ''}` : '—'}</td>
+        <td style="min-width:120px;">
+          <div class="btn-actions">
           ${r.status === 'cancelled'
-            ? '<span style="color:#888;font-size:12px;">Cancelled</span>'
+            ? '<span style="color:#aaa;font-size:12px;font-style:italic;">Cancelled</span>'
             : r.payment_verified
-              ? `<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>${canVerify ? ` <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')" title="Cancel registration">🚫</button>` : ''}`
+              ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark Paid</button> <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')" title="Cancel">🚫</button>`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Paid</button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Cancelled</button>`
                 : '—'
           }
+          </div>
         </td>
       </tr>
     `).join('');
   }
 
   function statusBadge(s) {
-    return {confirmed:'<span class="badge badge-green">✅ Confirmed</span>',payment_pending_review:'<span class="badge badge-amber">🕐 Pending</span>',awaiting_payment:'<span class="badge badge-red">💳 Awaiting</span>'}[s]||`<span class="badge">${s}</span>`;
+    return {
+      confirmed:              '<span class="badge badge-green">✅ Confirmed</span>',
+      payment_pending_review: '<span class="badge badge-amber">🕐 Pending</span>',
+      awaiting_payment:       '<span class="badge badge-red">💳 Awaiting</span>',
+      cancelled:              '<span class="badge badge-gray">🚫 Cancelled</span>',
+    }[s] || `<span class="badge">${s}</span>`;
   }
 
   function renderBreakdowns(ph, intl) {
-    // PH church — exact fees from actual registrant data
+    // PH church — exclude cancelled
     const phChurchFees = {};
-    localData.forEach(r => {
+    localData.filter(r => r.status !== 'cancelled').forEach(r => {
       if (!phChurchFees[r.church]) phChurchFees[r.church] = {count:0, fee:0};
       phChurchFees[r.church].count++;
       phChurchFees[r.church].fee += r.student_status === 'student' ? 3000 : 4500;
@@ -881,7 +960,6 @@
     if (tab === 'admins') loadAdmins();
   }
 
-  let pendingGroupId = null;
   function openModal(id, name, groupId) {
     pendingConfirmId = id;
     pendingGroupId = groupId || null;
@@ -891,12 +969,25 @@
   }
   function closeModal() { pendingConfirmId = null; pendingGroupId = null; document.getElementById('confirmModal').classList.remove('visible'); }
 
-  let pendingCancelId = null, pendingCancelGroupId = null;
+  function toggleCancelNotify() {
+    const track = document.getElementById('cancelToggleTrack');
+    const thumb = document.getElementById('cancelToggleThumb');
+    const input = document.getElementById('cancelNotifyToggle');
+    const on = input.value === 'false';
+    input.value = on ? 'true' : 'false';
+    track.style.background = on ? '#2E7048' : '#D4E2EA';
+    thumb.style.left = on ? '22px' : '2px';
+  }
 
   function openCancelModal(id, name, groupId) {
     pendingCancelId      = id;
     pendingCancelGroupId = groupId || null;
     document.getElementById('cancelName').textContent = groupId ? name + ' (Group)' : name;
+    // Reset fields
+    document.getElementById('cancelReason').value = '';
+    document.getElementById('cancelNotifyToggle').value = 'false';
+    document.getElementById('cancelToggleTrack').style.background = '#D4E2EA';
+    document.getElementById('cancelToggleThumb').style.left = '2px';
     document.getElementById('cancelModal').style.display = 'flex';
   }
 
@@ -906,13 +997,18 @@
   }
 
   async function doCancel(notify) {
+    if (notify === undefined) notify = document.getElementById('cancelNotifyToggle').value === 'true';
     if (!pendingCancelId) return;
+    // Capture before closing modal (which resets these to null)
+    const cancelId      = pendingCancelId;
+    const cancelGroupId = pendingCancelGroupId;
+    const cancelReason  = document.getElementById('cancelReason').value.trim() || null;
     closeCancelModal();
     try {
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel', id: pendingCancelId, group_id: pendingCancelGroupId, notify }),
+        body: JSON.stringify({ action: 'cancel', id: cancelId, group_id: cancelGroupId, notify, reason: cancelReason }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
@@ -958,13 +1054,25 @@
   }
 
   function resetFilters(tab) {
-    if (tab === 'ph') { ['ph-search','ph-status','ph-student'].forEach(id => document.getElementById(id).value=''); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
-    else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value=''); }
+    if (tab === 'ph') { ['ph-search','ph-status','ph-student'].forEach(id => document.getElementById(id).value='');
+      hideCancelled.ph = true;
+      const phTrack = document.getElementById('ph-hide-cancelled-track');
+      if (phTrack) phTrack.classList.add('on'); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
+    else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value='');
+      hideCancelled.intl = true;
+      const intlTrack = document.getElementById('intl-hide-cancelled-track');
+      if (intlTrack) intlTrack.classList.add('on');
+    }
     applyFilters(tab);
   }
 
   function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function adminName(email) {
+    if (!email) return '—';
+    const a = adminsList.find(x => x.email === email);
+    return a ? esc(a.name) : esc(email);
+  }
   // ── Sort state ─────────────────────────────────────────────────────────
   const sortState = { ph: { col: null, dir: 'asc' }, intl: { col: null, dir: 'asc' } };
 
@@ -1067,7 +1175,6 @@
   function openAddAdminModal() {
     editingAdminId = null;
     document.getElementById('adminModalTitle').textContent = 'Add Admin';
-    document.getElementById('am-save-btn').textContent = 'Send Invite';
     document.getElementById('am-name').value  = '';
     document.getElementById('am-email').value = '';
     document.getElementById('am-email').disabled = false;
@@ -1076,6 +1183,8 @@
     document.getElementById('am-perm-manage').checked  = false;
     document.getElementById('am-super').checked = false;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
+    document.getElementById('am-save-btn').disabled = false;
+    document.getElementById('am-save-btn').textContent = 'Send Invite';
     document.getElementById('am-err').style.display = 'none';
     document.getElementById('adminModal').style.display = 'flex';
   }
@@ -1086,7 +1195,6 @@
     editingAdminId = id;
     const perm = admin.permissions || {};
     document.getElementById('adminModalTitle').textContent = 'Edit Admin';
-    document.getElementById('am-save-btn').textContent = 'Save Changes';
     document.getElementById('am-name').value  = admin.name;
     document.getElementById('am-email').value = admin.email;
     document.getElementById('am-email').disabled = true;
@@ -1095,6 +1203,8 @@
     document.getElementById('am-perm-manage').checked  = !!perm.manage_admins;
     document.getElementById('am-super').checked = !!admin.is_super_admin;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
+    document.getElementById('am-save-btn').disabled = false;
+    document.getElementById('am-save-btn').textContent = 'Save Changes';
     document.getElementById('am-err').style.display = 'none';
     document.getElementById('adminModal').style.display = 'flex';
   }
@@ -1117,12 +1227,13 @@
       manage_admins:   document.getElementById('am-perm-manage').checked,
     };
     const is_super_admin = document.getElementById('am-super').checked;
+    const isEditing = !!editingAdminId;
     const btn = document.getElementById('am-save-btn');
     btn.disabled = true; btn.textContent = 'Saving…';
 
     try {
-      const method = editingAdminId ? 'PUT' : 'POST';
-      const body   = editingAdminId
+      const method = isEditing ? 'PUT' : 'POST';
+      const body   = isEditing
         ? { id: editingAdminId, name, permissions, is_super_admin }
         : { email, name, permissions, is_super_admin };
 
@@ -1132,14 +1243,16 @@
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = editingAdminId ? 'Save Changes' : 'Send Invite'; return; }
+      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; return; }
 
       closeAdminModal();
-      showToast(editingAdminId ? 'Admin updated.' : 'Admin invited! A welcome email has been sent.');
+      showToast(isEditing ? 'Admin updated.' : 'Admin invited! A welcome email has been sent.');
       loadAdmins();
     } catch (e) {
       errEl.textContent = e.message; errEl.style.display = 'block';
+    } finally {
       btn.disabled = false;
+      btn.textContent = isEditing ? 'Save Changes' : 'Send Invite';
     }
   }
 
@@ -1161,8 +1274,31 @@
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
   // Expose all onclick-called functions globally
+  // Restore session on page load
+  (function initSession() {
+    const savedToken   = sessionStorage.getItem('adminToken');
+    const savedSession = sessionStorage.getItem('adminSession');
+    if (savedToken && savedSession) {
+      try {
+        adminToken   = savedToken;
+        adminSession = JSON.parse(savedSession);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display   = 'block';
+        document.getElementById('adminName').textContent     = adminSession.name || '';
+        applyPermissionUI();
+        loadData();
+      } catch(e) {
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminSession');
+      }
+    }
+  })();
+
   window.login                = login;
   window.logout               = logout;
+
+  // Restore session after all functions are defined
+  restoreSession();
   window.submitNewPassword    = submitNewPassword;
   window.switchTab            = switchTab;
   window.tileFilter           = tileFilter;
@@ -1171,7 +1307,10 @@
   window.openModal            = openModal;
   window.closeModal           = closeModal;
   window.doConfirm            = doConfirm;
+  window.toggleHideCancelled  = toggleHideCancelled;
+  window.toggleHideCancelled  = toggleHideCancelled;
   window.openCancelModal      = openCancelModal;
+  window.toggleCancelNotify   = toggleCancelNotify;
   window.closeCancelModal     = closeCancelModal;
   window.doCancel             = doCancel;
   window.openImgModal         = openImgModal;
@@ -1186,6 +1325,7 @@
   window.removeAdmin          = removeAdmin;
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 </script>
 </body>
 </html>

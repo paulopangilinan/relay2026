@@ -93,3 +93,18 @@ CREATE TABLE IF NOT EXISTS admins (
 --   true,
 --   true
 -- );
+
+-- ── Group Registration Columns ─────────────────────────────────────────────
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS group_id UUID;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS group_size INTEGER DEFAULT 1;
+
+-- ── Add cancelled status support ──────────────────────────────────────────────
+ALTER TABLE registrations DROP CONSTRAINT IF EXISTS registrations_status_check;
+ALTER TABLE registrations ADD CONSTRAINT registrations_status_check
+  CHECK (status IN ('awaiting_payment', 'payment_pending_review', 'confirmed', 'cancelled'));
+
+-- ── Audit columns ─────────────────────────────────────────────────────────────
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS verified_by       TEXT;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS cancelled_by      TEXT;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS cancelled_at      TIMESTAMPTZ;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
