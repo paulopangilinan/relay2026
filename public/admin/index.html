@@ -1160,7 +1160,31 @@
 
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
-  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+  // Expose all onclick-called functions globally
+  window.login                = login;
+  window.logout               = logout;
+  window.submitNewPassword    = submitNewPassword;
+  window.switchTab            = switchTab;
+  window.tileFilter           = tileFilter;
+  window.resetFilters         = resetFilters;
+  window.exportCSV            = exportCSV;
+  window.openModal            = openModal;
+  window.closeModal           = closeModal;
+  window.doConfirm            = doConfirm;
+  window.openCancelModal      = openCancelModal;
+  window.closeCancelModal     = closeCancelModal;
+  window.doCancel             = doCancel;
+  window.openImgModal         = openImgModal;
+  window.closeImgModal        = closeImgModal;
+  window.toggleChurchDropdown = toggleChurchDropdown;
+  window.selectAllChurches    = selectAllChurches;
+  window.applyFilters         = applyFilters;
+  window.openAddAdminModal    = openAddAdminModal;
+  window.openEditAdminModal   = openEditAdminModal;
+  window.closeAdminModal      = closeAdminModal;
+  window.saveAdmin            = saveAdmin;
+  window.removeAdmin          = removeAdmin;
+
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
 </script>
 </body>
