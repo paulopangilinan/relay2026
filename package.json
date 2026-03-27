@@ -1,6 +1,7 @@
 {
   "name": "relay-conference",
   "version": "1.0.0",
+  "type": "module",
   "description": "RELAY Conference Registration System",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
