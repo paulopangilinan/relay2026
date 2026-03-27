@@ -110,6 +110,7 @@
   .badge-amber{background:var(--amber-light);color:var(--amber);}
   .badge-blue{background:var(--sky-light);color:var(--sky);}
   .badge-red{background:var(--red-light);color:var(--red);}
+  .badge-gray{background:#EBEBEB;color:#888;}
   .receipt-link{color:var(--sky);text-decoration:none;font-size:12px;font-weight:600;}
   .church-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
   .church-opt:hover{background:var(--sky-light);}
@@ -673,6 +674,7 @@
     document.getElementById('ph-review').textContent      = ph.pending_review;
     document.getElementById('ph-rev-pending').textContent = '₱' + (ph.pending_revenue||0).toLocaleString();
     document.getElementById('ph-awaiting').textContent    = ph.awaiting_payment;
+    document.getElementById('ph-cancelled').textContent   = ph.cancelled || 0;
     document.getElementById('ph-rev-awaiting').textContent = '₱' + (ph.awaiting_revenue||0).toLocaleString();
     // Intl tiles
     document.getElementById('intl-total').textContent       = intl.total;
@@ -846,7 +848,12 @@
   }
 
   function statusBadge(s) {
-    return {confirmed:'<span class="badge badge-green">✅ Confirmed</span>',payment_pending_review:'<span class="badge badge-amber">🕐 Pending</span>',awaiting_payment:'<span class="badge badge-red">💳 Awaiting</span>'}[s]||`<span class="badge">${s}</span>`;
+    return {
+      confirmed:              '<span class="badge badge-green">✅ Confirmed</span>',
+      payment_pending_review: '<span class="badge badge-amber">🕐 Pending</span>',
+      awaiting_payment:       '<span class="badge badge-red">💳 Awaiting</span>',
+      cancelled:              '<span class="badge badge-gray">🚫 Cancelled</span>',
+    }[s] || `<span class="badge">${s}</span>`;
   }
 
   function renderBreakdowns(ph, intl) {
