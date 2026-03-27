@@ -22,8 +22,8 @@ function getTransporter() {
 }
 
 async function getAdminsWithPermission(permission) {
-  const { data } = await supabase.from('admins').select('email, name, permissions');
-  return (data || []).filter(a => a.permissions?.[permission]);
+  const { data } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+  return (data || []).filter(a => a.permissions?.[permission] && !a.force_password_change);
 }
 
 export const handler = async (event) => {
@@ -38,7 +38,7 @@ export const handler = async (event) => {
       const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
-      const { data: adminsData } = await supabase.from('admins').select('email, name');
+      const { data: adminsData } = await supabase.from('admins').select('email, name, force_password_change');
 
       const local = data.filter(r => r.registrant_type !== 'international');
       const intl  = data.filter(r => r.registrant_type === 'international');
@@ -68,7 +68,7 @@ export const handler = async (event) => {
 
       // ── Confirm payment ────────────────────────────────────────────────────
       if (action === 'confirm') {
-        if (!requester.permissions?.verify_payment) {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to verify payment' }) };
         }
 
@@ -111,7 +111,7 @@ export const handler = async (event) => {
 
       // ── Cancel registration ────────────────────────────────────────────────
       if (action === 'cancel') {
-        if (!requester.permissions?.verify_payment) {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to cancel registrations' }) };
         }
 

@@ -27,7 +27,7 @@ export const handler = async (event) => {
     if (!valid) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Invalid email or password' }) };
 
     const token = jwt.sign(
-      { id: admin.id, email: admin.email, name: admin.name, permissions: admin.permissions, is_super_admin: admin.is_super_admin },
+      { id: admin.id, email: admin.email, name: admin.name, permissions: admin.permissions, is_super_admin: admin.is_super_admin, force_password_change: admin.force_password_change },
       JWT_SECRET,
       { expiresIn: '12h' }
     );

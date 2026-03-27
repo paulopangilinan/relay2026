@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 
 
 async function getAdminEmails(supabase, permission) {
-  const { data } = await supabase.from('admins').select('email, name, permissions');
+  const { data } = await supabase.from('admins').select('email, name, permissions, force_password_change');
   return (data || []).filter(a => a.permissions?.[permission]).map(a => a.email);
 }
 const supabase = createClient(
@@ -122,8 +122,8 @@ export const handler = async (event) => {
 
     if (paymentReady === "now") {
       // Send per-admin — CTA only for those with verify_payment permission
-      const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions');
-      const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates);
+      const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+      const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
       for (const admin of notifyAdmins) {
         const canVerify = !!admin.permissions?.verify_payment;
         await transporter.sendMail({
@@ -141,8 +141,8 @@ export const handler = async (event) => {
       });
     } else {
       // Send per-admin (no CTA needed for awaiting payment)
-      const { data: allAdmins2 } = await supabase.from('admins').select('email, name, permissions');
-      const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates);
+      const { data: allAdmins2 } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+      const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
       for (const admin of notifyAdmins2) {
         await transporter.sendMail({
           from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,

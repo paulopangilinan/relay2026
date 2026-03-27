@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 
 
 async function getAdminEmails(supabase, permission) {
-  const { data } = await supabase.from('admins').select('email, name, permissions');
+  const { data } = await supabase.from('admins').select('email, name, permissions, force_password_change');
   return (data || []).filter(a => a.permissions?.[permission]).map(a => a.email);
 }
 const supabase = createClient(
@@ -93,8 +93,8 @@ export const handler = async (event) => {
         </tr></tfoot>
       </table>`;
 
-    const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions');
-    const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates);
+    const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+    const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
     for (const admin of notifyAdmins) {
       const canVerify = !!admin.permissions?.verify_payment;
       await getTransporter().sendMail({
