@@ -2,6 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { randomUUID } from "crypto";
+import jwt from "jsonwebtoken";
 
 
 async function getAdminEmails(supabase, permission) {
@@ -116,7 +117,8 @@ export const handler = async (event) => {
     const primaryName = participants[0].name;
     const totalAmount = participants.reduce((sum, p) => sum + feeFor(p.studentStatus), 0);
     const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
-    const verifyLink  = `${siteUrl}/.netlify/functions/verify?id=${primaryReg.id}${isGroup ? `&group_id=${group_id}` : ""}`;
+    const baseVerifyUrl = `${siteUrl}/.netlify/functions/verify?id=${primaryReg.id}${isGroup ? `&group_id=${group_id}` : ''}`;
+    const JWT_SECRET = process.env.JWT_SECRET || 'relay2026secret';
 
     const breakdownTable = buildBreakdownTable(participants, totalLabel);
 
@@ -126,6 +128,10 @@ export const handler = async (event) => {
       const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
       for (const admin of notifyAdmins) {
         const canVerify = !!admin.permissions?.verify_payment;
+        const adminToken = canVerify
+          ? jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: '30d' })
+          : null;
+        const verifyLink = adminToken ? `${baseVerifyUrl}&atoken=${adminToken}` : baseVerifyUrl;
         await transporter.sendMail({
           from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
           to:      admin.email,

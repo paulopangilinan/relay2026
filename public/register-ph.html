@@ -1520,7 +1520,8 @@
       }
 
       // Redirect to thank-you page
-      window.location.href = withReceipt ? 'thank-you.html?type=paid&form=ph' : 'thank-you.html?type=later&form=ph';
+      const regTypeParam = new URLSearchParams(window.location.search).get('type') || 'single';
+      window.location.href = withReceipt ? `thank-you.html?type=paid&form=ph&regType=${regTypeParam}` : `thank-you.html?type=later&form=ph&regType=${regTypeParam}`;
     } catch (err) {
       showToast('❌ Error: ' + err.message, true);
     } finally {

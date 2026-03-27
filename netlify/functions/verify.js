@@ -1,11 +1,13 @@
 // netlify/functions/verify.js
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+const JWT_SECRET = process.env.JWT_SECRET || 'relay2026secret';
 
 function getTransporter() {
   return nodemailer.createTransport({
@@ -15,8 +17,20 @@ function getTransporter() {
 }
 
 export const handler = async (event) => {
-  const { id, group_id } = event.queryStringParameters || {};
+  const { id, group_id, atoken } = event.queryStringParameters || {};
   if (!id) return { statusCode: 400, body: "Missing ID" };
+
+  // Decode admin token — fallback to "email-link" if missing or expired
+  let verifiedBy = "email-link";
+  if (atoken) {
+    try {
+      const decoded = jwt.verify(atoken, JWT_SECRET);
+      if (decoded?.email) verifiedBy = decoded.email;
+    } catch (e) {
+      // Token expired or invalid — use fallback
+      verifiedBy = "email-link";
+    }
+  }
 
   try {
     // Fetch the primary registration
@@ -25,22 +39,24 @@ export const handler = async (event) => {
     if (fetchErr || !reg) return htmlPage("Not Found", "Registration not found.", false);
     if (reg.payment_verified) return htmlPage("Already Verified", `${reg.name}'s registration was already confirmed.`, true);
 
+    const effectiveGroupId = group_id || reg.group_id || null;
+
     // Update all group members or just the single row
-    if (group_id) {
+    if (effectiveGroupId) {
       await supabase.from("registrations")
-        .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString() })
-        .eq("group_id", group_id);
+        .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString(), verified_by: verifiedBy })
+        .eq("group_id", effectiveGroupId);
     } else {
       await supabase.from("registrations")
-        .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString() })
+        .update({ payment_verified: true, status: "confirmed", verified_at: new Date().toISOString(), verified_by: verifiedBy })
         .eq("id", id);
     }
 
     // Fetch all group members for confirmation email
     let allMembers = [reg];
-    if (group_id) {
+    if (effectiveGroupId) {
       const { data: members } = await supabase.from("registrations")
-        .select("*").eq("group_id", group_id);
+        .select("*").eq("group_id", effectiveGroupId);
       if (members) allMembers = members;
     }
 

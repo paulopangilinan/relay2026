@@ -76,22 +76,24 @@ export const handler = async (event) => {
         const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
+        const effectiveGroupId = group_id || reg.group_id || null;
+
         const confirmUpdate = {
           payment_verified: true,
           status: 'confirmed',
           verified_at: new Date().toISOString(),
           verified_by: requester.email,
         };
-        if (group_id) {
-          await supabase.from('registrations').update(confirmUpdate).eq('group_id', group_id);
+        if (effectiveGroupId) {
+          await supabase.from('registrations').update(confirmUpdate).eq('group_id', effectiveGroupId);
         } else {
           await supabase.from('registrations').update(confirmUpdate).eq('id', id);
         }
 
         // Fetch all group members for email
         let allMembers = [reg];
-        if (group_id) {
-          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', group_id);
+        if (effectiveGroupId) {
+          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveGroupId);
           if (members) allMembers = members;
         }
 
@@ -120,6 +122,7 @@ export const handler = async (event) => {
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
         const { notify, reason } = body;
+        const effectiveCancelGroupId = group_id || reg.group_id || null;
         const cancelUpdate = {
           status: 'cancelled',
           payment_verified: false,
@@ -127,16 +130,16 @@ export const handler = async (event) => {
           cancelled_at: new Date().toISOString(),
           cancellation_reason: reason || null,
         };
-        if (group_id) {
-          await supabase.from('registrations').update(cancelUpdate).eq('group_id', group_id);
+        if (effectiveCancelGroupId) {
+          await supabase.from('registrations').update(cancelUpdate).eq('group_id', effectiveCancelGroupId);
         } else {
           await supabase.from('registrations').update(cancelUpdate).eq('id', id);
         }
 
         if (notify) {
           let allMembers = [reg];
-          if (group_id) {
-            const { data: members } = await supabase.from('registrations').select('*').eq('group_id', group_id);
+          if (effectiveCancelGroupId) {
+            const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveCancelGroupId);
             if (members) allMembers = members;
           }
           const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;

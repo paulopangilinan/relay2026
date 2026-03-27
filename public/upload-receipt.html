@@ -203,11 +203,13 @@
 
 <script>
   let registrationId = null;
+  let registrationGroupId = null;
 
   // ── On load: read ID from URL, fetch registration details ─────────────
   window.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
-    registrationId = params.get('id');
+    registrationId      = params.get('id');
+    registrationGroupId = params.get('group_id');
 
     if (!registrationId) { showError(); return; }
 
@@ -311,6 +313,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: registrationId,
+            group_id: registrationGroupId || null,
           receiptBase64: receiptData?.base64,
           receiptName: receiptData?.name,
         }),

@@ -13,7 +13,7 @@ console.log(`VALUES (`);
 console.log(`  'paulopangilinan@gmail.com',`);
 console.log(`  'Paulo Pangilinan',`);
 console.log(`  '${hash}',`);
-console.log(`  '{"receive_updates":true,"verify_payment":true,"manage_admins":true}',`);
+console.log(`  '{"receive_updates":true,"verify_payment":true,"manage_admins":true,"manage_churches":true}',`);
 console.log(`  true,`);
 console.log(`  true`);
 console.log(`);\n`);

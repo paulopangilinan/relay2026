@@ -164,12 +164,14 @@
 <script>
   // Read query param ?type=paid or ?type=later
   const params = new URLSearchParams(window.location.search);
-  const type = params.get('type') || 'paid';
-  const form = params.get('form') || 'ph';
-  const isIntl = form === 'intl';
+  const type    = params.get('type') || 'paid';
+  const form    = params.get('form') || 'ph';
+  const regType = params.get('regType') || 'single'; // single or group
+  const isIntl  = form === 'intl';
 
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
-  document.getElementById('backBtn').href = isIntl ? '/register-international' : '/register-ph';
+  // PH: return to picker (index); Intl: return to intl form
+  document.getElementById('backBtn').href = isIntl ? '/register-international' : `/?regType=${regType}`;
 
   // Swap payment method wording for international (BPI) vs PH (GCash)
   if (isIntl) {

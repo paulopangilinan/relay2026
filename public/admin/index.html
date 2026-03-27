@@ -93,7 +93,14 @@
 
   /* TABLE */
   .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
-  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;}
+  .table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-height:520px;}
+  @media(max-width:600px){.table-scroll{max-height:360px;}}
+  thead th{position:sticky;top:0;z-index:1;background:#f7fafb;}
+  .table-body-scroll{max-height:520px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  @media(max-width:600px){.table-body-scroll{max-height:360px;}}
+  .table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-height:520px;}
+  @media(max-width:600px){.table-scroll{max-height:360px;}}
+  thead th{position:sticky;top:0;z-index:1;background:#f7fafb;}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
@@ -996,20 +1003,43 @@
   function renderBarListGrouped(id, known, others, symbol) {
     const el = document.getElementById(id);
     if (!el) return;
-    const allKnown = Object.entries(known).sort((a,b) => b[1].count - a[1].count);
+    const allKnown  = Object.entries(known).sort((a,b) => b[1].count - a[1].count);
     const allOthers = Object.entries(others).sort((a,b) => b[1].count - a[1].count);
     const max = Math.max(...[...allKnown, ...allOthers].map(([,v]) => v.count), 1);
 
     const makeRow = ([k, v]) =>
       `<div class="church-row"><span class="church-name" title="${esc(k)}">${esc(k)}</span><div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(v.count/max*100)}%"></div></div><span class="church-count">${v.count} <span style="color:var(--muted);font-size:11px;">| ${symbol}${v.fee.toLocaleString()}</span></span></div>`;
 
-    let html = '';
-    if (allKnown.length) html += allKnown.map(makeRow).join('');
+    let rows = '';
+    if (allKnown.length) rows += allKnown.map(makeRow).join('');
+
     if (allOthers.length) {
-      html += `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:10px 0 4px;">Other</div>`;
-      html += allOthers.map(makeRow).join('');
+      const totalOthersCount = allOthers.reduce((s,[,v]) => s + v.count, 0);
+      const totalOthersFee   = allOthers.reduce((s,[,v]) => s + v.fee, 0);
+      const othersId = id + '-others';
+      rows += `
+        <div class="church-row others-header" onclick="toggleOthers('${othersId}')" style="cursor:pointer;background:#f7fafb;border-top:1px solid var(--border);margin-top:4px;">
+          <span class="church-name" style="font-weight:700;color:var(--muted);">Other</span>
+          <div class="church-bar-wrap"><div class="church-bar" style="width:${Math.round(totalOthersCount/max*100)}%;background:#ccc;"></div></div>
+          <span class="church-count" style="display:flex;align-items:center;gap:6px;">
+            ${totalOthersCount} <span style="color:var(--muted);font-size:11px;">| ${symbol}${totalOthersFee.toLocaleString()}</span>
+            <span id="${othersId}-chevron" style="font-size:10px;color:var(--muted);">▾</span>
+          </span>
+        </div>
+        <div id="${othersId}" style="display:none;">
+          ${allOthers.map(makeRow).join('')}
+        </div>`;
     }
-    el.innerHTML = html || '<div class="empty">No data yet</div>';
+    el.innerHTML = rows || '<div class="empty">No data yet</div>';
+  }
+
+  function toggleOthers(id) {
+    const el      = document.getElementById(id);
+    const chevron = document.getElementById(id + '-chevron');
+    if (!el) return;
+    const open = el.style.display === 'none';
+    el.style.display      = open ? 'block' : 'none';
+    if (chevron) chevron.textContent = open ? '▴' : '▾';
   }
 
   function renderBarListExact(id, obj, symbol) {
@@ -1178,6 +1208,7 @@
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function adminName(email) {
     if (!email) return '—';
+    if (email === 'email-link') return '<span style="color:var(--muted);font-style:italic;">via email (expired)</span>';
     const a = adminsList.find(x => x.email === email);
     return a ? esc(a.name) : esc(email);
   }
@@ -1523,7 +1554,9 @@
   window.openModal            = openModal;
   window.closeModal           = closeModal;
   window.doConfirm            = doConfirm;
+  window.toggleOthers         = toggleOthers;
   window.toggleHideCancelled  = toggleHideCancelled;
+  window.toggleOthers         = toggleOthers;
   window.toggleHideCancelled  = toggleHideCancelled;
   window.openCancelModal      = openCancelModal;
   window.toggleCancelNotify   = toggleCancelNotify;

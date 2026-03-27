@@ -1,4 +1,5 @@
 // netlify/functions/submit-receipt.js
+import jwt from 'jsonwebtoken';
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
@@ -97,6 +98,10 @@ export const handler = async (event) => {
     const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
     for (const admin of notifyAdmins) {
       const canVerify = !!admin.permissions?.verify_payment;
+      const adminToken = canVerify
+        ? jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: '30d' })
+        : null;
+      const verifyLink = adminToken ? `${baseVerifyUrl}&atoken=${adminToken}` : baseVerifyUrl;
       await getTransporter().sendMail({
         from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      admin.email,
