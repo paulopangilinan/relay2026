@@ -140,7 +140,7 @@
     <div class="card">
       <div class="section-label">Complete Your Registration</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from <span class="contact-email">—</span>.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
       </div>
@@ -154,7 +154,7 @@
     </div>
 
     <div class="note" style="margin-bottom:24px;">
-      Can't find the email? Check your spam/junk folder or contact us at <strong>ccsgmprojects@gmail.com</strong>
+      Can't find the email? Check your spam/junk folder or contact us at <strong><span class="contact-email">—</span></strong>
     </div>
   </div>
 
@@ -163,6 +163,15 @@
 
 <script>
   // Read query param ?type=paid or ?type=later
+  // Fetch contact email
+  fetch('/.netlify/functions/contact-info')
+    .then(r => r.json())
+    .then(d => {
+      document.querySelectorAll('.contact-email').forEach(el => {
+        el.textContent = d.email || '';
+      });
+    }).catch(() => {});
+
   const params = new URLSearchParams(window.location.search);
   const type    = params.get('type') || 'paid';
   const form    = params.get('form') || 'ph';
@@ -179,7 +188,7 @@
     const payStep    = document.getElementById('payInstructStep');
     const subtitle   = document.getElementById('paidSubtitle');
     if (verifyStep) verifyStep.innerHTML = 'Our team will <strong>verify your BPI transfer</strong> and send you a confirmation email shortly.';
-    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from ccsgmprojects@gmail.com.';
+    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="contact-email">—</span>.';
     if (subtitle)   subtitle.innerHTML  = 'Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment receipt and will verify it shortly.';
   }
 </script>

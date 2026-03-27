@@ -71,7 +71,8 @@ export const handler = async (event) => {
     const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
     const siteUrl     = (process.env.SITE_URL || '').replace(/\/+$/, '');
     const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg`;
-    const verifyLink  = `${siteUrl}/.netlify/functions/verify?id=${id}${group_id ? `&group_id=${group_id}` : ""}`;
+    const baseVerifyUrl = `${siteUrl}/.netlify/functions/verify?id=${id}${group_id ? `&group_id=${group_id}` : ''}`;
+    const JWT_SECRET  = process.env.JWT_SECRET || 'relay2026secret';
 
     const breakdownRows = allMembers.map(m => `
       <tr>
