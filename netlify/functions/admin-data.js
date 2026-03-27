@@ -64,14 +64,17 @@ export const handler = async (event) => {
       const body = JSON.parse(event.body);
       const { action, id, group_id } = body;
 
-      const { data: reg, error: fetchErr } = await supabase.from('registrations').select('*').eq('id', id).single();
-      if (fetchErr || !reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+      if (!action || !id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action or id' }) };
 
       // ── Confirm payment ────────────────────────────────────────────────────
       if (action === 'confirm') {
         if (!requester.permissions?.verify_payment) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to verify payment' }) };
         }
+
+        // Fetch one row to get email/name for confirmation email
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
         const confirmUpdate = {
           payment_verified: true,
@@ -112,9 +115,11 @@ export const handler = async (event) => {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to cancel registrations' }) };
         }
 
-        const { notify } = body; // true/false — send email to registrant
+        // Fetch one row to get email for notification
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
-        const { reason } = body;
+        const { notify, reason } = body;
         const cancelUpdate = {
           status: 'cancelled',
           payment_verified: false,

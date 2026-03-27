@@ -88,6 +88,7 @@
 
   /* TABLE */
   .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
@@ -115,7 +116,7 @@
   .church-opt.selected{background:var(--sky-light);font-weight:600;color:var(--sky);}
   .church-group-hdr{padding:6px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
   .receipt-link:hover{text-decoration:underline;}
-  .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;display:block;margin-bottom:4px;width:100%;text-align:center;}
   .btn-confirm-row:hover{background:var(--green-bright);}
 
   /* BOTTOM */
@@ -147,8 +148,9 @@
   .btn-cancel{padding:9px 18px;background:transparent;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;}
   .btn-cancel:hover{border-color:var(--text);color:var(--text);}
   .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
-  .btn-cancel-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:4px 8px;margin-left:4px;}
+  .btn-cancel-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;}
   .btn-cancel-row:hover{background:#E05050;color:#fff;}
+  .btn-actions{display:flex;flex-direction:column;gap:4px;min-width:110px;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
@@ -347,7 +349,7 @@
       </div>
       <div class="table-wrap">
         <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th></tr></thead>
             <tbody id="ph-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
@@ -419,7 +421,7 @@
       </div>
       <div class="table-wrap">
         <div class="table-header"><h2>International Registrations</h2><span class="table-count" id="intl-count">–</span></div>
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th></tr></thead>
             <tbody id="intl-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
@@ -442,7 +444,7 @@
         <button onclick="openAddAdminModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Admin</button>
       </div>
       <div class="table-wrap">
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr>
               <th>Name</th><th>Email</th>
@@ -805,15 +807,17 @@
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
         <td style="font-size:11px;color:var(--muted);">${r.verified_by ? `<span title="${esc(r.verified_by)}">${adminName(r.verified_by)}</span><br><span style="font-size:10px;">${formatDate(r.verified_at)}</span>` : '—'}</td>
         <td style="font-size:11px;color:var(--muted);">${r.cancelled_by ? `<span title="${esc(r.cancelled_by)}">${adminName(r.cancelled_by)}</span><br><span style="font-size:10px;">${formatDate(r.cancelled_at)}</span>${r.cancellation_reason ? `<br><span style="font-size:10px;font-style:italic;">${esc(r.cancellation_reason)}</span>` : ''}` : '—'}</td>
-        <td style="white-space:nowrap;">
+        <td style="min-width:120px;">
+          <div class="btn-actions">
           ${r.status === 'cancelled'
             ? '<span style="color:#aaa;font-size:12px;font-style:italic;">Cancelled</span>'
             : r.payment_verified
               ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Paid</button> <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Cancelled</button>`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Paid</button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Cancelled</button>`
                 : '—'
           }
+          </div>
         </td>
       </tr>
     `).join('');
