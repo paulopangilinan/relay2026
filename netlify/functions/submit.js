@@ -121,12 +121,18 @@ export const handler = async (event) => {
     const breakdownTable = buildBreakdownTable(participants, totalLabel);
 
     if (paymentReady === "now") {
-      await transporter.sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to:      (await getAdminEmails(supabase, 'receive_updates')).join(',') || process.env.ADMIN_EMAIL,
-        subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
-        html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable }),
-      });
+      // Send per-admin — CTA only for those with verify_payment permission
+      const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions');
+      const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates);
+      for (const admin of notifyAdmins) {
+        const canVerify = !!admin.permissions?.verify_payment;
+        await transporter.sendMail({
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          to:      admin.email,
+          subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
+          html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }),
+        });
+      }
       await transporter.sendMail({
         from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      email,
@@ -134,12 +140,17 @@ export const handler = async (event) => {
         html:    registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, participants, breakdownTable, totalLabel }),
       });
     } else {
-      await transporter.sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-        to:      (await getAdminEmails(supabase, 'receive_updates')).join(',') || process.env.ADMIN_EMAIL,
-        subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
-        html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
-      });
+      // Send per-admin (no CTA needed for awaiting payment)
+      const { data: allAdmins2 } = await supabase.from('admins').select('email, name, permissions');
+      const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates);
+      for (const admin of notifyAdmins2) {
+        await transporter.sendMail({
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          to:      admin.email,
+          subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
+          html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
+        });
+      }
       await transporter.sendMail({
         from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      email,
@@ -217,7 +228,7 @@ function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
 
 function r(l, v) { return `<div class="row"><div class="lbl">${l}</div><div class="val">${v}</div></div>`; }
 
-function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable }) {
+function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }) {
   const primaryName = participants[0].name;
   return emailShell({
     heroUrl,
@@ -228,11 +239,9 @@ function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, v
       ${r('Contact / Registrant', primaryName)}${r('Church', churchName)}${r('Total Amount', totalLabel)}
       ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
       <hr>
-      ${receiptUrl ? `<p style="font-size:13px;margin-bottom:16px;">📎 <a href="${receiptUrl}" style="color:#3A8BBF;font-weight:600;">View payment screenshot</a></p>` : ''}
-      <div class="note">Check your GCash app to confirm payment was received, then click the button below.</div>
-      <div style="text-align:center;margin-top:24px;">
-        <a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a>
-      </div>`
+      ${receiptUrl ? `<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Payment Screenshot</div><img src="${receiptUrl}" alt="Payment Receipt" style="width:100%;max-width:480px;border-radius:10px;border:1px solid #D4E2EA;display:block;"></div>` : ''}
+      <div class="note">Check your GCash app to confirm payment was received${canVerify ? ', then click the button below to confirm.' : '.'}</div>
+      ${canVerify ? `<div style="text-align:center;margin-top:24px;"><a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a></div>` : ''}`
   });
 }
 

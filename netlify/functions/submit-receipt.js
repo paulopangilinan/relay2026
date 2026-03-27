@@ -93,10 +93,14 @@ export const handler = async (event) => {
         </tr></tfoot>
       </table>`;
 
-    await getTransporter().sendMail({
-      from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-      to:      (await getAdminEmails(supabase, 'receive_updates')).join(',') || process.env.ADMIN_EMAIL,
-      subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
+    const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions');
+    const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates);
+    for (const admin of notifyAdmins) {
+      const canVerify = !!admin.permissions?.verify_payment;
+      await getTransporter().sendMail({
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        to:      admin.email,
+        subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
       html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
         body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
         .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
@@ -120,15 +124,14 @@ export const handler = async (event) => {
           <div class="row"><div class="lbl">Total</div><div class="val">${totalLabel}</div></div>
           ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${allMembers.length})</div>${breakdownTable}` : ''}
           <hr>
-          ${receiptUrl ? `<p style="font-size:13px;margin-bottom:16px;">📎 <a href="${receiptUrl}" style="color:#3A8BBF;font-weight:600;">View receipt screenshot</a></p>` : ""}
-          <div class="note">${isGroup ? `This group (${allMembers.length} participants) has submitted their GCash receipt. All participants will be confirmed upon verification.` : 'This registrant has submitted their GCash receipt.'} Verify the payment and click below to confirm.</div>
-          <div style="text-align:center;margin-top:24px;">
-            <a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a>
-          </div>
+          ${receiptUrl ? `<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Payment Screenshot</div><img src="${receiptUrl}" alt="Payment Receipt" style="width:100%;max-width:480px;border-radius:10px;border:1px solid #D4E2EA;display:block;"></div>` : ""}
+          <div class="note">${isGroup ? `This group (${allMembers.length} participants) has submitted their GCash receipt.` : 'This registrant has submitted their GCash receipt.'} ${canVerify ? 'Verify the payment and click below to confirm.' : ''}</div>
+          ${canVerify ? `<div style="text-align:center;margin-top:24px;"><a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a></div>` : ''}
         </div>
         <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific</div>
       </div></body></html>`,
-    });
+      });
+    }
 
     return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
   } catch (err) {

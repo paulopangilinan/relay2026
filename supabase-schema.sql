@@ -93,3 +93,7 @@ CREATE TABLE IF NOT EXISTS admins (
 --   true,
 --   true
 -- );
+
+-- ── Group Registration Columns ─────────────────────────────────────────────
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS group_id UUID;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS group_size INTEGER DEFAULT 1;
