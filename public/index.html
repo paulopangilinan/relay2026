@@ -4,57 +4,134 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RELAY 2026 — Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #1C2B38; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-  .wrap { text-align: center; padding: 20px; max-width: 420px; width: 100%; }
+  body { font-family: 'DM Sans', Arial, sans-serif; background: #1C2B38; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .wrap { text-align: center; max-width: 480px; width: 100%; }
+
+  /* Spinner */
   .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.15); border-top-color: #4BAE6A; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  p { color: rgba(255,255,255,0.5); font-size: 13px; }
-  .chooser { display: none; }
-  .chooser h2 { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .chooser p { color: rgba(255,255,255,0.55); font-size: 13px; margin-bottom: 28px; }
+  #loading p { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+  /* Chooser: PH vs Intl */
+  #chooser { display: none; }
+  #chooser h2 { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  #chooser > p { color: rgba(255,255,255,0.55); font-size: 13px; margin-bottom: 28px; }
   .choose-btns { display: flex; flex-direction: column; gap: 12px; }
-  .choose-btn { display: block; width: 100%; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: 600; transition: all 0.2s; cursor: pointer; }
-  .choose-btn-ph { background: linear-gradient(135deg, #2E7048, #4BAE6A); color: #fff; }
-  .choose-btn-ph:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(75,174,106,0.35); }
-  .choose-btn-intl { background: linear-gradient(135deg, #3A8BBF, #5AADD4); color: #fff; }
-  .choose-btn-intl:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(58,139,191,0.35); }
+  .choose-btn { display: block; width: 100%; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: 600; transition: all 0.2s; cursor: pointer; border: none; text-align: left; }
   .choose-btn sub { display: block; font-size: 11px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+  .choose-btn-ph   { background: linear-gradient(135deg,#2E7048,#4BAE6A); color: #fff; }
+  .choose-btn-ph:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(75,174,106,0.35); }
+  .choose-btn-intl { background: linear-gradient(135deg,#3A8BBF,#5AADD4); color: #fff; }
+  .choose-btn-intl:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(58,139,191,0.35); }
+
+  /* Type picker: Single vs Group */
+  #typePicker { display: none; }
+  .type-header { margin-bottom: 28px; }
+  .type-header .relay-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.2em; color: #4BAE6A; margin-bottom: 6px; }
+  .type-header h2 { color: #fff; font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .type-header p { color: rgba(255,255,255,0.5); font-size: 13px; }
+  .type-cards { display: flex; flex-direction: column; gap: 14px; }
+  .type-card {
+    background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 20px; text-align: left; cursor: pointer;
+    transition: all 0.2s; text-decoration: none; display: block;
+  }
+  .type-card:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); transform: translateY(-1px); }
+  .type-card-icon { font-size: 28px; margin-bottom: 10px; }
+  .type-card-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .type-card-sub { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+  .type-card-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 50px; letter-spacing: 0.06em;
+    margin-top: 8px;
+  }
+  .badge-green { background: rgba(75,174,106,0.2); color: #4BAE6A; }
+  .badge-blue  { background: rgba(58,139,191,0.2); color: #5AADD4; }
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <!-- Step 1: Loading / GeoIP -->
   <div id="loading">
     <div class="spinner"></div>
     <p>Loading registration form…</p>
   </div>
-  <div class="chooser" id="chooser">
+
+  <!-- Step 1b: Manual PH vs International chooser (GeoIP failed) -->
+  <div id="chooser">
     <h2>RELAY Conference 2026</h2>
     <p>Please select the registration form that applies to you.</p>
     <div class="choose-btns">
-      <a href="/register-ph" class="choose-btn choose-btn-ph">
+      <button class="choose-btn choose-btn-ph" onclick="showTypePicker('ph')">
         🇵🇭 Philippine Attendee
         <sub>Local registration · PHP pricing</sub>
-      </a>
-      <a id="intlBtn" href="/register-international" class="choose-btn choose-btn-intl">
+      </button>
+      <button id="intlBtn" class="choose-btn choose-btn-intl" onclick="showTypePicker('intl')">
         🌏 International Attendee
         <sub>Outside Philippines · USD $300</sub>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Single vs Group -->
+  <div id="typePicker">
+    <div class="type-header">
+      <div class="relay-label">RELAY 2026 · REGISTRATION</div>
+      <h2>How are you registering?</h2>
+      <p>You won't be able to change this after proceeding.</p>
+    </div>
+    <div class="type-cards">
+      <a id="singleCard" href="#" class="type-card" onclick="goToForm('single');return false;">
+        <div class="type-card-icon">👤</div>
+        <div class="type-card-title">Single Participant</div>
+        <div class="type-card-sub">Just registering for yourself. Fill in your own details and complete payment.</div>
+        <span class="type-card-badge badge-green">One registration</span>
+      </a>
+      <a id="groupCard" href="#" class="type-card" onclick="goToForm('group');return false;">
+        <div class="type-card-icon">👥</div>
+        <div class="type-card-title">Group Registration</div>
+        <div class="type-card-sub">Registering multiple people together. Max of 5 participants, one church, one payment.</div>
+        <span class="type-card-badge badge-blue">2–5 participants</span>
       </a>
     </div>
   </div>
+
 </div>
 <script>
   const PH_FORM   = '/register-ph';
   const INTL_FORM = '/register-international';
   const TIMEOUT_MS = 3000;
 
+  let detectedRegion = 'ph';
+  let detectedCountry = '';
+
+  function showTypePicker(region, country) {
+    detectedRegion  = region || 'ph';
+    detectedCountry = country || '';
+    document.getElementById('loading').style.display  = 'none';
+    document.getElementById('chooser').style.display  = 'none';
+    document.getElementById('typePicker').style.display = 'block';
+  }
+
+  function goToForm(type) {
+    if (detectedRegion === 'ph') {
+      window.location.href = PH_FORM + '?type=' + type;
+    } else {
+      const countryParam = detectedCountry ? '&country=' + encodeURIComponent(detectedCountry) : '';
+      window.location.href = INTL_FORM + '?type=' + type + countryParam;
+    }
+  }
+
   async function detectAndRedirect() {
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      // Default to PH form silently when detection times out
-      window.location.replace(PH_FORM);
+      // Default: show type picker for PH
+      showTypePicker('ph');
     }, TIMEOUT_MS);
 
     try {
@@ -69,14 +146,14 @@
       const countryName = data.country_name || '';
 
       if (countryCode === 'PH' || countryCode === '') {
-        window.location.replace(PH_FORM);
+        showTypePicker('ph', '');
       } else {
-        window.location.replace(`${INTL_FORM}?country=${encodeURIComponent(countryName)}`);
+        showTypePicker('intl', countryName);
       }
     } catch (e) {
       clearTimeout(timer);
       if (!timedOut) {
-        // Show chooser only if we explicitly failed (not timed out)
+        // Show manual chooser
         document.getElementById('loading').style.display = 'none';
         document.getElementById('chooser').style.display = 'block';
       }

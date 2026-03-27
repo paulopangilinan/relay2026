@@ -33,7 +33,7 @@ export const handler = async (event) => {
 
     const churchName = church === "others" ? otherChurch : church;
     const transporter = getTransporter();
-    const siteUrl = process.env.SITE_URL;
+    const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
     const heroUrl = `${siteUrl}/assets/images/hero-email.jpg`;
     const qrUrl   = `${siteUrl}/assets/images/qr/gcash-qr.png`;
     const isGroup = registrationType === "group";
