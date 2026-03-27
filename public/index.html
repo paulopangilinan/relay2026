@@ -4,58 +4,208 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RELAY 2026 — Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #1C2B38; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-  .wrap { text-align: center; padding: 20px; max-width: 420px; width: 100%; }
-  .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.15); border-top-color: #4BAE6A; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB; --green: #2E7048;
+    --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A;
+    --border: #D4E2EA; --input-bg: #F5F9FC; --card-bg: #fff;
+    --gold-light: #E8B830;
+  }
+
+  body {
+    font-family: 'DM Sans', Arial, sans-serif;
+    background: #F2F5F8; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  /* Hero banner */
+  .hero { width: 100%; max-height: 180px; overflow: hidden; }
+  .hero img { width: 100%; display: block; object-fit: cover; object-position: center top; }
+
+  /* Confetti bar */
+  .confetti-bar {
+    height: 4px; width: 100%;
+    background: linear-gradient(90deg, #4BAE6A, #3A8BBF, #E8B830, #4BAE6A);
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  /* Chips */
+  .chips-bar {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    padding: 14px 20px; background: var(--dark); width: 100%;
+  }
+  .chip {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 50px; letter-spacing: 0.03em;
+  }
+  .chip-venue { background: rgba(74,155,196,0.18); color: #8DD4F5; border: 1px solid rgba(74,155,196,0.3); }
+  .chip-date  { background: rgba(232,184,48,0.18);  color: #F5D06A; border: 1px solid rgba(232,184,48,0.3); }
+  .chip-age   { background: rgba(75,174,106,0.18);  color: #7EE0A2; border: 1px solid rgba(75,174,106,0.3); }
+
+  /* Page wrap */
+  .page-wrap { width: 100%; max-width: 560px; padding: 24px 16px 48px; }
+
+  /* Heading */
+  .form-heading { text-align: center; margin-bottom: 24px; }
+  .form-heading h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+    letter-spacing: 0.06em; color: var(--dark); margin-bottom: 6px;
+  }
+  .form-heading p { font-size: 13px; color: var(--muted); }
+
+  /* Spinner */
+  .spinner {
+    width: 36px; height: 36px; border: 3px solid var(--border);
+    border-top-color: var(--sky); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 40px auto 14px;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
-  p { color: rgba(255,255,255,0.5); font-size: 13px; }
-  .chooser { display: none; }
-  .chooser h2 { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .chooser p { color: rgba(255,255,255,0.55); font-size: 13px; margin-bottom: 28px; }
+  #loading p { color: var(--muted); font-size: 13px; text-align: center; }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg); border-radius: 14px;
+    border: 1px solid var(--border); padding: 20px;
+    box-shadow: 0 2px 12px rgba(28,43,56,0.06); margin-bottom: 14px;
+  }
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--sky);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  /* Type cards */
+  .type-card {
+    display: block; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 18px 16px; margin-bottom: 12px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; text-decoration: none;
+    background: #fff;
+  }
+  .type-card:last-child { margin-bottom: 0; }
+  .type-card:hover { border-color: var(--sky); background: var(--sky-light); }
+  .type-card-icon { font-size: 26px; margin-bottom: 8px; }
+  .type-card-title { font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+  .type-card-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .type-card-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 50px; letter-spacing: 0.05em; margin-top: 8px;
+  }
+  .badge-green { background: #E6F5EC; color: var(--green); }
+  .badge-blue  { background: var(--sky-light); color: var(--sky); }
+
+  /* Chooser (GeoIP failed fallback) */
+  #chooser { display: none; }
   .choose-btns { display: flex; flex-direction: column; gap: 12px; }
-  .choose-btn { display: block; width: 100%; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: 600; transition: all 0.2s; cursor: pointer; }
-  .choose-btn-ph { background: linear-gradient(135deg, #2E7048, #4BAE6A); color: #fff; }
-  .choose-btn-ph:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(75,174,106,0.35); }
-  .choose-btn-intl { background: linear-gradient(135deg, #3A8BBF, #5AADD4); color: #fff; }
-  .choose-btn-intl:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(58,139,191,0.35); }
+  .choose-btn {
+    display: block; width: 100%; padding: 16px 20px; border-radius: 12px;
+    text-decoration: none; font-size: 15px; font-weight: 600;
+    transition: all 0.2s; cursor: pointer; border: none; text-align: left;
+  }
   .choose-btn sub { display: block; font-size: 11px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+  .choose-btn-ph   { background: linear-gradient(135deg,#2E7048,#4BAE6A); color: #fff; }
+  .choose-btn-ph:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(75,174,106,0.35); }
+  .choose-btn-intl { background: linear-gradient(135deg,#3A8BBF,#5AADD4); color: #fff; }
+  .choose-btn-intl:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(58,139,191,0.35); }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="hero">
+  <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
+</div>
+<div class="confetti-bar"></div>
+<div class="chips-bar">
+  <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
+  <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
+  <span class="chip chip-age">👥 Ages 17–33 (Young Adults &amp; Leaders)</span>
+</div>
+
+<div class="page-wrap">
+
+  <!-- Spinner -->
   <div id="loading">
     <div class="spinner"></div>
     <p>Loading registration form…</p>
   </div>
-  <div class="chooser" id="chooser">
-    <h2>RELAY Conference 2026</h2>
-    <p>Please select the registration form that applies to you.</p>
-    <div class="choose-btns">
-      <a href="/register-ph" class="choose-btn choose-btn-ph">
-        🇵🇭 Philippine Attendee
-        <sub>Local registration · PHP pricing</sub>
-      </a>
-      <a id="intlBtn" href="/register-international" class="choose-btn choose-btn-intl">
-        🌏 International Attendee
-        <sub>Outside Philippines · USD $300</sub>
-      </a>
+
+  <!-- GeoIP failed: manual PH vs International chooser -->
+  <div id="chooser">
+    <div class="form-heading">
+      <h1>Conference Registration</h1>
+      <p>Sovereign Grace Churches Asia Pacific &nbsp;·&nbsp; Select the form that applies to you.</p>
+    </div>
+    <div class="card">
+      <div class="section-label">Where are you from?</div>
+      <div class="choose-btns">
+        <button class="choose-btn choose-btn-ph" onclick="showTypePicker()">
+          🇵🇭 Philippine Attendee
+          <sub>Local registration · PHP pricing</sub>
+        </button>
+        <button class="choose-btn choose-btn-intl" onclick="goIntl('')">
+          🌏 International Attendee
+          <sub>Outside Philippines · USD $300</sub>
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- Type picker: Single vs Group (PH only) -->
+  <div id="typePicker" style="display:none;">
+    <div class="form-heading">
+      <h1>Conference Registration</h1>
+      <p>Sovereign Grace Churches Asia Pacific &nbsp;·&nbsp; How are you registering?</p>
+    </div>
+    <div class="card">
+      <div class="section-label">Registration Type</div>
+      <a href="#" class="type-card" onclick="goToForm('single');return false;">
+        <div class="type-card-icon">👤</div>
+        <div class="type-card-title">Single Participant</div>
+        <div class="type-card-sub">Just registering for yourself. Fill in your own details and complete payment.</div>
+        <span class="type-card-badge badge-green">One registration</span>
+      </a>
+      <a href="#" class="type-card" onclick="goToForm('group');return false;">
+        <div class="type-card-icon">👥</div>
+        <div class="type-card-title">Group Registration</div>
+        <div class="type-card-sub">Registering multiple people together. Max of 5 participants, one church, one payment.</div>
+        <span class="type-card-badge badge-blue">2–5 participants</span>
+      </a>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;">You won't be able to change this after proceeding.</p>
+  </div>
+
 </div>
+
 <script>
   const PH_FORM   = '/register-ph';
   const INTL_FORM = '/register-international';
-  const TIMEOUT_MS = 3000;
+
+  function showTypePicker() {
+    document.getElementById('loading').style.display  = 'none';
+    document.getElementById('chooser').style.display  = 'none';
+    document.getElementById('typePicker').style.display = 'block';
+  }
+
+  function goIntl(country) {
+    const param = country ? '?country=' + encodeURIComponent(country) : '';
+    window.location.href = INTL_FORM + param;
+  }
+
+  function goToForm(type) {
+    window.location.href = PH_FORM + '?type=' + type;
+  }
 
   async function detectAndRedirect() {
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      // Default to PH form silently when detection times out
-      window.location.replace(PH_FORM);
-    }, TIMEOUT_MS);
+      // Timeout: default to PH type picker
+      showTypePicker();
+    }, 3000);
 
     try {
       const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(2500) });
@@ -69,14 +219,16 @@
       const countryName = data.country_name || '';
 
       if (countryCode === 'PH' || countryCode === '') {
-        window.location.replace(PH_FORM);
+        // Local: show Single vs Group picker
+        showTypePicker();
       } else {
-        window.location.replace(`${INTL_FORM}?country=${encodeURIComponent(countryName)}`);
+        // International: skip picker, go straight to intl form
+        goIntl(countryName);
       }
     } catch (e) {
       clearTimeout(timer);
       if (!timedOut) {
-        // Show chooser only if we explicitly failed (not timed out)
+        // GeoIP failed: show manual chooser
         document.getElementById('loading').style.display = 'none';
         document.getElementById('chooser').style.display = 'block';
       }

@@ -92,7 +92,13 @@
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
   table{width:100%;border-collapse:collapse;}
-  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;}
+  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;position:relative;user-select:none;}
+  thead th.sortable{cursor:pointer;}
+  thead th.sortable:hover{background:#edf4f8;color:var(--sky);}
+  thead th.sort-asc::after{content:' ↑';color:var(--sky);}
+  thead th.sort-desc::after{content:' ↓';color:var(--sky);}
+  thead th .col-resize{position:absolute;right:0;top:0;bottom:0;width:4px;cursor:col-resize;background:transparent;}
+  thead th .col-resize:hover,thead th .col-resize.resizing{background:var(--sky);}
   tbody tr{border-bottom:1px solid #eef3f6;transition:background 0.1s;}
   tbody tr:last-child{border-bottom:none;}
   tbody tr:hover{background:#f7fafb;}
@@ -141,6 +147,8 @@
   .btn-cancel{padding:9px 18px;background:transparent;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--muted);cursor:pointer;}
   .btn-cancel:hover{border-color:var(--text);color:var(--text);}
   .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-cancel-row{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.7;}
+  .btn-cancel-row:hover{opacity:1;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
@@ -178,10 +186,39 @@
     <div class="login-bar"></div>
     <img src="../assets/images/admin-logo.jpg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
     <h1>Relay Conference 2026</h1>
-    <p>Admin Dashboard · Enter your password</p>
-    <input type="password" id="passwordInput" placeholder="Admin password">
+    <p>Admin Dashboard</p>
+    <input type="email" id="emailInput" placeholder="Email address">
+    <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
     <button class="login-btn" onclick="login()">Sign In</button>
-    <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD SCREEN -->
+<div id="changePwScreen" style="display:none;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1C2B38,#2A3D4A);">
+  <div class="login-card">
+    <div class="login-bar"></div>
+    <img src="../assets/images/admin-logo.jpg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
+    <h1 style="font-family:'Bebas Neue';font-size:24px;color:#1C2B38;margin-bottom:4px;letter-spacing:0.06em;">Set New Password</h1>
+    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">You must change your password before continuing.</p>
+    <input type="password" id="newPw1" placeholder="New password (min. 8 chars)">
+    <input type="password" id="newPw2" placeholder="Confirm new password" onkeydown="if(event.key==='Enter')submitNewPassword()">
+    <button class="login-btn" onclick="submitNewPassword()">Set Password</button>
+    <div class="login-err" id="changePwErr"></div>
+  </div>
+</div>
+
+<!-- CANCEL REGISTRATION MODAL -->
+<div id="cancelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:8px;">Cancel Registration</h3>
+    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">Cancel registration for <strong id="cancelName"></strong>? This cannot be undone.</p>
+    <p style="font-size:13px;color:#2A3D4A;font-weight:600;margin-bottom:12px;">Notify the registrant via email?</p>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">
+      <button onclick="doCancel(true)" style="flex:1;padding:11px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Yes, Notify & Cancel</button>
+      <button onclick="doCancel(false)" style="flex:1;padding:11px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Cancel (No Email)</button>
+    </div>
+    <button onclick="closeCancelModal()" style="width:100%;padding:10px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Back</button>
   </div>
 </div>
 
@@ -189,9 +226,10 @@
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-left">
-      <img src="../assets/images/admin-logo.jpg" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
+      <img src="../assets/images/admin-icon.jpg" alt="Logo" class="topbar-logo" onerror="this.style.display='none'">
       <div>
         <div class="topbar-title">Relay Conference 2026</div>
+      <div style="font-size:11px;color:var(--muted);" id="adminName"></div>
         <div class="topbar-sub">Admin Dashboard</div>
       </div>
     </div>
@@ -212,6 +250,9 @@
       </button>
       <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
         🌏 International <span class="tab-badge" id="badge-intl">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('admins')" id="tab-admins" style="display:none;">
+        👤 Admin Users
       </button>
     </div>
 
@@ -254,6 +295,12 @@
           </div>
           <div class="tile-sub">No payment submitted yet</div>
         </div>
+        <!-- Cancelled -->
+        <div class="tile" id="ph-tile-cancelled" onclick="tileFilter('ph','cancelled')">
+          <div class="tile-label">Cancelled</div>
+          <div class="tile-count" style="color:#888;" id="ph-cancelled">–</div>
+          <div class="tile-sub">Backed out registrations</div>
+        </div>
       </div>
       <div class="filters-bar">
         <div class="filter-group"><label>Search</label><input type="text" id="ph-search" placeholder="Name, email, church…" oninput="applyFilters('ph')"></div>
@@ -263,6 +310,7 @@
             <option value="confirmed">✅ Confirmed</option>
             <option value="payment_pending_review">🕐 Pending Review</option>
             <option value="awaiting_payment">💳 Awaiting Payment</option>
+            <option value="cancelled">🚫 Cancelled</option>
           </select>
         </div>
         <div class="filter-group"><label>Type</label>
@@ -291,7 +339,7 @@
         <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Church</th><th>Status</th><th>Type</th><th>School ID</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Action</th></tr></thead>
             <tbody id="ph-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -355,7 +403,7 @@
         <div class="table-header"><h2>International Registrations</h2><span class="table-count" id="intl-count">–</span></div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>#</th><th>Name</th><th>Age</th><th>Mobile</th><th>Email</th><th>Country</th><th>Church</th><th>Status</th><th>Allergens</th><th>Receipt</th><th>Registered</th><th>Action</th></tr></thead>
+            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th></tr></thead>
             <tbody id="intl-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -366,6 +414,70 @@
       </div>
     </div>
 
+    <!-- ADMINS TAB -->
+    <div class="tab-content" id="content-admins">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--dark);">Admin Users</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Manage who has access to this dashboard.</div>
+        </div>
+        <button onclick="openAddAdminModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Admin</button>
+      </div>
+      <div class="table-wrap">
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Email</th>
+              <th>Receive Updates</th><th>Verify Payment</th><th>Manage Admins</th>
+              <th>Super Admin</th><th>Status</th><th>Action</th>
+            </tr></thead>
+            <tbody id="admins-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD/EDIT ADMIN MODAL -->
+<div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;" id="adminModalTitle">Add Admin</h3>
+      <button onclick="closeAdminModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Full Name *</label>
+        <input type="text" id="am-name" placeholder="Full name" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;outline:none;">
+      </div>
+      <div><label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Email *</label>
+        <input type="email" id="am-email" placeholder="Email address" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;outline:none;">
+      </div>
+      <div style="border:1px solid #D4E2EA;border-radius:10px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Permissions</div>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-updates" checked> Receive Registration Updates
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-verify"> Verify Payment &amp; Cancel Registration
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-manage"> Manage Admin Users
+        </label>
+      </div>
+      <div id="am-super-wrap" style="display:none;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 14px;background:#FDF6E0;border-radius:8px;border:1px solid #E8B830;">
+          <input type="checkbox" id="am-super"> Make Super Admin
+          <span style="font-size:11px;color:#7A5A10;margin-left:4px;">(cannot be removed)</span>
+        </label>
+      </div>
+    </div>
+    <div id="am-err" style="display:none;color:#E05050;font-size:12px;margin-top:10px;"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="saveAdmin()" style="flex:1;padding:12px;background:#1C2B38;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;" id="am-save-btn">Send Invite</button>
+      <button onclick="closeAdminModal()" style="padding:12px 20px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -402,34 +514,89 @@
     } catch(e) { /* fail open */ }
   })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
-  let adminPassword = '', pendingConfirmId = null, activeTab = 'ph';
+  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, activeTab = 'ph';
 
-  function login() {
-    const pw = document.getElementById('passwordInput').value;
-    if (!pw) return;
-    adminPassword = pw;
-    loadData().then(ok => {
-      if (ok) {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-      } else {
-        document.getElementById('loginErr').style.display = 'block';
-        adminPassword = '';
+  async function login() {
+    const email = document.getElementById('emailInput').value.trim();
+    const pw    = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.style.display = 'none';
+    if (!email || !pw) { errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
+
+    try {
+      const res  = await fetch('/.netlify/functions/admin-login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pw }),
+      });
+      const json = await res.json();
+      if (!res.ok) { errEl.textContent = json.error || 'Login failed.'; errEl.style.display = 'block'; return; }
+
+      adminToken   = json.token;
+      adminSession = { name: json.name, permissions: json.permissions, is_super_admin: json.is_super_admin };
+
+      if (json.force_password_change) {
+        showChangePassword();
+        return;
       }
-    });
+
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('adminName').textContent = json.name;
+      applyPermissionUI();
+      loadData();
+    } catch (e) {
+      errEl.textContent = 'Connection error. Try again.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  function showChangePassword() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('changePwScreen').style.display = 'flex';
+  }
+
+  async function submitNewPassword() {
+    const pw1   = document.getElementById('newPw1').value;
+    const pw2   = document.getElementById('newPw2').value;
+    const errEl = document.getElementById('changePwErr');
+    errEl.style.display = 'none';
+    if (pw1.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return; }
+    if (pw1 !== pw2)    { errEl.textContent = 'Passwords do not match.'; errEl.style.display = 'block'; return; }
+    try {
+      const res  = await fetch('/.netlify/functions/admin-change-password', {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: pw1 }),
+      });
+      const json = await res.json();
+      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; return; }
+      document.getElementById('changePwScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('adminName').textContent = adminSession.name;
+      applyPermissionUI();
+      loadData();
+    } catch (e) {
+      errEl.textContent = 'Error. Try again.'; errEl.style.display = 'block';
+    }
+  }
+
+  function applyPermissionUI() {
+    const adminTab = document.getElementById('tab-admins');
+    if (adminTab) adminTab.style.display = adminSession?.permissions?.manage_admins ? 'flex' : 'none';
   }
 
   function logout() {
-    adminPassword = '';
+    adminToken = ''; adminSession = null;
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('changePwScreen').style.display = 'none';
+    document.getElementById('emailInput').value = '';
     document.getElementById('passwordInput').value = '';
     document.getElementById('loginErr').style.display = 'none';
   }
 
   async function loadData() {
     try {
-      const res = await fetch('/.netlify/functions/admin-data', { headers: { 'Authorization': 'Bearer ' + adminPassword } });
+      const res = await fetch('/.netlify/functions/admin-data', { headers: { 'Authorization': 'Bearer ' + adminToken } });
       if (res.status === 401) return false;
       const json = await res.json();
 
@@ -448,6 +615,7 @@
       applyFilters('intl');
       renderBreakdowns(ph, intl);
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      initSortableHeaders();
       return true;
     } catch (e) { showToast('Error: ' + e.message); return false; }
   }
@@ -596,12 +764,15 @@
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
     const cols = isPH ? 11 : 12;
+    const { col, dir } = sortState[tab];
+    rows = sortData(rows, col, dir);
+    const canVerify = adminSession?.permissions?.verify_payment || false;
     const tbody = document.getElementById(`${tab}-body`);
     if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">No registrations match your filters.</td></tr>`; return; }
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
         <td class="mono">${i+1}</td>
-        <td><strong>${esc(r.name)}</strong></td>
+        <td><strong>${esc(r.name)}</strong>${r.group_id ? ` <span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:50px;background:#EDE9FE;color:#6D28D9;letter-spacing:0.05em;vertical-align:middle;">👥 GROUP</span>` : ''}</td>
         <td>${r.age}</td>
         <td class="mono" style="font-size:12px;">${esc(r.mobile)}</td>
         <td class="mono" style="font-size:12px;">${esc(r.email)}</td>
@@ -612,7 +783,16 @@
         ${isPH ? `<td>${r.school_id_url ? `<a href="#" onclick="openImgModal('${r.school_id_url}');return false;" class="receipt-link">🪪 View</a>` : (r.student_status==='student' ? '<span style="color:#E05050;font-size:12px;">Missing</span>' : '<span style="color:#ccc;font-size:12px;">—</span>')}</td>` : ''}
         <td>${r.receipt_url ? `<a href="#" onclick="openImgModal('${r.receipt_url}');return false;" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</td>
         <td class="mono" style="font-size:11px;">${formatDate(r.created_at)}</td>
-        <td>${r.payment_verified ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>' : `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}')">Mark Paid</button>`}</td>
+        <td style="white-space:nowrap;">
+          ${r.status === 'cancelled'
+            ? '<span style="color:#888;font-size:12px;">Cancelled</span>'
+            : r.payment_verified
+              ? `<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Done</span>${canVerify ? ` <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')" title="Cancel registration">🚫</button>` : ''}`
+              : canVerify
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark Paid</button> <button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')" title="Cancel">🚫</button>`
+                : '—'
+          }
+        </td>
       </tr>
     `).join('');
   }
@@ -698,14 +878,48 @@
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
     document.getElementById(`content-${tab}`).classList.add('active');
+    if (tab === 'admins') loadAdmins();
   }
 
-  function openModal(id, name) {
+  let pendingGroupId = null;
+  function openModal(id, name, groupId) {
     pendingConfirmId = id;
-    document.getElementById('modalName').textContent = name;
+    pendingGroupId = groupId || null;
+    const label = groupId ? `${name} (Group)` : name;
+    document.getElementById('modalName').textContent = label;
     document.getElementById('confirmModal').classList.add('visible');
   }
-  function closeModal() { pendingConfirmId = null; document.getElementById('confirmModal').classList.remove('visible'); }
+  function closeModal() { pendingConfirmId = null; pendingGroupId = null; document.getElementById('confirmModal').classList.remove('visible'); }
+
+  let pendingCancelId = null, pendingCancelGroupId = null;
+
+  function openCancelModal(id, name, groupId) {
+    pendingCancelId      = id;
+    pendingCancelGroupId = groupId || null;
+    document.getElementById('cancelName').textContent = groupId ? name + ' (Group)' : name;
+    document.getElementById('cancelModal').style.display = 'flex';
+  }
+
+  function closeCancelModal() {
+    pendingCancelId = null; pendingCancelGroupId = null;
+    document.getElementById('cancelModal').style.display = 'none';
+  }
+
+  async function doCancel(notify) {
+    if (!pendingCancelId) return;
+    closeCancelModal();
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', id: pendingCancelId, group_id: pendingCancelGroupId, notify }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error);
+      showToast('Registration cancelled' + (notify ? ' and registrant notified.' : '.'));
+      loadData();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
 
   async function doConfirm() {
     if (!pendingConfirmId) return;
@@ -714,8 +928,8 @@
     try {
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + adminPassword, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: pendingConfirmId, action: 'confirm' }),
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pendingConfirmId, group_id: pendingGroupId, action: 'confirm' }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
@@ -751,9 +965,226 @@
 
   function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  // ── Sort state ─────────────────────────────────────────────────────────
+  const sortState = { ph: { col: null, dir: 'asc' }, intl: { col: null, dir: 'asc' } };
+
+  function initSortableHeaders() {
+    document.querySelectorAll('thead th.sortable').forEach(th => {
+      // Prevent duplicate listeners
+      if (th.dataset.sortInit) return;
+      th.dataset.sortInit = '1';
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        const tab = th.dataset.tab;
+        const state = sortState[tab];
+        if (state.col === col) {
+          state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.col = col;
+          state.dir = 'asc';
+        }
+        th.closest('thead').querySelectorAll('th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+        th.classList.add(state.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+        applyFilters(tab);
+      });
+    });
+    initResizableColumns();
+  }
+
+  function sortData(data, col, dir) {
+    if (!col) return data;
+    return [...data].sort((a, b) => {
+      let va = a[col] ?? '', vb = b[col] ?? '';
+      if (col === 'age') { va = parseInt(va)||0; vb = parseInt(vb)||0; }
+      else if (col === 'created_at') { va = new Date(va); vb = new Date(vb); }
+      else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+      if (va < vb) return dir === 'asc' ? -1 : 1;
+      if (va > vb) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  function initResizableColumns() {
+    document.querySelectorAll('thead th').forEach(th => {
+      if (th.querySelector('.col-resize')) return;
+      const resizer = document.createElement('div');
+      resizer.className = 'col-resize';
+      th.appendChild(resizer);
+      let startX, startW;
+      resizer.addEventListener('mousedown', e => {
+        e.stopPropagation();
+        startX = e.pageX; startW = th.offsetWidth;
+        resizer.classList.add('resizing');
+        const onMove = e => { th.style.minWidth = Math.max(40, startW + e.pageX - startX) + 'px'; };
+        const onUp = () => { resizer.classList.remove('resizing'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
+  // ── Admin Management ─────────────────────────────────────────────────────
+  let editingAdminId = null;
+  let adminsList = [];
+
+  async function loadAdmins() {
+    try {
+      const res  = await fetch('/.netlify/functions/admin-users', {
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      if (!res.ok) { showToast('Error loading admins: ' + json.error); return; }
+      adminsList = json.admins || [];
+      renderAdminsTable();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  function renderAdminsTable() {
+    const tbody = document.getElementById('admins-body');
+    if (!tbody) return;
+    if (!adminsList.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">No admins found.</td></tr>'; return; }
+    const isSuperAdmin = adminSession?.is_super_admin;
+    tbody.innerHTML = adminsList.map(a => {
+      const perm  = a.permissions || {};
+      const check = v => v ? '✅' : '—';
+      const isMe  = a.email === adminSession?.email;
+      return `<tr>
+        <td><strong>${esc(a.name)}</strong>${isMe ? ' <span style="font-size:10px;color:var(--sky);font-weight:700;">YOU</span>' : ''}</td>
+        <td style="font-size:12px;color:var(--muted);">${esc(a.email)}</td>
+        <td style="text-align:center;">${check(perm.receive_updates)}</td>
+        <td style="text-align:center;">${check(perm.verify_payment)}</td>
+        <td style="text-align:center;">${check(perm.manage_admins)}</td>
+        <td style="text-align:center;">${a.is_super_admin ? '⭐' : '—'}</td>
+        <td style="text-align:center;">${a.force_password_change ? '<span style="font-size:11px;color:#E8B830;font-weight:600;">Pending</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
+        <td>
+          <button onclick="openEditAdminModal('${a.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
+          ${!a.is_super_admin && !isMe ? `<button onclick="removeAdmin('${a.id}','${esc(a.name)}')" style="font-size:12px;padding:4px 10px;background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-left:4px;">Remove</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function openAddAdminModal() {
+    editingAdminId = null;
+    document.getElementById('adminModalTitle').textContent = 'Add Admin';
+    document.getElementById('am-save-btn').textContent = 'Send Invite';
+    document.getElementById('am-name').value  = '';
+    document.getElementById('am-email').value = '';
+    document.getElementById('am-email').disabled = false;
+    document.getElementById('am-perm-updates').checked = true;
+    document.getElementById('am-perm-verify').checked  = false;
+    document.getElementById('am-perm-manage').checked  = false;
+    document.getElementById('am-super').checked = false;
+    document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
+    document.getElementById('am-err').style.display = 'none';
+    document.getElementById('adminModal').style.display = 'flex';
+  }
+
+  function openEditAdminModal(id) {
+    const admin = adminsList.find(a => a.id === id);
+    if (!admin) return;
+    editingAdminId = id;
+    const perm = admin.permissions || {};
+    document.getElementById('adminModalTitle').textContent = 'Edit Admin';
+    document.getElementById('am-save-btn').textContent = 'Save Changes';
+    document.getElementById('am-name').value  = admin.name;
+    document.getElementById('am-email').value = admin.email;
+    document.getElementById('am-email').disabled = true;
+    document.getElementById('am-perm-updates').checked = !!perm.receive_updates;
+    document.getElementById('am-perm-verify').checked  = !!perm.verify_payment;
+    document.getElementById('am-perm-manage').checked  = !!perm.manage_admins;
+    document.getElementById('am-super').checked = !!admin.is_super_admin;
+    document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
+    document.getElementById('am-err').style.display = 'none';
+    document.getElementById('adminModal').style.display = 'flex';
+  }
+
+  function closeAdminModal() {
+    document.getElementById('adminModal').style.display = 'none';
+    editingAdminId = null;
+  }
+
+  async function saveAdmin() {
+    const name  = document.getElementById('am-name').value.trim();
+    const email = document.getElementById('am-email').value.trim();
+    const errEl = document.getElementById('am-err');
+    errEl.style.display = 'none';
+    if (!name || (!editingAdminId && !email)) { errEl.textContent = 'Name and email are required.'; errEl.style.display = 'block'; return; }
+
+    const permissions = {
+      receive_updates: document.getElementById('am-perm-updates').checked,
+      verify_payment:  document.getElementById('am-perm-verify').checked,
+      manage_admins:   document.getElementById('am-perm-manage').checked,
+    };
+    const is_super_admin = document.getElementById('am-super').checked;
+    const btn = document.getElementById('am-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    try {
+      const method = editingAdminId ? 'PUT' : 'POST';
+      const body   = editingAdminId
+        ? { id: editingAdminId, name, permissions, is_super_admin }
+        : { email, name, permissions, is_super_admin };
+
+      const res  = await fetch('/.netlify/functions/admin-users', {
+        method,
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) { errEl.textContent = json.error; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = editingAdminId ? 'Save Changes' : 'Send Invite'; return; }
+
+      closeAdminModal();
+      showToast(editingAdminId ? 'Admin updated.' : 'Admin invited! A welcome email has been sent.');
+      loadAdmins();
+    } catch (e) {
+      errEl.textContent = e.message; errEl.style.display = 'block';
+      btn.disabled = false;
+    }
+  }
+
+  async function removeAdmin(id, name) {
+    if (!confirm(`Remove ${name} as admin? They will lose all access.`)) return;
+    try {
+      const res  = await fetch('/.netlify/functions/admin-users', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const json = await res.json();
+      if (!res.ok) { showToast('Error: ' + json.error); return; }
+      showToast(name + ' removed.');
+      loadAdmins();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
-  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+  // Expose all onclick-called functions globally
+  window.login                = login;
+  window.logout               = logout;
+  window.submitNewPassword    = submitNewPassword;
+  window.switchTab            = switchTab;
+  window.tileFilter           = tileFilter;
+  window.resetFilters         = resetFilters;
+  window.exportCSV            = exportCSV;
+  window.openModal            = openModal;
+  window.closeModal           = closeModal;
+  window.doConfirm            = doConfirm;
+  window.openCancelModal      = openCancelModal;
+  window.closeCancelModal     = closeCancelModal;
+  window.doCancel             = doCancel;
+  window.openImgModal         = openImgModal;
+  window.closeImgModal        = closeImgModal;
+  window.toggleChurchDropdown = toggleChurchDropdown;
+  window.selectAllChurches    = selectAllChurches;
+  window.applyFilters         = applyFilters;
+  window.openAddAdminModal    = openAddAdminModal;
+  window.openEditAdminModal   = openEditAdminModal;
+  window.closeAdminModal      = closeAdminModal;
+  window.saveAdmin            = saveAdmin;
+  window.removeAdmin          = removeAdmin;
+
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
 </script>
 </body>

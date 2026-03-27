@@ -175,6 +175,14 @@
   .upload-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .upload-text strong { color: var(--sky); }
   .upload-preview { margin-top: 8px; font-size: 12px; color: var(--green); display: none; font-weight: 500; }
+  .upload-done {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: #E6F5EC;
+    border: 1.5px solid #A8D8B9; border-radius: 10px; margin-top: 4px;
+  }
+  .upload-done-name { flex: 1; font-size: 12px; font-weight: 600; color: #2E7048; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .upload-done-del { background: none; border: none; color: #E05050; font-size: 16px; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+  .upload-done-del:hover { color: #c0392b; }
 
   .select-wrap { position: relative; }
   .select-wrap::after {
@@ -192,6 +200,172 @@
     font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 12px;
   }
   .fee-note strong { color: #9A6F10; }
+
+  /* Registration type */
+  .reg-type-wrap { display: flex; gap: 12px; margin-bottom: 4px; }
+  .reg-type-option { flex: 1; cursor: pointer; }
+  .reg-type-option input[type=radio] { display: none; }
+  .reg-type-card {
+    display: block; border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; background: #fff;
+  }
+  .reg-type-card:hover { border-color: var(--sky); }
+  .reg-type-option input:checked ~ .reg-type-card { border-color: var(--sky); background: var(--sky-light); }
+  .reg-type-icon { font-size: 22px; margin-bottom: 6px; }
+  .reg-type-title { font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 2px; }
+  .reg-type-sub { font-size: 11px; color: var(--muted); }
+
+  /* Participant slots */
+  /* In single mode, participant card appears merged with contact card */
+  .single-mode-merge {
+    border: none !important; padding: 0 !important; margin-bottom: 0 !important;
+    box-shadow: none !important; background: transparent !important;
+  }
+  .participant-slot {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 12px; position: relative;
+    background: #fff;
+  }
+  .participant-slot-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .participant-slot-label {
+    font-size: 12px; font-weight: 700; color: var(--sky);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .btn-remove-participant {
+    font-size: 11px; color: #E05050; background: none; border: none;
+    cursor: pointer; font-weight: 600; padding: 2px 6px;
+    border-radius: 6px; transition: background 0.15s;
+  }
+  .btn-remove-participant:hover { background: #FDECEA; }
+  .btn-add-participant {
+    width: 100%; padding: 12px; border: 1.5px dashed var(--border);
+    border-radius: 10px; background: transparent; color: var(--sky);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; margin-top: 4px;
+  }
+  .btn-add-participant:hover { border-color: var(--sky); background: var(--sky-light); }
+  .btn-add-participant:disabled { opacity: 0.4; cursor: not-allowed; }
+  @media(max-width:520px) { .btn-add-participant { display: block !important; } .reg-type-wrap { flex-direction: column; } }
+  /* Slot action row: Done + (optional) future use */
+  .slot-actions { display: flex; gap: 8px; margin-top:14px; }
+  .btn-slot-done {
+    flex:1; padding: 9px 14px; border: 1.5px solid var(--green);
+    border-radius: 8px; background: transparent; color: var(--green);
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-slot-done:hover { background: #E6F5EC; }
+  .btn-remove-participant {
+    padding: 9px 12px; background: none; border: 1.5px solid #FDDCDC;
+    border-radius: 8px; cursor: pointer; font-size: 14px; color: #E05050;
+    transition: background 0.15s; line-height:1;
+  }
+  .btn-remove-participant:hover { background: #FDECEA; }
+  /* Add More button */
+  .btn-add-more {
+    width: 100%; padding: 11px; border: 1.5px dashed var(--sky);
+    border-radius: 10px; background: transparent; color: var(--sky);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; margin-top: 4px;
+    display: none;
+  }
+  .btn-add-more:hover { background: var(--sky-light); }
+  @media(max-width:520px) {
+    .btn-add-participant { display: block !important; }
+    .reg-type-wrap { flex-direction: column; }
+  }
+
+  /* Payment breakdown */
+  .breakdown-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+  .breakdown-table th { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  .breakdown-table td { font-size: 13px; color: var(--text); padding: 8px 10px; border-bottom: 1px solid #f0f4f7; }
+  .breakdown-table tr:last-child td { border-bottom: none; }
+  .breakdown-total td { font-weight: 700; color: var(--dark); background: #f7fafb; border-top: 2px solid var(--border) !important; }
+  .breakdown-total td:last-child { color: var(--green); font-size: 14px; }
+
+  /* Participant list (group mode) */
+  .participant-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .participant-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid var(--border);
+    border-radius: 10px; background: #fff;
+  }
+  .participant-row-info { flex: 1; min-width: 0; }
+  .participant-row-name { font-size: 13px; font-weight: 700; color: var(--dark); }
+  .participant-row-meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .p-chip { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 50px; letter-spacing: 0.05em; }
+  .p-chip-green { background: #E6F5EC; color: #2E7048; }
+  .p-chip-blue  { background: #E8F4FF; color: #3A8BBF; }
+  .btn-participant-edit {
+    background: none; border: none; cursor: pointer; font-size: 15px;
+    color: var(--sky); padding: 4px 6px; border-radius: 6px; flex-shrink: 0;
+  }
+  .btn-participant-edit:hover { background: var(--sky-light); }
+  .btn-participant-del {
+    background: none; border: none; cursor: pointer; font-size: 15px;
+    color: #E05050; padding: 4px 6px; border-radius: 6px; flex-shrink: 0;
+  }
+  .btn-participant-del:hover { background: #FDECEA; }
+  .participant-empty {
+    text-align: center; padding: 20px; color: var(--muted);
+    font-size: 13px; border: 1.5px dashed var(--border);
+    border-radius: 10px; background: var(--input-bg);
+  }
+  .participant-empty-icon { font-size: 24px; margin-bottom: 6px; }
+  .btn-add-participant-list {
+    width: 100%; padding: 11px; border: 1.5px dashed var(--sky);
+    border-radius: 10px; background: transparent; color: var(--sky);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-add-participant-list:hover { background: var(--sky-light); }
+  .btn-add-participant-list:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Participant modal */
+  .p-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 2000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .p-modal-overlay.open { display: flex; }
+  body.modal-open { overflow: hidden; }
+  .p-modal {
+    background: #fff; border-radius: 16px;
+    padding: 24px 20px 28px; width: 100%; max-width: 500px;
+    max-height: 88vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  }
+  .p-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .p-modal-title { font-family: 'Bebas Neue'; font-size: 20px; letter-spacing: 0.05em; color: var(--dark); }
+  .btn-modal-close {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    color: var(--muted); line-height: 1; padding: 4px;
+  }
+  .p-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-modal-done {
+    flex: 1; padding: 13px; background: var(--sky); color: #fff;
+    border: none; border-radius: 10px; font-family: 'Bebas Neue';
+    font-size: 18px; letter-spacing: 0.06em; cursor: pointer;
+  }
+  .btn-modal-done:hover { opacity: 0.9; }
+
+  /* GCash breakdown toggle */
+  .gcash-breakdown-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #f0f8ff; border-radius: 8px;
+    cursor: pointer; margin-bottom: 4px; border: 1px solid #d0e8f5;
+  }
+  .gcash-breakdown-toggle .total-label { font-size: 13px; font-weight: 700; color: var(--dark); }
+  .gcash-breakdown-toggle .total-amount { font-family: 'Bebas Neue'; font-size: 20px; color: var(--sky); letter-spacing: 0.04em; }
+  .gcash-breakdown-detail { display: none; overflow: hidden; }
+  .gcash-breakdown-detail.open { display: block; }
 
   .pay-option { cursor: pointer; margin-bottom: 10px; }
   .pay-option:last-child { margin-bottom: 0; }
@@ -359,7 +533,7 @@
   .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(196,154,26,0.35); }
 
   .toast {
-    display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 3000;
     padding: 14px 26px; border-radius: 50px; font-size: 14px; font-weight: 500;
     box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 999;
     text-align: center; max-width: 90vw; color: #fff;
@@ -456,111 +630,186 @@
 <div class="page-wrap">
 
   <div class="form-heading">
-    <h1>Conference Registration</h1>
+    <h1 id="formHeading">Conference Registration</h1>
     <p>Sovereign Grace Churches Asia Pacific &nbsp;·&nbsp; Fill in all required fields to register</p>
   </div>
 
   <form id="relayForm" novalidate>
 
-    <!-- PERSONAL INFO -->
-    <div class="card">
-      <div class="section-label">Personal Information</div>
+    <!-- REGISTRATION TYPE: locked via URL param, hidden inputs -->
+    <input type="hidden" name="registrationType" id="regTypeSingle" value="single">
+    <input type="hidden" name="registrationType" id="regTypeGroup" value="group">
+
+    <!-- PERSONAL INFO + PARTICIPANTS (one card) -->
+    <div class="card" id="participantCard">
+      <div class="section-label" id="contactCardLabel">Personal Information</div>
+
+      <!-- Email + Church (always shown) -->
       <div class="grid-2">
         <div class="field">
-          <label>Full Name <span class="req">*</span></label>
-          <input type="text" id="name" placeholder="Your full name" required>
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="you@email.com" required oninput="validateEmailField()">
+          <div class="field-msg" id="emailMsg"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;display:none;" id="emailGroupNote">All confirmations will be sent to this email.</div>
         </div>
         <div class="field">
-          <label>Age <span class="req">*</span></label>
-          <input type="number" id="age" placeholder="e.g. 22" min="17" max="45" required>
+          <label>Church Affiliation <span class="req">*</span></label>
+          <div class="select-wrap">
+            <select id="church" required onchange="handleChurchChange(this)">
+              <option value="" disabled selected>Select your church…</option>
+              <optgroup label="CCSGM">
+                <option>CCSGM – Kawit</option>
+                <option>CCSGM – Imus</option>
+                <option>CCSGM – Cavite City</option>
+                <option>CCSGM – Dasma</option>
+                <option>CCSGM – Carrascal</option>
+                <option>CCSGM – Maitum</option>
+                <option>CCSGM – Madrid</option>
+                <option>CCSGM – Tandag</option>
+                <option>CCSGM – Castillo</option>
+                <option>CCSGM – Agusan Del Sur</option>
+                <option>CCSGM – Cabangahan</option>
+                <option>CCSGM – Nangka</option>
+                <option>CCSGM – Gacub</option>
+                <option>CCSGM – Pili</option>
+              </optgroup>
+              <optgroup label="Other SGC Churches">
+                <option>SGC Wahroonga</option>
+                <option>SGC Parramatta</option>
+                <option>SGC Singapore</option>
+                <option>SGC Hong Kong</option>
+                <option>SGC Manila</option>
+                <option>Others (please specify)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="slide-panel" id="other-church-wrap" style="margin-top:8px;">
+            <input type="text" id="otherChurch" placeholder="Enter your church name">
+          </div>
         </div>
       </div>
-      <div class="grid-2">
+
+      <!-- Single mode fields (always in card, hidden in group mode) -->
+      <div id="singleModeFields">
+        <div class="grid-2" style="margin-top:0;">
+          <div class="field">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="p-name-0" placeholder="Your full name" required>
+          </div>
+          <div class="field">
+            <label>Age <span class="req">*</span></label>
+            <input type="number" id="p-age-0" placeholder="e.g. 22" min="17" max="45" required>
+          </div>
+        </div>
         <div class="field">
           <label>Mobile Number <span class="req">*</span></label>
           <div class="mobile-wrap">
             <div class="country-code-fixed">🇵🇭 +63</div>
             <input type="hidden" id="countryCode" value="+63">
-            <input type="tel" id="mobile" placeholder="9XX XXX XXXX" required oninput="validateMobileField()">
+            <input type="tel" id="p-mobile-0" placeholder="9XX XXX XXXX" required oninput="validateMobileField()">
           </div>
           <div class="field-msg" id="mobileMsg"></div>
         </div>
+        <div class="field" style="margin-top:8px;">
+          <div class="section-label" style="margin-bottom:8px;">Participant Category <span class="req">*</span></div>
+          <div class="toggle-wrap">
+            <input type="radio" name="p-status-0" id="p-student-0" value="student" onchange="document.getElementById('p-schoolIdWrap-0').style.display='block'">
+            <label for="p-student-0">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
+              <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
+              <div class="p-sub-label">High School and College Students</div>
+            </label>
+            <input type="radio" name="p-status-0" id="p-nonstudent-0" value="non-student" onchange="document.getElementById('p-schoolIdWrap-0').style.display='none'">
+            <label for="p-nonstudent-0">💼 Non-Student <span class="p-badge-inline">25% Off</span>
+              <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
+            </label>
+          </div>
+          <div id="p-schoolIdWrap-0" style="display:none;margin-top:12px;">
+            <div class="section-label" style="margin-bottom:6px;">Valid School ID <span class="req" style="color:#E05050;">*</span></div>
+            <div id="upload-single-id">
+              <div class="upload-area" id="upload-single-id-zone">
+                <input type="file" id="p-schoolIdFile-0" accept="image/*,.pdf" onchange="handleSmartUpload(this,'upload-single-id')">
+                <div class="upload-icon">🪪</div>
+                <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
+              </div>
+              <div class="upload-done" id="upload-single-id-done" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group participant list -->
+      <div id="participantCardDivider" style="display:none;border-top:1px solid var(--border);margin:16px 0;"></div>
+      <div id="participantListWrap" style="display:none;">
+        <div class="section-label" style="margin-bottom:10px;">Participants</div>
+        <div class="participant-list" id="participantList">
+          <div class="participant-empty" id="participantEmpty" onclick="openParticipantModal()" style="cursor:pointer;">
+            <div class="participant-empty-icon">👥</div>
+            <div style="font-weight:700;color:var(--sky);">No participants yet.</div>
+            <div style="font-size:11px;margin-top:3px;"><strong style="color:var(--sky);">Click here</strong> to add participants.</div>
+          </div>
+        </div>
+        <button type="button" class="btn-add-participant-list" id="addParticipantBtn" onclick="openParticipantModal()" style="display:none;">
+          ＋ Add Participant
+        </button>
+      </div>
+    </div>
+
+    <!-- Participant Modal -->
+    <div class="p-modal-overlay" id="participantModal">
+      <div class="p-modal">
+        <div class="p-modal-header">
+          <div class="p-modal-title" id="modalTitle">Add Participant</div>
+          <button type="button" class="btn-modal-close" onclick="closeParticipantModal()">✕</button>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="m-name" placeholder="Full name">
+          </div>
+          <div class="field">
+            <label>Age <span class="req">*</span></label>
+            <input type="number" id="m-age" placeholder="e.g. 22" min="17" max="45">
+          </div>
+        </div>
         <div class="field">
-          <label>Email Address <span class="req">*</span></label>
-          <input type="email" id="email" placeholder="you@email.com" required oninput="validateEmailField()">
-          <div class="field-msg" id="emailMsg"></div>
+          <label>Mobile Number <span class="req">*</span></label>
+          <div class="mobile-wrap">
+            <div class="country-code-fixed">🇵🇭 +63</div>
+            <input type="tel" id="m-mobile" placeholder="9XX XXX XXXX" oninput="validateModalMobile()">
+          </div>
+          <div class="field-msg" id="m-mobileMsg"></div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <div class="section-label" style="margin-bottom:8px;">Participant Category <span class="req">*</span></div>
+          <div class="toggle-wrap">
+            <input type="radio" name="m-status" id="m-student" value="student" onchange="handleModalCategory(this)">
+            <label for="m-student">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
+              <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
+              <div class="p-sub-label">High School and College Students</div>
+            </label>
+            <input type="radio" name="m-status" id="m-nonstudent" value="non-student" onchange="handleModalCategory(this)">
+            <label for="m-nonstudent">💼 Non-Student <span class="p-badge-inline">25% Off</span>
+              <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
+            </label>
+          </div>
+        </div>
+        <div id="m-schoolIdWrap" style="display:none;margin-top:12px;">
+          <div class="section-label" style="margin-bottom:6px;">Valid School ID <span class="req" style="color:#E05050;">*</span></div>
+          <div id="upload-modal-id">
+            <div class="upload-area" id="upload-modal-id-zone">
+              <input type="file" id="m-schoolIdFile" accept="image/*,.pdf" onchange="handleSmartUpload(this,'upload-modal-id')">
+              <div class="upload-icon">🪪</div>
+              <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
+            </div>
+            <div class="upload-done" id="upload-modal-id-done" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="p-modal-actions">
+          <button type="button" class="btn-modal-done" onclick="saveParticipant()">✓ Done</button>
         </div>
       </div>
     </div>
 
-    <!-- PARTICIPANT CATEGORY -->
-    <div class="card">
-      <div class="section-label">Participant Category</div>
-      <div class="toggle-wrap">
-        <input type="radio" name="studentStatus" id="isStudent" value="student">
-        <label for="isStudent">🎓 Student <span class="p-badge-inline p-badge-green">50% Off</span>
-          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount p-amount-green">₱3,000</span></div>
-          <div class="p-sub-label">High School and College Students</div>
-        </label>
-        <input type="radio" name="studentStatus" id="notStudent" value="non-student">
-        <label for="notStudent">💼 Non-Student <span class="p-badge-inline">25% Off</span>
-          <div class="p-price-line"><span class="p-strike">₱6,000</span><span class="p-amount">₱4,500</span></div>
-        </label>
-      </div>
-
-      <div class="slide-panel" id="schoolIdWrap" style="margin-top:16px;">
-        <div class="section-label">Valid School ID <span class="req" style="color:#E05050;font-size:12px;">*</span></div>
-        <div class="upload-area">
-          <input type="file" id="schoolIdFile" accept="image/*,.pdf" onchange="handleIdUpload(this)">
-          <div class="upload-icon">🪪</div>
-          <div class="upload-text">To avail the student discount, <strong>click here to upload</strong> your valid school ID.<br>PNG, JPG, or PDF</div>
-        </div>
-        <div class="upload-preview" id="idPreview"></div>
-      </div>
-    </div>
-
-    <!-- CHURCH -->
-    <div class="card">
-      <div class="section-label">Church Affiliation</div>
-      <div class="field">
-        <label>Church Name <span class="req">*</span></label>
-        <div class="select-wrap">
-          <select id="church" required onchange="handleChurchChange(this)">
-            <option value="" disabled selected>Select your church…</option>
-            <optgroup label="CCSGM">
-              <option>CCSGM – Kawit</option>
-              <option>CCSGM – Imus</option>
-              <option>CCSGM – Cavite City</option>
-              <option>CCSGM – Dasma</option>
-              <option>CCSGM – Carrascal</option>
-              <option>CCSGM – Maitum</option>
-              <option>CCSGM – Madrid</option>
-              <option>CCSGM – Tandag</option>
-              <option>CCSGM – Castillo</option>
-              <option>CCSGM – Agusan Del Sur</option>
-              <option>CCSGM – Cabangahan</option>
-              <option>CCSGM – Nangka</option>
-              <option>CCSGM – Gacub</option>
-              <option>CCSGM – Pili</option>
-            </optgroup>
-            <optgroup label="His Dwelling Christian Church">
-              <option value="HDCC - Cebu City">His Dwelling Christian Church – Cebu City</option>
-              <option value="HDCC - Isabela">His Dwelling Christian Church – Isabela</option>
-            </optgroup>
-            <optgroup label="Other Churches">
-              <option>His Touch Ministries</option>
-              <option value="others">Others…</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-      <div class="slide-panel" id="other-church-wrap">
-        <div class="field" style="margin-top:12px;">
-          <label>Please specify your church <span class="req">*</span></label>
-          <input type="text" id="otherChurch" placeholder="Enter your church name">
-        </div>
-      </div>
-    </div>
 
     <!-- PAYMENT -->
     <div class="card">
@@ -599,6 +848,28 @@
               <img src="assets/images/qr/gcash-qr.png" alt="GCash QR Code">
             </div>
             <div class="gcash-transfer-note">Transfer fees may apply.</div>
+            <!-- Breakdown toggle for group mode -->
+            <div id="gcashBreakdownWrap" style="display:none;margin-bottom:12px;">
+              <div class="gcash-breakdown-toggle" onclick="toggleGCashBreakdown()">
+                <span class="total-label">💰 Total Amount Due</span>
+                <span>
+                  <span class="total-amount" id="gcashTotalAmount">—</span>
+                  <span id="gcashBreakdownChevron" style="font-size:11px;color:var(--muted);margin-left:6px;">▾</span>
+                </span>
+              </div>
+              <div class="gcash-breakdown-detail" id="gcashBreakdownDetail">
+                <table class="breakdown-table" style="margin-top:4px;">
+                  <thead><tr>
+                    <th>Participant</th><th>Type</th><th style="text-align:right;">Amount</th>
+                  </tr></thead>
+                  <tbody id="gcashBreakdownBody"></tbody>
+                  <tfoot><tr class="breakdown-total">
+                    <td colspan="2">Total</td>
+                    <td style="text-align:right;" id="gcashBreakdownTotal">—</td>
+                  </tr></tfoot>
+                </table>
+              </div>
+            </div>
             <hr class="gcash-divider">
             <div class="gcash-acct-name" id="gcashAcctName">Loading…</div>
             <div class="gcash-acct-holder" id="gcashAcctHolder"></div>
@@ -615,12 +886,14 @@
 
         <div class="field" style="margin-top:14px;">
           <label>Attach GCash Screenshot <span class="req">*</span></label>
-          <div class="upload-area">
-            <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(this)">
-            <div class="upload-icon">📸</div>
-            <div class="upload-text"><strong>Click to attach</strong> your GCash receipt<br>PNG or JPG · make sure reference number is visible</div>
+          <div id="upload-receipt">
+            <div class="upload-area" id="upload-receipt-zone">
+              <input type="file" id="receiptFile" accept="image/*" onchange="handleSmartUpload(this,'upload-receipt')">
+              <div class="upload-icon">📸</div>
+              <div class="upload-text"><strong>Click to attach</strong> your GCash receipt<br>PNG or JPG · make sure reference number is visible</div>
+            </div>
+            <div class="upload-done" id="upload-receipt-done" style="display:none;"></div>
           </div>
-          <div class="upload-preview" id="receiptPreview"></div>
         </div>
         <button type="button" class="btn btn-gold" onclick="submitForm()" style="margin-top:14px;">Submit Registration + Payment</button>
       </div>
@@ -749,6 +1022,19 @@
   })();
   // Load GCash details from ENV VARs — wait for DOM
   window.addEventListener('DOMContentLoaded', () => {
+    // Read ?type= param and lock registration type
+    const params = new URLSearchParams(window.location.search);
+    const type   = params.get('type') === 'group' ? 'group' : 'single';
+    const heading = document.getElementById('formHeading');
+    if (heading) heading.textContent = type === 'group' ? 'Group Registration' : 'Single Participant Registration';
+
+    // Apply type immediately (no toggle UI)
+    handleRegType({ value: type });
+
+    // Initialize group participant list (empty)
+    renderParticipantList();
+
+    // Fetch GCash details
     fetch('/.netlify/functions/gcash-details')
       .then(r => r.json())
       .then(d => {
@@ -763,12 +1049,8 @@
         const name = document.getElementById('gcashAcctName');
         if (name) name.textContent = 'CCSGM';
       });
-  });
 
-  document.querySelectorAll('input[name="studentStatus"]').forEach(r => {
-    r.addEventListener('change', function() {
-      document.getElementById('schoolIdWrap').classList.toggle('visible', this.value === 'student');
-    });
+    // Update breakdown when payment method changes
   });
 
   function handleChurchChange(sel) {
@@ -778,6 +1060,27 @@
   function handlePayment(radio) {
     document.getElementById('gcash-section').classList.toggle('visible', radio.value === 'now');
     document.getElementById('payLaterSubmit').classList.toggle('visible', radio.value === 'later');
+    updateGCashBreakdown();
+  }
+
+  function handleSmartUpload(input, wrapperId) {
+    const file = input.files[0];
+    if (!file) return;
+    const zone = document.getElementById(wrapperId + '-zone');
+    const done = document.getElementById(wrapperId + '-done');
+    if (!zone || !done) return;
+    zone.style.display = 'none';
+    done.style.display = 'flex';
+    done.innerHTML = `<span style="font-size:18px;">📎</span><span class="upload-done-name">✅ ${file.name}</span><button type="button" class="upload-done-del" onclick="clearSmartUpload('${wrapperId}','${input.id}')" title="Remove file">✕</button>`;
+  }
+
+  function clearSmartUpload(wrapperId, inputId) {
+    const zone  = document.getElementById(wrapperId + '-zone');
+    const done  = document.getElementById(wrapperId + '-done');
+    const input = document.getElementById(inputId);
+    if (zone)  zone.style.display  = '';
+    if (done)  { done.style.display = 'none'; done.innerHTML = ''; }
+    if (input) input.value = '';
   }
 
   function handleIdUpload(input) {
@@ -817,7 +1120,7 @@
   }
 
   function validateMobileField() {
-    const el = document.getElementById('mobile');
+    const el = document.getElementById('p-mobile-0');
     const msg = document.getElementById('mobileMsg');
     const code = document.getElementById('countryCode').value;
     const val = el.value.trim().replace(/[\s\-().]/g, '');
@@ -842,36 +1145,270 @@
     return ok;
   }
 
-  // ── Full form validation ─────────────────────────────────────────────────
-  function validateBase() {
-    const name = document.getElementById('name').value.trim();
-    const age = document.getElementById('age').value;
-    const church = document.getElementById('church').value;
-    const status = document.querySelector('input[name="studentStatus"]:checked');
+  // ── Registration type handler ────────────────────────────────────────────
+  function handleRegType(radio) {
+    const isGroup = radio.value === 'group';
+    const contactLabel = document.getElementById('contactCardLabel');
+    if (contactLabel) contactLabel.textContent = isGroup ? 'Contact & Church' : 'Personal Information';
+    document.getElementById('emailGroupNote').style.display        = isGroup ? 'block' : 'none';
+    document.getElementById('participantCardDivider').style.display = isGroup ? 'block' : 'none';
+    document.getElementById('singleModeFields').style.display      = isGroup ? 'none'  : 'block';
+    document.getElementById('participantListWrap').style.display   = isGroup ? 'block' : 'none';
+    if (!isGroup) { groupParticipants = []; renderParticipantList(); }
+    updateGCashBreakdown();
+  }
 
-    if (!name || !age || !church || !status) {
-      showToast('⚠️ Please fill in all required fields.', true); return false;
+  // ── Single-mode slot (old system, kept for single participant) ──────────
+  let singleSlotId = 0;
+
+  function initSingleSlot() {
+    // Single mode still uses the old slot[0] for its fields — but no DOM slots needed
+    // We use direct IDs for single mode: p-name-0, p-age-0, etc. — REMOVED in new approach
+    // Single mode fields are now the modal fields with id m-* reused via different path
+    // Actually — single mode keeps original direct fields in card (from initSlots before)
+    // We'll keep a minimal placeholder
+  }
+
+  // ── Group participant data store ──────────────────────────────────────────
+  const MAX_PARTICIPANTS = 5;
+  let groupParticipants  = []; // array of { name, age, mobile, studentStatus, schoolIdBase64, schoolIdName }
+  let editingIndex       = null; // null = adding new, number = editing existing
+
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderParticipantList() {
+    const list    = document.getElementById('participantList');
+    const empty   = document.getElementById('participantEmpty');
+    const addBtn  = document.getElementById('addParticipantBtn');
+    if (!list) return;
+
+    // Clear existing rows (keep empty message)
+    list.querySelectorAll('.participant-row').forEach(r => r.remove());
+
+    if (groupParticipants.length === 0) {
+      if (empty) empty.style.display = 'block';
+      if (addBtn) addBtn.style.display = 'none';
+    } else {
+      if (empty) empty.style.display = 'none';
+      groupParticipants.forEach((p, i) => {
+        const isStudent  = p.studentStatus === 'student';
+        const fee        = isStudent ? '₱3,000' : '₱4,500';
+        const chipClass  = isStudent ? 'p-chip-green' : 'p-chip-blue';
+        const chipLabel  = isStudent ? '🎓 Student' : '💼 Non-Student';
+        const row = document.createElement('div');
+        row.className = 'participant-row';
+        row.innerHTML = `
+          <div class="participant-row-info">
+            <div class="participant-row-name">${esc(p.name)}</div>
+            <div class="participant-row-meta">
+              <span>${p.age} yrs</span>
+              <span class="p-chip ${chipClass}">${chipLabel}</span>
+              <span style="font-weight:700;color:var(--dark);">${fee}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-participant-edit" title="Edit" onclick="editParticipant(${i})">✏️</button>
+          <button type="button" class="btn-participant-del"  title="Remove" onclick="deleteParticipant(${i})">✕</button>`;
+        list.appendChild(row);
+      });
+      if (addBtn) addBtn.style.display = groupParticipants.length >= MAX_PARTICIPANTS ? 'none' : 'block';
     }
 
-    // Email
+    updateGCashBreakdown();
+  }
+
+  function openParticipantModal(editIdx) {
+    editingIndex = editIdx !== undefined ? editIdx : null;
+    const modal  = document.getElementById('participantModal');
+    const title  = document.getElementById('modalTitle');
+
+    // Reset form
+    document.getElementById('m-name').value    = '';
+    document.getElementById('m-age').value     = '';
+    document.getElementById('m-mobile').value  = '';
+    document.getElementById('m-mobileMsg').textContent = '';
+    document.querySelectorAll('input[name="m-status"]').forEach(r => r.checked = false);
+    document.getElementById('m-schoolIdWrap').style.display = 'none';
+    clearSmartUpload('upload-modal-id', 'm-schoolIdFile');
+
+    // Pre-fill if editing
+    if (editingIndex !== null) {
+      const p = groupParticipants[editingIndex];
+      document.getElementById('m-name').value   = p.name;
+      document.getElementById('m-age').value    = p.age;
+      document.getElementById('m-mobile').value = p.mobile.replace(/^\+63/, '');
+      const radio = document.querySelector(`input[name="m-status"][value="${p.studentStatus}"]`);
+      if (radio) { radio.checked = true; }
+      if (p.studentStatus === 'student') {
+        document.getElementById('m-schoolIdWrap').style.display = 'block';
+        if (p.schoolIdName) {
+          const zone = document.getElementById('upload-modal-id-zone');
+          const done = document.getElementById('upload-modal-id-done');
+          if (zone) zone.style.display = 'none';
+          if (done) { done.style.display = 'flex'; done.innerHTML = `<span style="font-size:18px;">📎</span><span class="upload-done-name">✅ ${p.schoolIdName}</span><button type="button" class="upload-done-del" onclick="clearSmartUpload('upload-modal-id','m-schoolIdFile')" title="Remove file">✕</button>`; }
+        }
+      }
+      title.textContent = 'Edit Participant';
+    } else {
+      title.textContent = 'Add Participant';
+    }
+
+    modal.classList.add('open');
+    document.body.classList.add('modal-open');
+    setTimeout(() => document.getElementById('m-name').focus(), 100);
+  }
+
+  function closeParticipantModal() {
+    document.getElementById('participantModal').classList.remove('open');
+    document.body.classList.remove('modal-open');
+    editingIndex = null;
+  }
+
+  function handleModalCategory(radio) {
+    document.getElementById('m-schoolIdWrap').style.display =
+      radio.value === 'student' ? 'block' : 'none';
+  }
+
+  function handleModalIdUpload(input) {
+    const preview = document.getElementById('m-idPreview');
+    if (input.files[0]) {
+      preview.textContent = '✅ ' + input.files[0].name;
+      preview.style.display = 'block';
+    }
+  }
+
+  function validateModalMobile() {
+    const el  = document.getElementById('m-mobile');
+    const msg = document.getElementById('m-mobileMsg');
+    const val = el.value.trim().replace(/[\s\-().]/g, '');
+    const ok  = /^9\d{9}$/.test(val);
+    el.classList.toggle('field-error', val.length > 0 && !ok);
+    el.classList.toggle('field-ok', ok);
+    msg.className = 'field-msg';
+    if (val.length > 0 && !ok) { msg.textContent = 'PH mobile: 10 digits starting with 9'; msg.classList.add('show-error'); }
+    else if (ok)               { msg.textContent = '✓ Looks good'; msg.classList.add('show-ok'); }
+    return ok;
+  }
+
+  function saveParticipant() {
+    const name   = document.getElementById('m-name').value.trim();
+    const age    = document.getElementById('m-age').value.trim();
+    const mobile = document.getElementById('m-mobile').value.trim();
+    const status = document.querySelector('input[name="m-status"]:checked');
+
+    if (!name)   { showToast('⚠️ Please enter a name.', true); return; }
+    if (!age)    { showToast('⚠️ Please enter an age.', true); return; }
+    if (!mobile || !/^9\d{9}$/.test(mobile.replace(/[\s\-().]/g,''))) {
+      showToast('⚠️ Please enter a valid mobile number (e.g. 9171234567).', true); return;
+    }
+    if (!status) { showToast('⚠️ Please select a Participant Category.', true); return; }
+
+    const schoolFile = document.getElementById('m-schoolIdFile').files[0];
+    const isStudent  = status.value === 'student';
+    const existingId = editingIndex !== null ? groupParticipants[editingIndex]?.schoolIdBase64 : null;
+    if (isStudent && !schoolFile && !existingId) {
+      showToast('⚠️ Please upload your school ID.', true); return;
+    }
+
+    // If new school ID selected, read it then save; else save immediately
+    if (schoolFile) {
+      fileToBase64(document.getElementById('m-schoolIdFile')).then(function(data) {
+        _commitParticipant(name, age, mobile, status.value, data?.base64||null, data?.name||null);
+      });
+    } else {
+      const schoolIdBase64 = existingId || null;
+      const schoolIdName   = editingIndex !== null ? groupParticipants[editingIndex]?.schoolIdName || null : null;
+      _commitParticipant(name, age, mobile, status.value, schoolIdBase64, schoolIdName);
+    }
+  }
+
+  function _commitParticipant(name, age, mobile, studentStatus, schoolIdBase64, schoolIdName) {
+    const participant = {
+      name, age, mobile: '+63' + mobile,
+      studentStatus, schoolIdBase64, schoolIdName,
+    };
+    if (editingIndex !== null) {
+      groupParticipants[editingIndex] = participant;
+    } else {
+      groupParticipants.push(participant);
+    }
+    renderParticipantList();
+    closeParticipantModal();
+  }
+
+  function editParticipant(index) {
+    openParticipantModal(index);
+  }
+
+  function deleteParticipant(index) {
+    groupParticipants.splice(index, 1);
+    renderParticipantList();
+  }
+
+  function updateGCashBreakdown() {
+    const isGroup = new URLSearchParams(window.location.search).get('type') === 'group';
+    const wrap    = document.getElementById('gcashBreakdownWrap');
+    if (!wrap) return;
+    if (!isGroup || groupParticipants.length === 0) { wrap.style.display = 'none'; return; }
+
+    let total = 0, rows = '';
+    groupParticipants.forEach(p => {
+      const isStudent = p.studentStatus === 'student';
+      const fee = isStudent ? 3000 : 4500;
+      total += fee;
+      rows += `<tr><td>${esc(p.name)}</td><td>${isStudent ? 'Student' : 'Non-Student'}</td><td style="text-align:right;">₱${fee.toLocaleString()}</td></tr>`;
+    });
+    document.getElementById('gcashBreakdownBody').innerHTML  = rows;
+    document.getElementById('gcashBreakdownTotal').textContent  = `₱${total.toLocaleString()}`;
+    document.getElementById('gcashTotalAmount').textContent   = `₱${total.toLocaleString()}`;
+    wrap.style.display = 'block';
+  }
+
+  function toggleGCashBreakdown() {
+    const detail  = document.getElementById('gcashBreakdownDetail');
+    const chevron = document.getElementById('gcashBreakdownChevron');
+    const open    = detail.classList.toggle('open');
+    chevron.textContent = open ? '▴' : '▾';
+  }
+
+  function updateBreakdown() { updateGCashBreakdown(); }
+
+
+
+  // ── Full form validation ─────────────────────────────────────────────────
+  function validateBase() {
+    const email  = document.getElementById('email').value.trim();
+    const church = document.getElementById('church').value;
+    const isGroup = new URLSearchParams(window.location.search).get('type') === 'group';
+
+    if (!email || !church) {
+      showToast('⚠️ Please fill in all required fields.', true); return false;
+    }
     if (!validateEmailField()) {
       document.getElementById('email').focus();
       showToast('⚠️ Please enter a valid email address.', true); return false;
     }
-
-    // Mobile
-    if (!validateMobileField()) {
-      document.getElementById('mobile').focus();
-      const code = document.getElementById('countryCode').value;
-      const hint = code === '+63' ? ' (PH format: 9XXXXXXXXX)' : '';
-      showToast('⚠️ Please enter a valid mobile number' + hint + '.', true); return false;
-    }
-
     if (church === 'others' && !document.getElementById('otherChurch').value.trim()) {
       showToast('⚠️ Please specify your church name.', true); return false;
     }
-    if (status.value === 'student' && !document.getElementById('schoolIdFile').files.length) {
-      showToast('⚠️ Please upload your valid school ID.', true); return false;
+
+    if (isGroup) {
+      if (groupParticipants.length === 0) {
+        showToast('⚠️ Please add at least one participant.', true); return false;
+      }
+    } else {
+      // Single mode validation
+      const name   = document.getElementById('p-name-0')?.value.trim();
+      const age    = document.getElementById('p-age-0')?.value;
+      const status = document.querySelector('input[name="p-status-0"]:checked');
+      if (!name || !age || !status) {
+        showToast('⚠️ Please fill in all required fields.', true); return false;
+      }
+      if (!validateMobileField()) {
+        showToast('⚠️ Please enter a valid mobile number (PH format: 9XXXXXXXXX).', true); return false;
+      }
+      if (status.value === 'student' && !document.getElementById('p-schoolIdFile-0')?.files.length) {
+        showToast('⚠️ Please upload your valid school ID.', true); return false;
+      }
     }
     return true;
   }
@@ -879,13 +1416,10 @@
   // Convert a file input to base64 string
   function fileToBase64(fileInput) {
     return new Promise((resolve, reject) => {
-      const file = fileInput.files[0];
+      const file = fileInput?.files?.[0];
       if (!file) { resolve(null); return; }
       const reader = new FileReader();
-      reader.onload = () => resolve({
-        base64: reader.result.split(',')[1],
-        name: file.name
-      });
+      reader.onload = () => resolve({ base64: reader.result.split(',')[1], name: file.name });
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -893,22 +1427,36 @@
 
   async function buildPayload(withReceipt) {
     const church = document.getElementById('church').value;
-    const schoolIdData = await fileToBase64(document.getElementById('schoolIdFile'));
+    const params2 = new URLSearchParams(window.location.search);
+    const registrationType = params2.get('type') === 'group' ? 'group' : 'single';
+    const isGroup = registrationType === 'group';
     const receiptData = withReceipt ? await fileToBase64(document.getElementById('receiptFile')) : null;
 
+    let participants = [];
+    if (isGroup) {
+      participants = groupParticipants; // already has all data including schoolIdBase64
+    } else {
+      const status = document.querySelector('input[name="p-status-0"]:checked').value;
+      const schoolIdData = status === 'student' ? await fileToBase64(document.getElementById('p-schoolIdFile-0')) : null;
+      participants = [{
+        name:           document.getElementById('p-name-0').value.trim(),
+        age:            document.getElementById('p-age-0').value,
+        mobile:         '+63' + document.getElementById('p-mobile-0').value.trim(),
+        studentStatus:  status,
+        schoolIdBase64: schoolIdData?.base64 || null,
+        schoolIdName:   schoolIdData?.name   || null,
+      }];
+    }
+
     return {
-      name: document.getElementById('name').value.trim(),
-      age: document.getElementById('age').value,
-      mobile: document.getElementById('countryCode').value + document.getElementById('mobile').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      studentStatus: document.querySelector('input[name="studentStatus"]:checked').value,
+      email:         document.getElementById('email').value.trim(),
       church,
-      otherChurch: document.getElementById('otherChurch')?.value.trim() || '',
-      paymentReady: withReceipt ? 'now' : 'later',
-      schoolIdBase64: schoolIdData?.base64 || null,
-      schoolIdName: schoolIdData?.name || null,
+      otherChurch:   document.getElementById('otherChurch')?.value.trim() || '',
+      registrationType,
+      participants,
+      paymentReady:  withReceipt ? 'now' : 'later',
       receiptBase64: receiptData?.base64 || null,
-      receiptName: receiptData?.name || null,
+      receiptName:   receiptData?.name   || null,
     };
   }
 
