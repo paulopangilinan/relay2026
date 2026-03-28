@@ -104,7 +104,8 @@
   .table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-height:520px;}
   @media(max-width:600px){.table-scroll{max-height:360px;}}
   thead th{position:sticky;top:0;z-index:1;background:#f7fafb;}
-  .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  @media(max-width:600px){.table-header{flex-direction:column;align-items:flex-start;}.table-header>div{width:100%;justify-content:space-between;}}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
   table{width:100%;border-collapse:collapse;}
@@ -133,6 +134,20 @@
   .church-group-hdr{padding:6px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;}
   .receipt-link:hover{text-decoration:underline;}
   .btn-confirm-row{padding:5px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;display:block;margin-bottom:4px;width:100%;text-align:center;}
+  .btn-confirm-row .btn-label-text{display:inline;}
+  .btn-confirm-row .btn-label-icon{display:none;}
+  .btn-cancel-row .btn-label-text{display:inline;}
+  .btn-cancel-row .btn-label-icon{display:none;}
+  .btn-actions .edit-btn .btn-label-text{display:inline;}
+  .btn-actions .edit-btn .btn-label-icon{display:none;}
+  @media(max-width:600px){
+    .btn-confirm-row .btn-label-text{display:none;}
+    .btn-confirm-row .btn-label-icon{display:inline;}
+    .btn-cancel-row .btn-label-text{display:none;}
+    .btn-cancel-row .btn-label-icon{display:inline;}
+    .btn-confirm-row,.btn-cancel-row{padding:6px 8px;font-size:14px;margin-bottom:3px;}
+    .hide-cancelled-wrap .hc-text{display:none;}
+  }
   .btn-confirm-row:hover{background:var(--green-bright);}
 
   /* BOTTOM */
@@ -368,7 +383,16 @@
         </div>
       </div>
       <div class="table-wrap">
-        <div class="table-header"><h2>Philippines Registrations</h2><span class="table-count" id="ph-count">–</span></div>
+        <div class="table-header">
+          <h2>Philippines Registrations</h2>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
+              <span class="hc-text">Hide Cancelled Registrations</span>
+              <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+            </label>
+            <span class="table-count" id="ph-count">–</span>
+          </div>
+        </div>
         <div class="table-scroll">
           <table>
             <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th></tr></thead>
@@ -435,16 +459,21 @@
         </div>
         <div class="filter-group"><label>Country</label><select id="intl-country" onchange="applyFilters('intl')"><option value="">All Countries</option></select></div>
         <div class="filter-actions">
-          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
-            Hide Cancelled
-            <div class="toggle-track on" id="intl-hide-cancelled-track"><div class="toggle-thumb"></div></div>
-          </label>
           <button class="btn-reset" onclick="resetFilters('intl')">Reset</button>
           <button class="btn-export" onclick="exportCSV('intl')">⬇ Export CSV</button>
         </div>
       </div>
       <div class="table-wrap">
-        <div class="table-header"><h2>International Registrations</h2><span class="table-count" id="intl-count">–</span></div>
+        <div class="table-header">
+          <h2>International Registrations</h2>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
+              <span class="hc-text">Hide Cancelled Registrations</span>
+              <div class="toggle-track on" id="intl-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+            </label>
+            <span class="table-count" id="intl-count">–</span>
+          </div>
+        </div>
         <div class="table-scroll">
           <table>
             <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th></tr></thead>
@@ -469,7 +498,7 @@
         <button onclick="openAddGroupModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Group</button>
       </div>
       <div class="table-wrap" style="margin-bottom:28px;">
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr><th>Group Name</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="groups-body"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
@@ -486,7 +515,7 @@
         <button onclick="openAddChurchModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Church</button>
       </div>
       <div class="table-wrap">
-        <div style="overflow-x:auto;">
+        <div class="table-scroll">
           <table>
             <thead><tr><th>Church Name</th><th>Group</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="churches-body"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
@@ -963,7 +992,7 @@
             : r.payment_verified
               ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Paid</button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')">Mark as Cancelled</button>`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>`
                 : '—'
           }
           </div>
