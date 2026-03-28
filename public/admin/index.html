@@ -494,7 +494,7 @@
       </div>
       <div class="table-wrap" style="margin-bottom:28px;">
         <div class="table-scroll">
-          <table style="min-width:480px;">
+          <table style="min-width:600px;">
             <thead><tr><th>Group Name</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="groups-body"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
           </table>
@@ -511,7 +511,7 @@
       </div>
       <div class="table-wrap">
         <div class="table-scroll">
-          <table style="min-width:640px;">
+          <table style="min-width:800px;">
             <thead><tr><th>Church Name</th><th>Group</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="churches-body"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
           </table>
@@ -529,8 +529,8 @@
         <button onclick="openAddAdminModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;"><span class="btn-label-text">+ Add Admin</span><span class="btn-label-icon">＋</span></button>
       </div>
       <div class="table-wrap">
-        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;">
-          <table style="min-width:700px;">
+        <div class="table-scroll">
+          <table style="min-width:900px;">
             <thead><tr>
               <th>Name</th><th>Email</th>
               <th>Receive Updates</th><th>Verify Payment</th><th>Manage Admins</th><th>Manage Churches</th>
@@ -666,24 +666,6 @@
   })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
   let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, activeTab = 'ph';
-
-  function restoreSession() {
-    const savedToken   = sessionStorage.getItem('adminToken');
-    const savedSession = sessionStorage.getItem('adminSession');
-    if (!savedToken || !savedSession) return;
-    try {
-      adminToken   = savedToken;
-      adminSession = JSON.parse(savedSession);
-      document.getElementById('loginScreen').style.display  = 'none';
-      document.getElementById('dashboard').style.display    = 'block';
-      document.getElementById('adminName').textContent      = adminSession.name;
-      applyPermissionUI();
-      loadData();
-    } catch(e) {
-      sessionStorage.removeItem('adminToken');
-      sessionStorage.removeItem('adminSession');
-    }
-  }
 
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
@@ -1692,10 +1674,44 @@
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
   // Expose all onclick-called functions globally
+  // Clear session when navigating away (but not on reload)
+  window.addEventListener('pagehide', function() {
+    // persisted = page going into bfcache (back/forward), not a real unload
+    // We clear on all pagehide so navigation away kills the session
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSession');
+  });
+
+  // Mark that we're doing a reload so we can restore session after pagehide clears it
+  window.addEventListener('beforeunload', function() {
+    const navType = performance.getEntriesByType('navigation')[0]?.type;
+    if (navType === 'reload') {
+      // Temporarily move token to a reload-safe key
+      const t = sessionStorage.getItem('adminToken');
+      const s = sessionStorage.getItem('adminSession');
+      if (t) sessionStorage.setItem('adminToken_reload', t);
+      if (s) sessionStorage.setItem('adminSession_reload', s);
+    }
+  });
+
   // Restore session on page load
   (function initSession() {
-    const savedToken   = sessionStorage.getItem('adminToken');
-    const savedSession = sessionStorage.getItem('adminSession');
+    // Check if this is a reload — restore from reload-safe keys
+    const navType = performance.getEntriesByType('navigation')[0]?.type;
+    let savedToken, savedSession;
+    if (navType === 'reload') {
+      savedToken   = sessionStorage.getItem('adminToken_reload');
+      savedSession = sessionStorage.getItem('adminSession_reload');
+      // Move back to normal keys
+      if (savedToken)   sessionStorage.setItem('adminToken', savedToken);
+      if (savedSession) sessionStorage.setItem('adminSession', savedSession);
+    } else {
+      savedToken   = sessionStorage.getItem('adminToken');
+      savedSession = sessionStorage.getItem('adminSession');
+    }
+    // Always clean up reload keys
+    sessionStorage.removeItem('adminToken_reload');
+    sessionStorage.removeItem('adminSession_reload');
     if (savedToken && savedSession) {
       try {
         adminToken   = savedToken;
@@ -1713,10 +1729,6 @@
   })();
 
   window.login                = login;
-  window.logout               = logout;
-
-  // Restore session after all functions are defined
-  restoreSession();
   window.submitNewPassword    = submitNewPassword;
   window.switchTab            = switchTab;
   window.tileFilter           = tileFilter;
