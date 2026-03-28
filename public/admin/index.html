@@ -95,7 +95,7 @@
   .btn-reset:hover{border-color:var(--text);color:var(--text);}
 
   /* TABLE */
-  .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+  .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:clip;}
   .table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-height:520px;}
   @media(max-width:600px){.table-scroll{max-height:360px;}}
   thead th{position:sticky;top:0;z-index:1;background:#f7fafb;}
@@ -140,11 +140,15 @@
   .btn-cancel-row .btn-label-icon{display:none;}
   .btn-actions .edit-btn .btn-label-text{display:inline;}
   .btn-actions .edit-btn .btn-label-icon{display:none;}
+  .btn-actions .btn-label-text{display:inline;}
+  .btn-actions .btn-label-icon{display:none;}
   @media(max-width:600px){
     .btn-confirm-row .btn-label-text{display:none;}
     .btn-confirm-row .btn-label-icon{display:inline;}
     .btn-cancel-row .btn-label-text{display:none;}
     .btn-cancel-row .btn-label-icon{display:inline;}
+    .btn-actions .btn-label-text{display:none;}
+    .btn-actions .btn-label-icon{display:inline;}
     .btn-confirm-row,.btn-cancel-row{padding:6px 8px;font-size:14px;margin-bottom:3px;}
     .hide-cancelled-wrap .hc-text{display:none;}
   }
@@ -374,10 +378,6 @@
           </div>
         </div>
         <div class="filter-actions">
-          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
-            Hide Cancelled
-            <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
-          </label>
           <button class="btn-reset" onclick="resetFilters('ph')">Reset</button>
           <button class="btn-export" onclick="exportCSV('ph')">⬇ Export CSV</button>
         </div>
@@ -1574,9 +1574,15 @@
         <td style="text-align:center;">${check(perm.manage_churches)}</td>
         <td style="text-align:center;">${a.is_super_admin ? '⭐' : '—'}</td>
         <td style="text-align:center;">${a.force_password_change ? '<span style="font-size:11px;color:#E8B830;font-weight:600;">Pending</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
-        <td>
-          <button onclick="openEditAdminModal('${a.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
-          ${!a.is_super_admin && !isMe ? `<button onclick="removeAdmin('${a.id}','${esc(a.name)}')" style="font-size:12px;padding:4px 10px;background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-left:4px;">Remove</button>` : ''}
+        <td style="white-space:nowrap;">
+          <div class="btn-actions" style="display:flex;gap:4px;align-items:center;">
+            <button onclick="openEditAdminModal('${a.id}')" style="font-size:12px;padding:5px 12px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">
+              <span class="btn-label-text">Edit</span><span class="btn-label-icon">✏️</span>
+            </button>
+            ${!a.is_super_admin && !isMe ? `<button onclick="removeAdmin('${a.id}','${esc(a.name)}')" style="font-size:12px;padding:5px 12px;background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-weight:600;">
+              <span class="btn-label-text">Remove</span><span class="btn-label-icon">✕</span>
+            </button>` : ''}
+          </div>
         </td>
       </tr>`;
     }).join('');
