@@ -29,10 +29,8 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
 
-  .hero-wrap { background: #1C2B38; width: 100%; }
-  .hero { max-width: 700px; margin: 0 auto; display: block; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; border-radius: 0 0 12px 12px; }
-  .chips-outer { background: #1C2B38; width: 100%; }
+  .hero { width: 100%; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
 
   .chips-bar {
     background: var(--dark);
@@ -617,17 +615,13 @@
 </head>
 <body>
 
-<div class="hero-wrap">
-  <div class="hero">
-    <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
-  </div>
-  <div class="chips-outer">
-    <div class="chips-bar" style="max-width:700px;margin:0 auto;">
+<div class="hero">
+  <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
+</div>
+<div class="chips-bar">
   <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
   <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
   <span class="chip chip-age">👥 Ages 17–33 (Young Adults &amp; Leaders)</span>
-</div>
-  </div>
 </div>
 
 <div class="confetti-bar"></div>
@@ -1043,16 +1037,19 @@
       const json = await res.json();
       const sel  = document.getElementById('church');
       sel.innerHTML = '<option value="" disabled selected>Select your church…</option>';
-      // Group churches
-      const groups = {};
+      // Group churches by group_name in group order from groups list
+      const groupOrder = (json.groups || []).map(g => g.name);
+      const grouped = {};
       (json.churches || []).forEach(c => {
-        if (!groups[c.group_name]) groups[c.group_name] = [];
-        groups[c.group_name].push(c.name);
+        if (!grouped[c.group_name]) grouped[c.group_name] = [];
+        grouped[c.group_name].push(c.name);
       });
-      Object.entries(groups).forEach(([grp, names]) => {
+      // Render in group order
+      const orderedGroups = [...groupOrder.filter(g => grouped[g]), ...Object.keys(grouped).filter(g => !groupOrder.includes(g))];
+      orderedGroups.forEach(grp => {
         const og = document.createElement('optgroup');
         og.label = grp;
-        names.forEach(n => {
+        (grouped[grp] || []).forEach(n => {
           const opt = document.createElement('option');
           opt.value = n; opt.textContent = n;
           og.appendChild(opt);

@@ -1,8 +1,4 @@
 // netlify/functions/churches.js
-// GET    → list all churches (public, for form dropdown — active only)
-// POST   → add church (manage_churches permission)
-// PUT    → edit church name/group or toggle archive (manage_churches permission)
-
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 
@@ -20,46 +16,76 @@ function getAdmin(event) {
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
 
-  // ── GET: public — return active churches grouped ─────────────────────────
+  // ── GET: public ─────────────────────────────────────────────────────────────
   if (event.httpMethod === 'GET') {
     const { all } = event.queryStringParameters || {};
-    let query = supabase.from('churches').select('*').order('group_name').order('name');
-    if (!all) query = query.eq('is_archived', false);
-    const { data, error } = await query;
-    if (error) return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
-    return { statusCode: 200, headers, body: JSON.stringify({ churches: data }) };
+
+    // Fetch groups
+    let groupQuery = supabase.from('church_groups').select('*').order('name');
+    if (!all) groupQuery = groupQuery.eq('is_archived', false);
+    const { data: groups, error: ge } = await groupQuery;
+    if (ge) return { statusCode: 500, headers, body: JSON.stringify({ error: ge.message }) };
+
+    // Fetch churches with group join
+    let churchQuery = supabase
+      .from('churches')
+      .select('id, name, group_id, is_archived, created_at, church_groups(id, name)')
+      .order('name');
+    if (!all) churchQuery = churchQuery.eq('is_archived', false);
+    const { data: churchRows, error: ce } = await churchQuery;
+    if (ce) return { statusCode: 500, headers, body: JSON.stringify({ error: ce.message }) };
+
+    // Normalize: add group_name from join for convenience
+    const churches = (churchRows || []).map(c => ({
+      ...c,
+      group_name: c.church_groups?.name || '',
+    }));
+
+    return { statusCode: 200, headers, body: JSON.stringify({ churches, groups: groups || [] }) };
   }
 
-  // All write operations require manage_churches permission
+  // All write ops require manage_churches
   const admin = getAdmin(event);
   if (!admin) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
   if (!admin.permissions?.manage_churches) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to manage churches' }) };
   }
 
-  // ── POST: add church ─────────────────────────────────────────────────────
+  const body   = JSON.parse(event.body || '{}');
+  const entity = body.entity || 'church';
+
+  // ── POST: add ────────────────────────────────────────────────────────────────
   if (event.httpMethod === 'POST') {
     try {
-      const { name, group_name } = JSON.parse(event.body);
-      if (!name || !group_name) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Name and group required' }) };
-      const { data, error } = await supabase.from('churches').insert({ name: name.trim(), group_name: group_name.trim() }).select().single();
-      if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, church: data }) };
+      if (entity === 'group') {
+        const { name } = body;
+        if (!name) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Group name required' }) };
+        const { data, error } = await supabase.from('church_groups').insert({ name: name.trim() }).select().single();
+        if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, group: data }) };
+      } else {
+        const { name, group_id } = body;
+        if (!name || !group_id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Name and group required' }) };
+        const { data, error } = await supabase.from('churches').insert({ name: name.trim(), group_id }).select().single();
+        if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, church: data }) };
+      }
     } catch (err) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
     }
   }
 
-  // ── PUT: edit or archive/unarchive ───────────────────────────────────────
+  // ── PUT: edit or archive ─────────────────────────────────────────────────────
   if (event.httpMethod === 'PUT') {
     try {
-      const { id, name, group_name, is_archived } = JSON.parse(event.body);
+      const { id, name, group_id, is_archived } = body;
       if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'ID required' }) };
+      const table   = entity === 'group' ? 'church_groups' : 'churches';
       const updates = {};
-      if (name      !== undefined) updates.name       = name.trim();
-      if (group_name !== undefined) updates.group_name = group_name.trim();
+      if (name        !== undefined) updates.name        = name.trim();
+      if (group_id    !== undefined) updates.group_id    = group_id;
       if (is_archived !== undefined) updates.is_archived = is_archived;
-      const { error } = await supabase.from('churches').update(updates).eq('id', id);
+      const { error } = await supabase.from(table).update(updates).eq('id', id);
       if (error) return { statusCode: 400, headers, body: JSON.stringify({ error: error.message }) };
       return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
     } catch (err) {
