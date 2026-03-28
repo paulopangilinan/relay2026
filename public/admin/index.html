@@ -684,8 +684,6 @@
 
       adminToken   = json.token;
       adminSession = { name: json.name, email: json.email, permissions: json.permissions, is_super_admin: json.is_super_admin };
-      sessionStorage.setItem('adminToken', adminToken);
-      sessionStorage.setItem('adminSession', JSON.stringify(adminSession));
 
       if (json.force_password_change) {
         showChangePassword();
@@ -741,8 +739,9 @@
 
   function logout() {
     adminToken = ''; adminSession = null;
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminSession');
+    sessionStorage.removeItem('_relay_token');
+    sessionStorage.removeItem('_relay_session');
+    sessionStorage.removeItem('_relay_ts');
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('changePwScreen').style.display = 'none';
@@ -1337,9 +1336,9 @@
       <td><strong>${esc(g.name)}</strong></td>
       <td>${g.is_archived ? '<span style="font-size:11px;color:#888;font-weight:600;">Archived</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
       <td style="white-space:nowrap;">
-        <div style="display:flex;gap:4px;align-items:center;">
-          <button onclick="openEditGroupModal('${g.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
-          <button onclick="toggleArchiveGroup('${g.id}',${!g.is_archived})" style="font-size:12px;padding:4px 10px;background:${g.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${g.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;">${g.is_archived ? 'Unarchive' : 'Archive'}</button>
+        <div class="btn-actions" style="display:flex;gap:4px;align-items:center;">
+          <button onclick="openEditGroupModal('${g.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;"><span class="btn-label-text">Edit</span><span class="btn-label-icon">✏️</span></button>
+          <button onclick="toggleArchiveGroup('${g.id}',${!g.is_archived})" style="font-size:12px;padding:4px 10px;background:${g.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${g.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;"><span class="btn-label-text">${g.is_archived ? 'Unarchive' : 'Archive'}</span><span class="btn-label-icon">${g.is_archived ? '📂' : '📁'}</span></button>
         </div>
       </td>
     </tr>`).join('');
@@ -1354,9 +1353,9 @@
       <td style="font-size:12px;color:var(--muted);">${esc(c.group_name)}</td>
       <td>${c.is_archived ? '<span style="font-size:11px;color:#888;font-weight:600;">Archived</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
       <td style="white-space:nowrap;">
-        <div style="display:flex;gap:4px;align-items:center;">
-          <button onclick="openEditChurchModal('${c.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
-          <button onclick="toggleArchiveChurch('${c.id}',${!c.is_archived})" style="font-size:12px;padding:4px 10px;background:${c.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${c.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;">${c.is_archived ? 'Unarchive' : 'Archive'}</button>
+        <div class="btn-actions" style="display:flex;gap:4px;align-items:center;">
+          <button onclick="openEditChurchModal('${c.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;"><span class="btn-label-text">Edit</span><span class="btn-label-icon">✏️</span></button>
+          <button onclick="toggleArchiveChurch('${c.id}',${!c.is_archived})" style="font-size:12px;padding:4px 10px;background:${c.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${c.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;"><span class="btn-label-text">${c.is_archived ? 'Unarchive' : 'Archive'}</span><span class="btn-label-icon">${c.is_archived ? '📂' : '📁'}</span></button>
         </div>
       </td>
     </tr>`).join('');
@@ -1673,46 +1672,51 @@
 
   function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',3500); }
 
-  // Expose all onclick-called functions globally
-  // Clear session when navigating away (but not on reload)
-  window.addEventListener('pagehide', function() {
-    // persisted = page going into bfcache (back/forward), not a real unload
-    // We clear on all pagehide so navigation away kills the session
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminSession');
-  });
+  // ── Session persistence ─────────────────────────────────────────────────
+  // Goal: survive page refresh, but DIE when the user navigates to any
+  // other site and comes back (even within the same tab).
+  //
+  // How it works:
+  //   • On beforeunload we snapshot the session into sessionStorage.
+  //   • On page load we check: is the referrer our own admin page (or empty,
+  //     which covers F5/Ctrl-R)?  If yes AND navigation type is 'reload',
+  //     restore.  Otherwise, wipe everything — the user left and came back.
+  //   • We never leave tokens sitting in sessionStorage long-term.
 
-  // Mark that we're doing a reload so we can restore session after pagehide clears it
+  const ADMIN_ORIGIN = location.origin;
+  const ADMIN_PATH   = location.pathname;
+
+  // Before the page unloads (refresh OR navigate away), stash the session.
+  // We always stash — the *restore* side decides whether to honour it.
   window.addEventListener('beforeunload', function() {
-    const navType = performance.getEntriesByType('navigation')[0]?.type;
-    if (navType === 'reload') {
-      // Temporarily move token to a reload-safe key
-      const t = sessionStorage.getItem('adminToken');
-      const s = sessionStorage.getItem('adminSession');
-      if (t) sessionStorage.setItem('adminToken_reload', t);
-      if (s) sessionStorage.setItem('adminSession_reload', s);
+    if (adminToken) {
+      sessionStorage.setItem('_relay_token', adminToken);
+      sessionStorage.setItem('_relay_session', JSON.stringify(adminSession));
+      sessionStorage.setItem('_relay_ts', String(Date.now()));
     }
   });
 
-  // Restore session on page load
+  // On page load: decide whether to restore
   (function initSession() {
-    // Check if this is a reload — restore from reload-safe keys
-    const navType = performance.getEntriesByType('navigation')[0]?.type;
-    let savedToken, savedSession;
-    if (navType === 'reload') {
-      savedToken   = sessionStorage.getItem('adminToken_reload');
-      savedSession = sessionStorage.getItem('adminSession_reload');
-      // Move back to normal keys
-      if (savedToken)   sessionStorage.setItem('adminToken', savedToken);
-      if (savedSession) sessionStorage.setItem('adminSession', savedSession);
-    } else {
-      savedToken   = sessionStorage.getItem('adminToken');
-      savedSession = sessionStorage.getItem('adminSession');
-    }
-    // Always clean up reload keys
-    sessionStorage.removeItem('adminToken_reload');
-    sessionStorage.removeItem('adminSession_reload');
-    if (savedToken && savedSession) {
+    const savedToken   = sessionStorage.getItem('_relay_token');
+    const savedSession = sessionStorage.getItem('_relay_session');
+    const savedTs      = Number(sessionStorage.getItem('_relay_ts') || 0);
+
+    // Always clean up immediately — tokens should never linger
+    sessionStorage.removeItem('_relay_token');
+    sessionStorage.removeItem('_relay_session');
+    sessionStorage.removeItem('_relay_ts');
+
+    if (!savedToken || !savedSession) return;
+
+    // Only restore if this is genuinely a reload of the admin page:
+    //  1) Navigation type is 'reload'
+    //  2) Stash is less than 10 seconds old (guards against stale data)
+    const nav     = performance.getEntriesByType('navigation')[0];
+    const isReload = nav && nav.type === 'reload';
+    const isFresh  = (Date.now() - savedTs) < 10000;
+
+    if (isReload && isFresh) {
       try {
         adminToken   = savedToken;
         adminSession = JSON.parse(savedSession);
@@ -1721,11 +1725,10 @@
         document.getElementById('adminName').textContent     = adminSession.name || '';
         applyPermissionUI();
         loadData();
-      } catch(e) {
-        sessionStorage.removeItem('adminToken');
-        sessionStorage.removeItem('adminSession');
-      }
+      } catch(e) { /* parse failed — stay on login */ }
     }
+    // If not a reload (user typed the URL, navigated back, etc.) we do
+    // nothing — the page starts at the login screen as normal.
   })();
 
   window.login                = login;
