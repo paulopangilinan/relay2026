@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY 2026 — Registration Received</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB;
+    --gold: #C49A1A; --gold-light: #E8B830; --gold-bg: #FDF6E0;
+    --green: #2E7048; --green-light: #EAF5EE; --green-bright: #4BAE6A;
+    --page-bg: #F2F5F8; --card-bg: #fff;
+    --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A; --border: #D4E2EA;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+
+  .confetti-bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--green-bright), var(--sky), var(--gold-light), var(--green-bright));
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .hero { max-width: 600px; margin: 32px auto 0; padding: 0 20px; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; border-radius: 12px; }
+
+  .page-wrap {
+    max-width: 600px; margin: 0 auto; padding: 40px 20px 80px;
+    text-align: center;
+  }
+
+  .icon-wrap {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin: 0 auto 24px;
+  }
+  .icon-paid { background: var(--green-light); }
+  .icon-later { background: var(--sky-light); }
+
+  h1 {
+    font-family: 'Bebas Neue'; font-size: 38px; letter-spacing: 0.05em;
+    color: var(--dark); margin-bottom: 10px;
+  }
+  .subtitle { font-size: 15px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+
+  .card {
+    background: var(--card-bg); border-radius: 14px; padding: 24px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    margin-bottom: 16px; text-align: left;
+  }
+
+  .section-label {
+    font-family: 'DM Mono'; font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--sky); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f4f7; font-size: 14px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .label { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .info-row .val { color: var(--text); font-weight: 500; }
+
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff;
+  }
+  .step-num.blue { background: var(--sky); }
+  .step-num.gold { background: var(--gold); }
+  .step-num.green { background: var(--green); }
+  .step-text { font-size: 13px; color: var(--text); line-height: 1.5; padding-top: 4px; }
+  .step-text strong { color: var(--dark); }
+
+  .note {
+    background: var(--gold-bg); border-left: 3px solid var(--gold-light);
+    border-radius: 0 8px 8px 0; padding: 12px 16px;
+    font-size: 13px; color: #7A5A10; line-height: 1.6;
+  }
+
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--dark); color: #fff; text-decoration: none;
+    padding: 14px 28px; border-radius: 10px;
+    font-family: 'Bebas Neue'; font-size: 20px; letter-spacing: 0.08em;
+    transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-back:hover { background: var(--sky); }
+
+  @media (max-width: 600px) {
+    .page-wrap { padding: 28px 14px 60px; }
+    h1 { font-size: 30px; }
+    .card { padding: 18px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="assets/images/hero.jpg" alt="RELAY Conference 2026">
+</div>
+<div class="confetti-bar"></div>
+
+<div class="page-wrap">
+
+  <!-- Paid -->
+  <div id="statePaid" style="display:none;">
+    <div class="icon-wrap icon-paid">🎉</div>
+    <h1>Registration Received!</h1>
+    <p class="subtitle" id="paidSubtitle">Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment screenshot and will verify it shortly.</p>
+
+    <div class="card">
+      <div class="section-label">What Happens Next</div>
+      <div class="steps">
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="verifyStep">Our team will <strong>verify your GCash payment</strong> and send you a confirmation email shortly.</div></div>
+        <div class="step"><div class="step-num gold">2</div><div class="step-text">You'll receive a <strong>confirmation email</strong> once your slot is officially reserved.</div></div>
+        <div class="step"><div class="step-num green">3</div><div class="step-text"><strong>See you in Tagaytay</strong> on September 23–26, 2026! 🙌</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Event Details</div>
+      <div class="info-row"><span class="label">Date</span><span class="val">September 23–26, 2026</span></div>
+      <div class="info-row"><span class="label">Venue</span><span class="val">CCT Tagaytay Retreat & Training Center</span></div>
+      <div class="info-row"><span class="label">Theme</span><span class="val">Living for Christ Alone</span></div>
+    </div>
+  </div>
+
+  <!-- Pay Later -->
+  <div id="stateLater" style="display:none;">
+    <div class="icon-wrap icon-later">📋</div>
+    <h1>Registration Noted!</h1>
+    <p class="subtitle">Thank you for your interest in RELAY Conference Asia Pacific 2026.<br>Payment instructions have been sent to your email.</p>
+
+    <div class="card">
+      <div class="section-label">Complete Your Registration</div>
+      <div class="steps">
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from <span class="contact-email">—</span>.</div></div>
+        <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
+        <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Event Details</div>
+      <div class="info-row"><span class="label">Date</span><span class="val">September 23–26, 2026</span></div>
+      <div class="info-row"><span class="label">Venue</span><span class="val">CCT Tagaytay Retreat & Training Center</span></div>
+      <div class="info-row"><span class="label">Theme</span><span class="val">Living for Christ Alone</span></div>
+    </div>
+
+    <div class="note" style="margin-bottom:24px;">
+      Can't find the email? Check your spam/junk folder or contact us at <strong><span class="contact-email">—</span></strong>
+    </div>
+  </div>
+
+  <a id="backBtn" href="/register-ph" class="btn-back">← Back to Registration</a>
+</div>
+
+<script>
+  // Read query param ?type=paid or ?type=later
+  // Fetch contact email
+  fetch('/.netlify/functions/contact-info')
+    .then(r => r.json())
+    .then(d => {
+      document.querySelectorAll('.contact-email').forEach(el => {
+        el.textContent = d.email || '';
+      });
+    }).catch(() => {});
+
+  const params = new URLSearchParams(window.location.search);
+  const type    = params.get('type') || 'paid';
+  const form    = params.get('form') || 'ph';
+  const regType = params.get('regType') || 'single'; // single or group
+  const isIntl  = form === 'intl';
+
+  document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
+  // PH: return to picker (index); Intl: return to intl form
+  document.getElementById('backBtn').href = isIntl ? '/register-international' : `/?regType=${regType}`;
+
+  // Swap payment method wording for international (BPI) vs PH (GCash)
+  if (isIntl) {
+    const verifyStep = document.getElementById('verifyStep');
+    const payStep    = document.getElementById('payInstructStep');
+    const subtitle   = document.getElementById('paidSubtitle');
+    if (verifyStep) verifyStep.innerHTML = 'Our team will <strong>verify your BPI transfer</strong> and send you a confirmation email shortly.';
+    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="contact-email">—</span>.';
+    if (subtitle)   subtitle.innerHTML  = 'Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment receipt and will verify it shortly.';
+  }
+</script>
+
+<!-- IAB Detection Modal -->
+<div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🌐</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">For the best experience, open this in your browser.</div>
+    <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">Some features may not work in this app's browser.</div>
+    <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+<script>
+(function detectIAB() {
+  var ua = navigator.userAgent || '';
+  var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  if (!isIAB) return;
+  var modal = document.getElementById('iabModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  var isAndroid = /android/i.test(ua);
+  var btns = document.getElementById('iabButtons');
+  if (!btns) return;
+  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  if (isAndroid) {
+    btns.innerHTML = openBtn + closeBtn;
+  } else {
+    btns.innerHTML = continueBtn + copyBtn;
+  }
+})();
+function openInBrowser() {
+  var url = window.location.href;
+  window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+}
+function copyURL() {
+  var url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
+    });
+  } else {
+    prompt('Copy this link and open it in Safari:', url);
+  }
+}
+</script>
+</body>
+</html>
