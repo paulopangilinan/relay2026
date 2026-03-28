@@ -95,21 +95,15 @@
   .btn-reset:hover{border-color:var(--text);color:var(--text);}
 
   /* TABLE */
-  .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:clip;}
-  .table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-height:520px;}
-  @media(max-width:600px){.table-scroll{max-height:360px;}}
-  thead th{position:sticky;top:0;z-index:1;background:#f7fafb;}
-  .table-body-scroll{max-height:520px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-  @media(max-width:600px){.table-body-scroll{max-height:360px;}}
-  .table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;max-height:520px;}
-  @media(max-width:600px){.table-scroll{max-height:360px;}}
-  thead th{position:sticky;top:0;z-index:1;background:#f7fafb;}
+  .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);}
+  .table-scroll{display:block;width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:480px;}
+  @media(max-width:600px){.table-scroll{max-height:320px;}}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
   @media(max-width:600px){.table-header{flex-direction:column;align-items:flex-start;}.table-header>div{width:100%;justify-content:space-between;}}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
   .table-count{font-size:12px;color:var(--muted);font-family:'DM Mono';}
   table{width:100%;border-collapse:collapse;}
-  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;position:relative;user-select:none;}
+  thead th{background:#f7fafb;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2;user-select:none;}
   thead th.sortable{cursor:pointer;}
   thead th.sortable:hover{background:#edf4f8;color:var(--sky);}
   thead th.sort-asc::after{content:' ↑';color:var(--sky);}
