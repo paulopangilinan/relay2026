@@ -107,34 +107,22 @@ export const handler = async (event) => {
         from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      admin.email,
         subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
-      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-        body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
-        .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
-        .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);}
-        .hero-img{width:100%;display:block;}
-        .header{background:linear-gradient(135deg,#1C2B38,#2A3D4A);padding:28px 32px;text-align:center;}
-        .header h1{color:#fff;font-size:22px;margin:0;}.header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
-        .body{padding:32px;}
-        .row{margin-bottom:12px;}.lbl{font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;}.val{color:#2A3D4A;font-size:14px;margin-top:3px;}
-        hr{border:none;border-top:1px solid #D4E2EA;margin:20px 0;}
-        .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;margin:16px 0;}
-        .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
-      </style></head><body><div class="wrap">
-        <div class="bar"></div>
-        <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
-        <div class="header"><h1>💰 ${isGroup ? 'Group Receipt' : 'Payment Receipt'} Submitted</h1><p>RELAY Conference Asia Pacific 2026</p></div>
-        <div class="body">
-          <div class="row"><div class="lbl">Contact</div><div class="val">${reg.name}</div></div>
-          <div class="row"><div class="lbl">Email</div><div class="val">${reg.email}</div></div>
-          <div class="row"><div class="lbl">Church</div><div class="val">${reg.church}</div></div>
-          <div class="row"><div class="lbl">Total</div><div class="val">${totalLabel}</div></div>
-          ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${allMembers.length})</div>${breakdownTable}` : ''}
-          <hr>
+      html: `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;"><div style="max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <div style="height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830);"></div>
+        <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
+        <div style="background:linear-gradient(135deg,#1C2B38,#2A3D4A);padding:28px 32px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0;">💰 ${isGroup ? 'Group Receipt' : 'Payment Receipt'} Submitted</h1><p style="color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;">RELAY Conference Asia Pacific 2026</p></div>
+        <div style="padding:32px;">
+          <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Contact</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${reg.name}</div></div>
+          <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Email</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${reg.email}</div></div>
+          <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Church</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${reg.church}</div></div>
+          <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Total</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${totalLabel}</div></div>
+          ${isGroup ? `<div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;margin-top:12px;">Participants (${allMembers.length})</div>${breakdownTable}` : ''}
+          <hr style="border:none;border-top:1px solid #D4E2EA;margin:20px 0;">
           ${receiptUrl ? `<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Payment Screenshot</div><img src="${receiptUrl}" alt="Payment Receipt" style="width:100%;max-width:480px;border-radius:10px;border:1px solid #D4E2EA;display:block;"></div>` : ""}
-          <div class="note">${isGroup ? `This group (${allMembers.length} participants) has submitted their GCash receipt.` : 'This registrant has submitted their GCash receipt.'} ${canVerify ? 'Verify the payment and click below to confirm.' : ''}</div>
+          <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;margin:16px 0;">${isGroup ? `This group (${allMembers.length} participants) has submitted their GCash receipt.` : 'This registrant has submitted their GCash receipt.'} ${canVerify ? 'Verify the payment and click below to confirm.' : ''}</div>
           ${canVerify ? `<div style="text-align:center;margin-top:24px;"><a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a></div>` : ''}
         </div>
-        <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific</div>
+        <div style="background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;">RELAY 2026 · Sovereign Grace Churches Asia Pacific</div>
       </div></body></html>`,
       });
     }
