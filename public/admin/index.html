@@ -96,7 +96,7 @@
 
   /* TABLE */
   .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);}
-  .table-scroll{display:block;width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:480px;}
+  .table-scroll{display:block;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:480px;}
   @media(max-width:600px){.table-scroll{max-height:320px;}}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
   @media(max-width:600px){.table-header{flex-direction:column;align-items:flex-start;}.table-header>div{width:100%;justify-content:space-between;}}
@@ -143,8 +143,9 @@
     .btn-cancel-row .btn-label-icon{display:inline;}
     .btn-actions .btn-label-text{display:none;}
     .btn-actions .btn-label-icon{display:inline;}
-    .btn-confirm-row,.btn-cancel-row{padding:6px 8px;font-size:14px;margin-bottom:3px;}
-    .hide-cancelled-wrap .hc-text{display:none;}
+    .btn-confirm-row,.btn-cancel-row{padding:6px 8px;font-size:14px;margin-bottom:0;}
+    .btn-label-text{display:none;}
+    .btn-label-icon{display:inline;}
   }
   .btn-confirm-row:hover{background:var(--green-bright);}
 
@@ -179,7 +180,7 @@
   .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
   .btn-cancel-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;}
   .btn-cancel-row:hover{background:#E05050;color:#fff;}
-  .btn-actions{display:flex;flex-direction:column;gap:4px;min-width:110px;}
+  .btn-actions{display:flex;flex-direction:row;gap:4px;align-items:center;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
@@ -381,7 +382,7 @@
           <h2>Philippines Registrations</h2>
           <div style="display:flex;align-items:center;gap:16px;">
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
-              <span class="hc-text">Hide Cancelled Registrations</span>
+              <span class="hc-text">Hide Cancelled</span>
               <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
             </label>
             <span class="table-count" id="ph-count">–</span>
@@ -462,7 +463,7 @@
           <h2>International Registrations</h2>
           <div style="display:flex;align-items:center;gap:16px;">
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
-              <span class="hc-text">Hide Cancelled Registrations</span>
+              <span class="hc-text">Hide Cancelled</span>
               <div class="toggle-track on" id="intl-hide-cancelled-track"><div class="toggle-thumb"></div></div>
             </label>
             <span class="table-count" id="intl-count">–</span>
@@ -489,11 +490,11 @@
           <div style="font-size:16px;font-weight:700;color:var(--dark);">Church Groups</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;">Groups used to categorize churches in the registration form.</div>
         </div>
-        <button onclick="openAddGroupModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Group</button>
+        <button onclick="openAddGroupModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;"><span class="btn-label-text">+ Add Group</span><span class="btn-label-icon">＋</span></button>
       </div>
       <div class="table-wrap" style="margin-bottom:28px;">
         <div class="table-scroll">
-          <table>
+          <table style="min-width:480px;">
             <thead><tr><th>Group Name</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="groups-body"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
           </table>
@@ -506,11 +507,11 @@
           <div style="font-size:16px;font-weight:700;color:var(--dark);">Churches</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;">Archived churches won't appear on the registration form.</div>
         </div>
-        <button onclick="openAddChurchModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Church</button>
+        <button onclick="openAddChurchModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;"><span class="btn-label-text">+ Add Church</span><span class="btn-label-icon">＋</span></button>
       </div>
       <div class="table-wrap">
         <div class="table-scroll">
-          <table>
+          <table style="min-width:640px;">
             <thead><tr><th>Church Name</th><th>Group</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="churches-body"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
           </table>
@@ -525,7 +526,7 @@
           <div style="font-size:16px;font-weight:700;color:var(--dark);">Admin Users</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;">Manage who has access to this dashboard.</div>
         </div>
-        <button onclick="openAddAdminModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Admin</button>
+        <button onclick="openAddAdminModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;"><span class="btn-label-text">+ Add Admin</span><span class="btn-label-icon">＋</span></button>
       </div>
       <div class="table-wrap">
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;">
@@ -1354,8 +1355,10 @@
       <td><strong>${esc(g.name)}</strong></td>
       <td>${g.is_archived ? '<span style="font-size:11px;color:#888;font-weight:600;">Archived</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
       <td style="white-space:nowrap;">
-        <button onclick="openEditGroupModal('${g.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
-        <button onclick="toggleArchiveGroup('${g.id}',${!g.is_archived})" style="font-size:12px;padding:4px 10px;background:${g.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${g.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-left:4px;">${g.is_archived ? 'Unarchive' : 'Archive'}</button>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button onclick="openEditGroupModal('${g.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
+          <button onclick="toggleArchiveGroup('${g.id}',${!g.is_archived})" style="font-size:12px;padding:4px 10px;background:${g.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${g.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;">${g.is_archived ? 'Unarchive' : 'Archive'}</button>
+        </div>
       </td>
     </tr>`).join('');
   }
@@ -1369,8 +1372,10 @@
       <td style="font-size:12px;color:var(--muted);">${esc(c.group_name)}</td>
       <td>${c.is_archived ? '<span style="font-size:11px;color:#888;font-weight:600;">Archived</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
       <td style="white-space:nowrap;">
-        <button onclick="openEditChurchModal('${c.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
-        <button onclick="toggleArchiveChurch('${c.id}',${!c.is_archived})" style="font-size:12px;padding:4px 10px;background:${c.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${c.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-left:4px;">${c.is_archived ? 'Unarchive' : 'Archive'}</button>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button onclick="openEditChurchModal('${c.id}')" style="font-size:12px;padding:4px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;">Edit</button>
+          <button onclick="toggleArchiveChurch('${c.id}',${!c.is_archived})" style="font-size:12px;padding:4px 10px;background:${c.is_archived ? '#E6F5EC' : '#FFF3CD'};color:${c.is_archived ? '#2E7048' : '#856404'};border:none;border-radius:6px;cursor:pointer;font-weight:600;">${c.is_archived ? 'Unarchive' : 'Archive'}</button>
+        </div>
       </td>
     </tr>`).join('');
   }
@@ -1574,7 +1579,7 @@
               <span class="btn-label-text">Edit</span><span class="btn-label-icon">✏️</span>
             </button>
             ${!a.is_super_admin && !isMe ? `<button onclick="removeAdmin('${a.id}','${esc(a.name)}')" style="font-size:12px;padding:5px 12px;background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-weight:600;">
-              <span class="btn-label-text">Remove</span><span class="btn-label-icon">✕</span>
+              <span class="btn-label-text">Remove</span><span class="btn-label-icon">🗑</span>
             </button>` : ''}
           </div>
         </td>
