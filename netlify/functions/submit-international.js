@@ -132,7 +132,7 @@ function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
     .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
   </style></head><body><div class="wrap">
     <div class="bar"></div>
-    <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
+    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
     <div class="header"><h1>${headerTitle}</h1><p>${headerSub}</p></div>
     <div class="body">${body}</div>
     <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>

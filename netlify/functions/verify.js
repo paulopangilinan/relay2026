@@ -151,7 +151,7 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
     .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
   </style></head><body><div class="wrap">
     <div class="bar"></div>
-    <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
+    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
     <div class="header"><h1>${isGroup ? 'Your group is confirmed! 🎉' : "You're confirmed! 🎉"}</h1><p>RELAY Conference Asia Pacific 2026</p></div>
     <div class="body">
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${primaryReg.name}</strong>, your payment has been verified and ${isGroup ? 'all participants are' : 'your registration is'} confirmed. We can't wait to see you in Tagaytay!</p>

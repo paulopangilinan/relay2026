@@ -225,7 +225,7 @@ function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
     .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
   </style></head><body><div class="wrap">
     <div class="bar"></div>
-    <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
+    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
     <div class="header"><h1>${headerTitle}</h1><p>${headerSub}</p></div>
     <div class="body">${body}</div>
     <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
@@ -304,12 +304,12 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
               <img src="${siteUrl}/assets/images/gcash-header.png" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
             </td></tr>
             <tr><td style="padding:0 14px 14px;">
-              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;text-align:center;">
-                <tr><td align="center" style="padding:24px 20px 16px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">
+                <tr><td align="center" style="padding-bottom:16px;">
                   <img src="${qrUrl}" alt="GCash QR" width="190" height="190" style="display:block;border-radius:10px;border:1px solid #e0e0e0;background:#fff;">
                 </td></tr>
-                <tr><td style="font-size:13px;color:#666;padding:0 20px 14px;">Transfer fees may apply.</td></tr>
-                <tr><td style="border-top:1px solid #E0E0E0;padding:14px 20px 24px;">
+                <tr><td style="font-size:13px;color:#666;padding-bottom:14px;">Transfer fees may apply.</td></tr>
+                <tr><td style="border-top:1px solid #E0E0E0;padding-top:14px;">
                   <div style="font-size:22px;font-weight:800;color:#0070E0;margin-bottom:4px;">${gcashAccountName || 'CCSGM'}</div>
                   <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">${gcashAccountHolder || ''}</div>
                   <div style="font-size:13px;padding:4px 0;">

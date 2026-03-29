@@ -121,7 +121,7 @@ export const handler = async (event) => {
         .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
       </style></head><body><div class="wrap">
         <div class="bar"></div>
-        <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
+        <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
         <div class="header"><h1>💰 ${isGroup ? 'Group Receipt' : 'Payment Receipt'} Submitted</h1><p>RELAY Conference Asia Pacific 2026</p></div>
         <div class="body">
           <div class="row"><div class="lbl">Contact</div><div class="val">${reg.name}</div></div>
