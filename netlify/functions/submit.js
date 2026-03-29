@@ -40,8 +40,9 @@ export const handler = async (event) => {
     const churchName = church === "others" ? otherChurch : church;
     const transporter = getTransporter();
     const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
-    const heroUrl = `${siteUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
-    const qrUrl   = `${siteUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
+    const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
+    const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+    const qrUrl   = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
     const isGroup = registrationType === "group";
 
     // Duplicate email check
@@ -162,7 +163,7 @@ export const handler = async (event) => {
         to:      email,
         subject: "RELAY 2026 — Complete your registration",
         html:    registrantPaymentEmail({
-          primaryName, totalLabel, qrUrl, heroUrl, siteUrl,
+          primaryName, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl,
           registrationId: primaryReg.id,
           group_id, isGroup, participants, breakdownTable,
           gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
@@ -286,7 +287,7 @@ function registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, partici
   });
 }
 
-function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, registrationId, group_id, isGroup, participants, breakdownTable, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl, registrationId, group_id, isGroup, participants, breakdownTable, gcashAccountName, gcashAccountHolder, gcashMobile }) {
   const uploadLink = `${siteUrl}/upload-receipt?id=${registrationId}${isGroup && group_id ? `&group_id=${group_id}` : ''}`;
   return emailShell({
     heroUrl,
@@ -301,7 +302,7 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
         <tr><td align="center">
           <table cellpadding="0" cellspacing="0" border="0" style="background:#0A8FD9;border-radius:16px;overflow:hidden;width:100%;max-width:360px;">
             <tr><td style="padding:0;line-height:0;">
-              <img src="${siteUrl}/assets/images/gcash-header-email.jpg?v=${Date.now()}" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
+              <img src="${imgUrl}/assets/images/gcash-header-email.jpg?v=${Date.now()}" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
             </td></tr>
             <tr><td style="padding:0 14px 14px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">
