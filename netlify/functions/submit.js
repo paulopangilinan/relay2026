@@ -45,20 +45,6 @@ export const handler = async (event) => {
     const qrUrl   = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
     const isGroup = registrationType === "group";
 
-    // Duplicate email check
-    const { data: existing } = await supabase
-      .from("registrations")
-      .select("id, payment_verified")
-      .eq("email", email.toLowerCase().trim())
-      .maybeSingle();
-
-    if (existing) {
-      if (existing.payment_verified) {
-        return { statusCode: 409, headers, body: JSON.stringify({ error: "already_confirmed", message: "This email has already been registered and confirmed. Please contact us if you need help." }) };
-      }
-      return { statusCode: 409, headers, body: JSON.stringify({ error: "already_registered", message: "This email already has a pending registration. Check your inbox for payment instructions, or contact us for help." }) };
-    }
-
     // Upload shared receipt (pay now)
     let receiptUrl = null;
     if (paymentReady === "now" && receiptBase64) {

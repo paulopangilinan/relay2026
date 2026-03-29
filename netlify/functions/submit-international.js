@@ -28,20 +28,6 @@ export const handler = async (event) => {
     const imgUrl      = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
     const heroUrl     = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
-    // 0. Check for duplicate email
-    const { data: existing } = await supabase
-      .from("registrations")
-      .select("id, payment_verified")
-      .eq("email", email.toLowerCase().trim())
-      .maybeSingle();
-
-    if (existing) {
-      if (existing.payment_verified) {
-        return { statusCode: 409, headers, body: JSON.stringify({ error: "already_confirmed", message: "This email has already been registered and confirmed. Please contact us if you need help." }) };
-      }
-      return { statusCode: 409, headers, body: JSON.stringify({ error: "already_registered", message: "This email already has a pending registration. Check your inbox for payment instructions, or contact us for help." }) };
-    }
-
     // 1. Upload receipt
     let receiptUrl = null;
     if (receiptBase64) {

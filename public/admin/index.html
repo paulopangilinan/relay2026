@@ -97,7 +97,7 @@
   /* TABLE */
   .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);}
   .table-scroll{display:block;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:480px;}
-  @media(max-width:600px){.table-scroll{max-height:320px;}}
+  @media(max-width:600px){.table-scroll{max-height:520px;}}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
   @media(max-width:600px){.table-header{flex-direction:column;align-items:flex-start;}.table-header>div{width:100%;justify-content:space-between;}}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
@@ -151,8 +151,9 @@
 
   /* BOTTOM */
   .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;}
-  .church-card{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
-  .church-card-header{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--dark);}
+  .church-card{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;}
+  .church-card-header{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--dark);flex-shrink:0;}
+  .church-card-body{max-height:360px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .church-row{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid #eef3f6;font-size:13px;gap:8px;}
   .church-row:last-child{border-bottom:none;}
   .church-name{color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -279,8 +280,8 @@
       <span class="ts" id="lastRefresh"></span>
       <button class="btn-topbar-icon" id="tab-churches" onclick="switchTab('churches')">⛪ Churches</button>
       <button class="btn-topbar-icon" id="tab-admins" onclick="switchTab('admins')">🛡️ Admins</button>
-      <button class="btn-sm btn-outline" onclick="loadData()">↻ Refresh</button>
-      <button class="btn-sm btn-outline" onclick="logout()">Sign Out</button>
+      <button class="btn-sm btn-outline" onclick="loadData()">🔄 Refresh Data</button>
+      <button class="btn-sm btn-outline" onclick="logout()"><span style="display:inline-block;width:14px;height:14px;vertical-align:middle;margin-right:3px;margin-top:-1px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>Sign Out</button>
     </div>
     <div class="topbar-bar"></div>
   </div>
@@ -396,8 +397,8 @@
         </div>
       </div>
       <div class="bottom-row">
-        <div class="church-card"><div class="church-card-header">📊 By Church</div><div id="ph-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
-        <div class="church-card"><div class="church-card-header">👥 Participant Breakdown</div><div id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">📊 By Church</div><div class="church-card-body" id="ph-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">👥 Participant Breakdown</div><div class="church-card-body" id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
       </div>
     </div>
 
@@ -477,8 +478,8 @@
         </div>
       </div>
       <div class="bottom-row">
-        <div class="church-card"><div class="church-card-header">🌍 By Country</div><div id="intl-country-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
-        <div class="church-card"><div class="church-card-header">⛪ By Church</div><div id="intl-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">🌍 By Country</div><div class="church-card-body" id="intl-country-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header">⛪ By Church</div><div class="church-card-body" id="intl-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
       </div>
     </div>
 
