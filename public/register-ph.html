@@ -1550,11 +1550,21 @@
       // Android Chrome/browser — open GCash directly
       window.location.href = 'intent://main#Intent;scheme=gcash;package=com.globe.gcash.android;end';
     } else if (isIOS) {
-      // iOS: try gcash:// first, fall back to App Store after 1.5s if not installed
-      window.location.href = 'gcash://';
-      setTimeout(() => {
+      // iOS: try gcash:// scheme, fall back to App Store
+      const isIOSIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+      if (isIOSIAB) {
+        // IAB browsers block custom schemes — go straight to App Store
         window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
-      }, 1500);
+      } else {
+        var appOpened = false;
+        window.addEventListener('blur', function() { appOpened = true; }, { once: true });
+        window.location.href = 'gcash://';
+        setTimeout(function() {
+          if (!appOpened && !document.hidden) {
+            window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+          }
+        }, 1500);
+      }
     } else {
       showToast('Open GCash on your phone to pay.', false);
     }
@@ -1587,29 +1597,29 @@
   var ua = navigator.userAgent || '';
   var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
+  if (sessionStorage.getItem('iab_dismissed')) return;
   var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
-  var closeBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
-  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var closeBtn = '<button onclick="dismissIAB()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#2E7048;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
   var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
   if (isAndroid) {
     btns.innerHTML = openBtn + closeBtn;
   } else {
-    var openSafariBtn = '<button onclick="openInSafari()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Safari</button>';
-    btns.innerHTML = openSafariBtn + copyBtn + closeBtn;
+    btns.innerHTML = closeBtn + copyBtn;
   }
 })();
+function dismissIAB() {
+  sessionStorage.setItem('iab_dismissed', '1');
+  document.getElementById('iabModal').style.display = 'none';
+}
 function openInBrowser() {
   var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
-}
-function openInSafari() {
-  var url = window.location.href;
-  window.open(url, '_blank');
 }
 function copyURL() {
   var url = window.location.href;
