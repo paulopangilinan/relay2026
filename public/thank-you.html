@@ -216,19 +216,23 @@
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
-  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+  var closeBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
   var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
   var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
-  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
     btns.innerHTML = openBtn + closeBtn;
   } else {
-    btns.innerHTML = continueBtn + copyBtn;
+    var openSafariBtn = '<button onclick="openInSafari()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Safari</button>';
+    btns.innerHTML = openSafariBtn + copyBtn + closeBtn;
   }
 })();
 function openInBrowser() {
   var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+}
+function openInSafari() {
+  var url = window.location.href;
+  window.open(url, '_blank');
 }
 function copyURL() {
   var url = window.location.href;

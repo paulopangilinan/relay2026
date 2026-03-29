@@ -238,5 +238,56 @@
 
   detectAndRedirect();
 </script>
+
+<!-- IAB Detection Modal -->
+<div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🌐</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">For the best experience, open this in your browser.</div>
+    <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">Some features may not work in this app's browser.</div>
+    <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+<script>
+(function detectIAB() {
+  var ua = navigator.userAgent || '';
+  var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  if (!isIAB) return;
+  var modal = document.getElementById('iabModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  var isAndroid = /android/i.test(ua);
+  var btns = document.getElementById('iabButtons');
+  if (!btns) return;
+  var closeBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+  if (isAndroid) {
+    btns.innerHTML = openBtn + closeBtn;
+  } else {
+    var openSafariBtn = '<button onclick="openInSafari()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Safari</button>';
+    btns.innerHTML = openSafariBtn + copyBtn + closeBtn;
+  }
+})();
+function openInBrowser() {
+  var url = window.location.href;
+  window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+}
+function openInSafari() {
+  var url = window.location.href;
+  window.open(url, '_blank');
+}
+function copyURL() {
+  var url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
+    });
+  } else {
+    prompt('Copy this link and open it in Safari:', url);
+  }
+}
+</script>
 </body>
 </html>
