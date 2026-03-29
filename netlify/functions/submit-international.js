@@ -108,18 +108,40 @@ export const handler = async (event) => {
 
 // ── Email shell (matches local form style) ────────────────────────────────────
 function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;"><div style="max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);"></div>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
+    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
+    .hero-img{width:100%;display:block;}
+    .header{background:${headerBg};padding:28px 32px;text-align:center;}
+    .header h1{color:#fff;font-size:22px;margin:0;}
+    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
+    .body{padding:32px;}
+    .row{margin-bottom:12px;}
+    .lbl{font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;}
+    .val{color:#2A3D4A;font-size:14px;margin-top:3px;}
+    hr{border:none;border-top:1px solid #D4E2EA;margin:20px 0;}
+    .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;}
+    .bpi-box{background:#EAF5EE;border-radius:10px;padding:16px 20px;margin:16px 0;}
+    .bpi-box h4{font-size:12px;font-weight:700;color:#2E7048;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;}
+    .bpi-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #D0EADA;font-size:13px;}
+    .bpi-row:last-child{border-bottom:none;}
+    .bpi-lbl{color:#6B8A9A;flex-shrink:0;min-width:110px;} .bpi-val{color:#2A3D4A;font-weight:600;text-align:right;}
+    .info-box{background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;}
+    .cta{display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;}
+    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
+  </style></head><body><div class="wrap">
+    <div class="bar"></div>
     <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
-    <div style="background:${headerBg};padding:28px 32px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0;">${headerTitle}</h1><p style="color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;">${headerSub}</p></div>
-    <div style="padding:32px;">${body}</div>
-    <div style="background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
+    <div class="header"><h1>${headerTitle}</h1><p>${headerSub}</p></div>
+    <div class="body">${body}</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
   </div></body></html>`;
 }
 
 function rows(...items) {
   return items.filter(([,v]) => v).map(([l,v]) =>
-    `<div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">${l}</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${v}</div></div>`
+    `<div class="row"><div class="lbl">${l}</div><div class="val">${v}</div></div>`
   ).join('');
 }
 
@@ -133,11 +155,11 @@ function adminEmail({ name, email, mobile, age, country, church, allergenSummary
       ${rows(['Name',name],['Email',email],['Mobile',mobile],['Age',age],
              ['Country',country],['Church',church],['Fee','USD $300'],
              ['Dietary / Allergens', allergenSummary || 'None specified'])}
-      <hr style="border:none;border-top:1px solid #D4E2EA;margin:20px 0;">
+      <hr>
       ${receiptUrl ? `<p style="font-size:13px;margin-bottom:16px;">📎 <a href="${receiptUrl}" style="color:#3A8BBF;font-weight:600;">View payment receipt</a></p>` : ''}
-      <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;">Verify the BPI transfer in your banking app, then click below to confirm this registration.</div>
+      <div class="note">Verify the BPI transfer in your banking app, then click below to confirm this registration.</div>
       <div style="text-align:center;margin-top:24px;">
-        <a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a>
+        <a href="${verifyLink}" class="cta">✅ Verify Payment &amp; Confirm Registration</a>
       </div>
     `
   });
@@ -153,18 +175,16 @@ function registrantEmail({ name, country, church, allergenSummary, bpiName, bpiN
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${name}</strong>, thank you for registering for RELAY 2026! We're excited to welcome you from <strong>${country}</strong>. 🎉</p>
       ${rows(['Church',church],['Country',country],['Conference Fee','USD $300'],
              ['Dietary Notes', allergenSummary || 'None specified'])}
-      <hr style="border:none;border-top:1px solid #D4E2EA;margin:20px 0;">
-      <div style="background:#EAF5EE;border-radius:10px;padding:16px 20px;margin:16px 0;">
-        <h4 style="font-size:12px;font-weight:700;color:#2E7048;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 10px;">🏦 BPI Bank Transfer Details</h4>
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="padding:6px 0;font-size:13px;color:#6B8A9A;border-bottom:1px solid #D0EADA;width:110px;">Account Name</td><td style="padding:6px 0;font-size:13px;color:#2A3D4A;font-weight:600;text-align:right;border-bottom:1px solid #D0EADA;">${bpiName}</td></tr>
-          <tr><td style="padding:6px 0;font-size:13px;color:#6B8A9A;border-bottom:1px solid #D0EADA;">Account Number</td><td style="padding:6px 0;font-size:13px;color:#2A3D4A;font-weight:600;text-align:right;border-bottom:1px solid #D0EADA;">${bpiNumber}</td></tr>
-          <tr><td style="padding:6px 0;font-size:13px;color:#6B8A9A;border-bottom:1px solid #D0EADA;">Account Type</td><td style="padding:6px 0;font-size:13px;color:#2A3D4A;font-weight:600;text-align:right;border-bottom:1px solid #D0EADA;">${bpiType}</td></tr>
-          <tr><td style="padding:6px 0;font-size:13px;color:#6B8A9A;">Amount</td><td style="padding:6px 0;font-size:13px;color:#3A8BBF;font-weight:600;text-align:right;">USD $300</td></tr>
-        </table>
+      <hr>
+      <div class="bpi-box">
+        <h4>🏦 BPI Bank Transfer Details</h4>
+        <div class="bpi-row"><span class="bpi-lbl">Account Name</span><span class="bpi-val">${bpiName}</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Account Number</span><span class="bpi-val">${bpiNumber}</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Account Type</span><span class="bpi-val">${bpiType}</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Amount</span><span class="bpi-val" style="color:#3A8BBF;">USD $300</span></div>
       </div>
-      <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;">Please use your full name as the payment reference. Our team will verify your transfer and send a confirmation email once your slot is confirmed. For questions, reply to this email.</div>
-      <div style="background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;margin-top:16px;">
+      <div class="note">Please use your full name as the payment reference. Our team will verify your transfer and send a confirmation email once your slot is confirmed. For questions, reply to this email.</div>
+      <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center, Philippines<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
         <strong>✝️ Theme:</strong> Living for Christ Alone

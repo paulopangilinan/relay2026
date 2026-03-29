@@ -207,16 +207,32 @@ function buildBreakdownTable(participants, totalLabel) {
 }
 
 function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;"><div style="max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);"></div>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
+    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
+    .hero-img{width:100%;display:block;}
+    .header{background:${headerBg};padding:28px 32px;text-align:center;}
+    .header h1{color:#fff;font-size:22px;margin:0;letter-spacing:0.02em;}
+    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
+    .body{padding:32px;}
+    .row{margin-bottom:12px;}
+    .lbl{font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;}
+    .val{color:#2A3D4A;font-size:14px;margin-top:3px;}
+    hr{border:none;border-top:1px solid #D4E2EA;margin:20px 0;}
+    .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;}
+    .info-box{background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;}
+    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
+  </style></head><body><div class="wrap">
+    <div class="bar"></div>
     <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
-    <div style="background:${headerBg};padding:28px 32px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0;letter-spacing:0.02em;">${headerTitle}</h1><p style="color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;">${headerSub}</p></div>
-    <div style="padding:32px;">${body}</div>
-    <div style="background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
+    <div class="header"><h1>${headerTitle}</h1><p>${headerSub}</p></div>
+    <div class="body">${body}</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
   </div></body></html>`;
 }
 
-function r(l, v) { return `<div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">${l}</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${v}</div></div>`; }
+function r(l, v) { return `<div class="row"><div class="lbl">${l}</div><div class="val">${v}</div></div>`; }
 
 function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }) {
   const primaryName = participants[0].name;
@@ -227,10 +243,10 @@ function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, v
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
       ${r('Contact / Registrant', primaryName)}${r('Church', churchName)}${r('Total Amount', totalLabel)}
-      ${isGroup ? `<div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
       <hr>
       ${receiptUrl ? `<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Payment Screenshot</div><img src="${receiptUrl}" alt="Payment Receipt" style="width:100%;max-width:480px;border-radius:10px;border:1px solid #D4E2EA;display:block;"></div>` : ''}
-      <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;">Check your GCash app to confirm payment was received${canVerify ? ', then click the button below to confirm.' : '.'}</div>
+      <div class="note">Check your GCash app to confirm payment was received${canVerify ? ', then click the button below to confirm.' : '.'}</div>
       ${canVerify ? `<div style="text-align:center;margin-top:24px;"><a href="${verifyLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Verify Payment &amp; Confirm Registration</a></div>` : ''}`
   });
 }
@@ -244,8 +260,8 @@ function adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isG
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
       ${r('Contact / Registrant', primaryName)}${r('Church', churchName)}${r('Total Amount', totalLabel)}
-      ${isGroup ? `<div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
-      <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;">This registrant chose to pay later. Payment instructions have been sent to their email.</div>`
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
+      <div class="note">This registrant chose to pay later. Payment instructions have been sent to their email.</div>`
   });
 }
 
@@ -258,11 +274,11 @@ function registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, partici
     body: `
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${primaryName}</strong>, thank you for registering for RELAY 2026! 🎉</p>
       ${r('Church', churchName)}
-      ${isGroup ? `<div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;margin-top:12px;">Registered Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Registered Participants (${participants.length})</div>${breakdownTable}` : r('Type', participants[0].studentStatus === 'student' ? 'Student' : 'Non-Student')}
       <hr>
-      <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly.</div>
-      ${participants.some(p => p.studentStatus === 'student') ? '<div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:8px 0 16px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
-      <div style="background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;margin-top:16px;">
+      <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly.</div>
+      ${participants.some(p => p.studentStatus === 'student') ? '<div class="note" style="margin-top:8px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
+      <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
         <strong>✝️ Theme:</strong> Living for Christ Alone
@@ -280,7 +296,7 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
     body: `
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>, thank you for your interest in RELAY Conference Asia Pacific 2026!</p>
       <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">To confirm your slot${isGroup ? 's' : ''}, pay <strong>${totalLabel}</strong> via GCash and submit your receipt.</p>
-      ${isGroup ? `<div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;margin-top:12px;">Registered Participants (${participants.length})</div>${breakdownTable}` : ''}
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Registered Participants (${participants.length})</div>${breakdownTable}` : ''}
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
         <tr><td align="center">
           <table cellpadding="0" cellspacing="0" border="0" style="background:#0A8FD9;border-radius:16px;overflow:hidden;width:100%;max-width:360px;">
@@ -288,12 +304,12 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
               <img src="${siteUrl}/assets/images/gcash-header.png" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
             </td></tr>
             <tr><td style="padding:0 14px 14px;">
-              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">
-                <tr><td align="center" style="padding-bottom:16px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;text-align:center;">
+                <tr><td align="center" style="padding:24px 20px 16px;">
                   <img src="${qrUrl}" alt="GCash QR" width="190" height="190" style="display:block;border-radius:10px;border:1px solid #e0e0e0;background:#fff;">
                 </td></tr>
-                <tr><td style="font-size:13px;color:#666;padding-bottom:14px;">Transfer fees may apply.</td></tr>
-                <tr><td style="border-top:1px solid #E0E0E0;padding-top:14px;">
+                <tr><td style="font-size:13px;color:#666;padding:0 20px 14px;">Transfer fees may apply.</td></tr>
+                <tr><td style="border-top:1px solid #E0E0E0;padding:14px 20px 24px;">
                   <div style="font-size:22px;font-weight:800;color:#0070E0;margin-bottom:4px;">${gcashAccountName || 'CCSGM'}</div>
                   <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">${gcashAccountHolder || ''}</div>
                   <div style="font-size:13px;padding:4px 0;">
@@ -309,8 +325,8 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
           </table>
         </td></tr>
       </table>
-      <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;">After paying, click the button below to submit your GCash receipt screenshot.</div>
-      ${participants.some(p => p.studentStatus === 'student') ? '<div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:8px 0 16px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
+      <div class="note">After paying, click the button below to submit your GCash receipt screenshot.</div>
+      ${participants.some(p => p.studentStatus === 'student') ? '<div class="note" style="margin-top:8px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
       <div style="text-align:center;margin-top:20px;">
         <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
       </div>

@@ -131,28 +131,46 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
       </tr></tfoot>
     </table>`;
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;"><div style="max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);"></div>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
+    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
+    .hero-img{width:100%;display:block;}
+    .header{background:linear-gradient(135deg,#1C2B38,#2E7048);padding:28px 32px;text-align:center;}
+    .header h1{color:#fff;font-size:22px;margin:0;}
+    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
+    .body{padding:32px;}
+    .highlight{background:#EAF5EE;border-radius:10px;padding:20px;text-align:center;margin-bottom:20px;}
+    .highlight h2{color:#2E7048;font-size:20px;margin:0 0 4px;}
+    .highlight p{color:#4BAE6A;font-size:13px;margin:0;}
+    .row{margin-bottom:12px;}
+    .lbl{font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;}
+    .val{color:#2A3D4A;font-size:14px;margin-top:3px;}
+    hr{border:none;border-top:1px solid #D4E2EA;margin:20px 0;}
+    .info-box{background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;}
+    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
+  </style></head><body><div class="wrap">
+    <div class="bar"></div>
     <img src="${heroUrl}" alt="RELAY 2026" width="580" style="width:100%;height:auto;display:block;">
-    <div style="background:linear-gradient(135deg,#1C2B38,#2E7048);padding:28px 32px;text-align:center;"><h1 style="color:#fff;font-size:22px;margin:0;">${isGroup ? 'Your group is confirmed! 🎉' : "You're confirmed! 🎉"}</h1><p style="color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;">RELAY Conference Asia Pacific 2026</p></div>
-    <div style="padding:32px;">
+    <div class="header"><h1>${isGroup ? 'Your group is confirmed! 🎉' : "You're confirmed! 🎉"}</h1><p>RELAY Conference Asia Pacific 2026</p></div>
+    <div class="body">
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${primaryReg.name}</strong>, your payment has been verified and ${isGroup ? 'all participants are' : 'your registration is'} confirmed. We can't wait to see you in Tagaytay!</p>
-      <div style="background:#EAF5EE;border-radius:10px;padding:20px;text-align:center;margin-bottom:20px;">
-        <h2 style="color:#2E7048;font-size:20px;margin:0 0 4px;">Registration Confirmed ✅</h2>
-        <p style="color:#4BAE6A;font-size:13px;margin:0;">${isGroup ? `${allMembers.length} participants · Slots reserved for RELAY 2026` : 'Your slot is reserved for RELAY 2026'}</p>
+      <div class="highlight">
+        <h2>Registration Confirmed ✅</h2>
+        <p>${isGroup ? `${allMembers.length} participants · Slots reserved for RELAY 2026` : 'Your slot is reserved for RELAY 2026'}</p>
       </div>
-      <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Church</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${primaryReg.church}</div></div>
-      ${isGroup ? `<div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;margin-top:12px;">Participants (${allMembers.length})</div>${breakdownTable}` : `
-        <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Name</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${primaryReg.name}</div></div>
-        <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Type</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${primaryReg.student_status === "student" ? "Student" : "Non-Student"}</div></div>
-        <div style="margin-bottom:12px;"><div style="font-weight:700;color:#6B8A9A;text-transform:uppercase;font-size:10px;letter-spacing:0.08em;">Amount Paid</div><div style="color:#2A3D4A;font-size:14px;margin-top:3px;">${totalLabel}</div></div>`}
-      <hr style="border:none;border-top:1px solid #D4E2EA;margin:20px 0;">
-      <div style="background:#EBF5FB;border-radius:10px;padding:16px 20px;font-size:13px;color:#2A3D4A;line-height:1.8;">
+      <div class="row"><div class="lbl">Church</div><div class="val">${primaryReg.church}</div></div>
+      ${isGroup ? `<div class="lbl" style="margin-top:12px;">Participants (${allMembers.length})</div>${breakdownTable}` : `
+        <div class="row"><div class="lbl">Name</div><div class="val">${primaryReg.name}</div></div>
+        <div class="row"><div class="lbl">Type</div><div class="val">${primaryReg.student_status === "student" ? "Student" : "Non-Student"}</div></div>
+        <div class="row"><div class="lbl">Amount Paid</div><div class="val">${totalLabel}</div></div>`}
+      <hr>
+      <div class="info-box">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
         <strong>✝️ Theme:</strong> Living for Christ Alone
       </div>
     </div>
-    <div style="background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }
