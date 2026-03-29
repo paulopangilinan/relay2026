@@ -1550,15 +1550,22 @@
       // Android Chrome/browser — open GCash directly
       window.location.href = 'intent://main#Intent;scheme=gcash;package=com.globe.gcash.android;end';
     } else if (isIOS) {
-      // iOS: try gcash:// first, fall back to App Store if app didn't open
-      var appOpened = false;
-      window.addEventListener('blur', function() { appOpened = true; }, { once: true });
-      window.location.href = 'gcash://';
-      setTimeout(function() {
-        if (!appOpened && !document.hidden) {
-          window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
-        }
-      }, 1500);
+      const isIOSIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+      if (isIOSIAB) {
+        // IAB browsers silently swallow custom schemes — use App Store universal link
+        // If GCash is installed, iOS will offer to open it; if not, shows App Store page
+        window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+      } else {
+        // Regular browser: try gcash:// scheme, fall back to App Store
+        var appOpened = false;
+        window.addEventListener('blur', function() { appOpened = true; }, { once: true });
+        window.location.href = 'gcash://';
+        setTimeout(function() {
+          if (!appOpened && !document.hidden) {
+            window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+          }
+        }, 1500);
+      }
     } else {
       showToast('Open GCash on your phone to pay.', false);
     }
