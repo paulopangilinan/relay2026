@@ -70,7 +70,7 @@ export const handler = async (event) => {
     const totalAmount = allMembers.reduce((s, r) => s + (r.student_status === "student" ? 3000 : 4500), 0);
     const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
     const siteUrl     = (process.env.SITE_URL || '').replace(/\/+$/, '');
-    const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg`;
+    const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
     const baseVerifyUrl = `${siteUrl}/.netlify/functions/verify?id=${id}${group_id ? `&group_id=${group_id}` : ''}`;
     const JWT_SECRET  = process.env.JWT_SECRET || 'relay2026secret';
 

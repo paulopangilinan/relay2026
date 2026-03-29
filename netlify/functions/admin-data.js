@@ -99,7 +99,7 @@ export const handler = async (event) => {
 
         const isGroup   = allMembers.length > 1;
         const totalAmt  = allMembers.reduce((s, r) => s + feeFor(r), 0);
-        const heroUrl   = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
+        const heroUrl   = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
         await getTransporter().sendMail({
           from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
@@ -142,7 +142,7 @@ export const handler = async (event) => {
             const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveCancelGroupId);
             if (members) allMembers = members;
           }
-          const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
+          const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg?v=${Date.now()}`;
           const names   = allMembers.map(m => m.name).join(', ');
           await getTransporter().sendMail({
             from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,

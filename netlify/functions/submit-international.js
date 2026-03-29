@@ -25,7 +25,7 @@ export const handler = async (event) => {
 
     const transporter = getTransporter();
     const siteUrl     = process.env.SITE_URL;
-    const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg`;
+    const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
     // 0. Check for duplicate email
     const { data: existing } = await supabase
