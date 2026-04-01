@@ -27,10 +27,10 @@
     --shadow: 0 2px 12px rgba(26,58,82,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; margin: 0; padding: 0; overflow-x: hidden; }
 
-  .hero { width: 100%; display: block; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; }
+  .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
+  .hero img { width: 100%; height: auto; display: block; margin: 0; padding: 0; }
 
   .chips-bar {
     background: var(--dark);
@@ -618,7 +618,6 @@
 <div class="hero">
   <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
 </div>
-
 <div class="chips-bar">
   <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
   <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
@@ -656,31 +655,7 @@
           <label>Church Affiliation <span class="req">*</span></label>
           <div class="select-wrap">
             <select id="church" required onchange="handleChurchChange(this)">
-              <option value="" disabled selected>Select your church…</option>
-              <optgroup label="CCSGM">
-                <option>CCSGM – Kawit</option>
-                <option>CCSGM – Imus</option>
-                <option>CCSGM – Cavite City</option>
-                <option>CCSGM – Dasma</option>
-                <option>CCSGM – Carrascal</option>
-                <option>CCSGM – Maitum</option>
-                <option>CCSGM – Madrid</option>
-                <option>CCSGM – Tandag</option>
-                <option>CCSGM – Castillo</option>
-                <option>CCSGM – Agusan Del Sur</option>
-                <option>CCSGM – Cabangahan</option>
-                <option>CCSGM – Nangka</option>
-                <option>CCSGM – Gacub</option>
-                <option>CCSGM – Pili</option>
-              </optgroup>
-              <optgroup label="Other SGC Churches">
-                <option>SGC Wahroonga</option>
-                <option>SGC Parramatta</option>
-                <option>SGC Singapore</option>
-                <option>SGC Hong Kong</option>
-                <option>SGC Manila</option>
-                <option>Others (please specify)</option>
-              </optgroup>
+              <option value="" disabled selected>Loading churches…</option>
             </select>
           </div>
           <div class="slide-panel" id="other-church-wrap" style="margin-top:8px;">
@@ -1034,6 +1009,9 @@
     // Initialize group participant list (empty)
     renderParticipantList();
 
+    // Load churches dynamically
+    loadChurches();
+
     // Fetch GCash details
     fetch('/.netlify/functions/gcash-details')
       .then(r => r.json())
@@ -1052,6 +1030,44 @@
 
     // Update breakdown when payment method changes
   });
+
+  async function loadChurches() {
+    try {
+      const res  = await fetch('/.netlify/functions/churches');
+      const json = await res.json();
+      const sel  = document.getElementById('church');
+      sel.innerHTML = '<option value="" disabled selected>Select your church…</option>';
+      // Group churches by group_name in group order from groups list
+      const groupOrder = (json.groups || []).map(g => g.name);
+      const grouped = {};
+      (json.churches || []).forEach(c => {
+        if (!grouped[c.group_name]) grouped[c.group_name] = [];
+        grouped[c.group_name].push(c.name);
+      });
+      // Render in group order
+      const orderedGroups = [...groupOrder.filter(g => grouped[g]), ...Object.keys(grouped).filter(g => !groupOrder.includes(g))];
+      orderedGroups.forEach(grp => {
+        const og = document.createElement('optgroup');
+        og.label = grp;
+        (grouped[grp] || []).forEach(n => {
+          const opt = document.createElement('option');
+          opt.value = n; opt.textContent = n;
+          og.appendChild(opt);
+        });
+        sel.appendChild(og);
+      });
+      // Always append Others at end
+      const othersOg = document.createElement('optgroup');
+      othersOg.label = 'Other';
+      const othersOpt = document.createElement('option');
+      othersOpt.value = 'others'; othersOpt.textContent = 'Others (please specify)';
+      othersOg.appendChild(othersOpt);
+      sel.appendChild(othersOg);
+    } catch(e) {
+      const sel = document.getElementById('church');
+      sel.innerHTML = '<option value="" disabled selected>Failed to load churches</option>';
+    }
+  }
 
   function handleChurchChange(sel) {
     document.getElementById('other-church-wrap').classList.toggle('visible', sel.value === 'others');
@@ -1501,7 +1517,8 @@
       }
 
       // Redirect to thank-you page
-      window.location.href = withReceipt ? 'thank-you.html?type=paid&form=ph' : 'thank-you.html?type=later&form=ph';
+      const regTypeParam = new URLSearchParams(window.location.search).get('type') || 'single';
+      window.location.href = withReceipt ? `thank-you.html?type=paid&form=ph&regType=${regTypeParam}` : `thank-you.html?type=later&form=ph&regType=${regTypeParam}`;
     } catch (err) {
       showToast('❌ Error: ' + err.message, true);
     } finally {
@@ -1533,11 +1550,22 @@
       // Android Chrome/browser — open GCash directly
       window.location.href = 'intent://main#Intent;scheme=gcash;package=com.globe.gcash.android;end';
     } else if (isIOS) {
-      // iOS: try gcash:// first, fall back to App Store after 1.5s if not installed
-      window.location.href = 'gcash://';
-      setTimeout(() => {
+      const isIOSIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+      if (isIOSIAB) {
+        // IAB browsers silently swallow custom schemes — use App Store universal link
+        // If GCash is installed, iOS will offer to open it; if not, shows App Store page
         window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
-      }, 1500);
+      } else {
+        // Regular browser: try gcash:// scheme, fall back to App Store
+        var appOpened = false;
+        window.addEventListener('blur', function() { appOpened = true; }, { once: true });
+        window.location.href = 'gcash://';
+        setTimeout(function() {
+          if (!appOpened && !document.hidden) {
+            window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+          }
+        }, 1500);
+      }
     } else {
       showToast('Open GCash on your phone to pay.', false);
     }
@@ -1570,22 +1598,26 @@
   var ua = navigator.userAgent || '';
   var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
+  if (sessionStorage.getItem('iab_dismissed')) return;
   var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
-  var closeBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
-  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var closeBtn = '<button onclick="dismissIAB()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#2E7048;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
   var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
-  var continueBtn = '<button onclick="document.getElementById(\'iabModal\').style.display=\'none\'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
     btns.innerHTML = openBtn + closeBtn;
   } else {
-    btns.innerHTML = continueBtn + copyBtn;
+    btns.innerHTML = closeBtn + copyBtn;
   }
 })();
+function dismissIAB() {
+  sessionStorage.setItem('iab_dismissed', '1');
+  document.getElementById('iabModal').style.display = 'none';
+}
 function openInBrowser() {
   var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';

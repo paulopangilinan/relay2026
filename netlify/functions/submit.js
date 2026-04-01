@@ -2,10 +2,11 @@
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { randomUUID } from "crypto";
+import jwt from "jsonwebtoken";
 
 
 async function getAdminEmails(supabase, permission) {
-  const { data } = await supabase.from('admins').select('email, name, permissions');
+  const { data } = await supabase.from('admins').select('email, name, permissions, force_password_change');
   return (data || []).filter(a => a.permissions?.[permission]).map(a => a.email);
 }
 const supabase = createClient(
@@ -39,23 +40,10 @@ export const handler = async (event) => {
     const churchName = church === "others" ? otherChurch : church;
     const transporter = getTransporter();
     const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
-    const heroUrl = `${siteUrl}/assets/images/hero-email.jpg`;
-    const qrUrl   = `${siteUrl}/assets/images/qr/gcash-qr.png`;
+    const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
+    const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+    const qrUrl   = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
     const isGroup = registrationType === "group";
-
-    // Duplicate email check
-    const { data: existing } = await supabase
-      .from("registrations")
-      .select("id, payment_verified")
-      .eq("email", email.toLowerCase().trim())
-      .maybeSingle();
-
-    if (existing) {
-      if (existing.payment_verified) {
-        return { statusCode: 409, headers, body: JSON.stringify({ error: "already_confirmed", message: "This email has already been registered and confirmed. Please contact us if you need help." }) };
-      }
-      return { statusCode: 409, headers, body: JSON.stringify({ error: "already_registered", message: "This email already has a pending registration. Check your inbox for payment instructions, or contact us for help." }) };
-    }
 
     // Upload shared receipt (pay now)
     let receiptUrl = null;
@@ -116,51 +104,52 @@ export const handler = async (event) => {
     const primaryName = participants[0].name;
     const totalAmount = participants.reduce((sum, p) => sum + feeFor(p.studentStatus), 0);
     const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
-    const verifyLink  = `${siteUrl}/.netlify/functions/verify?id=${primaryReg.id}${isGroup ? `&group_id=${group_id}` : ""}`;
+    const baseVerifyUrl = `${siteUrl}/.netlify/functions/verify?id=${primaryReg.id}${isGroup ? `&group_id=${group_id}` : ''}`;
+    const JWT_SECRET = process.env.JWT_SECRET || 'relay2026secret';
 
     const breakdownTable = buildBreakdownTable(participants, totalLabel);
 
     if (paymentReady === "now") {
       // Send per-admin — CTA only for those with verify_payment permission
-      const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions');
-      const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates);
+      const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+      const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
       for (const admin of notifyAdmins) {
         const canVerify = !!admin.permissions?.verify_payment;
+        const adminToken = canVerify
+          ? jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: '30d' })
+          : null;
+        const verifyLink = adminToken ? `${baseVerifyUrl}&atoken=${adminToken}` : baseVerifyUrl;
         await transporter.sendMail({
-          from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
           to:      admin.email,
           subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
           html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }),
         });
       }
       await transporter.sendMail({
-        from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      email,
         subject: "RELAY 2026 — We received your registration!",
         html:    registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, participants, breakdownTable, totalLabel }),
       });
     } else {
       // Send per-admin (no CTA needed for awaiting payment)
-      const { data: allAdmins2 } = await supabase.from('admins').select('email, name, permissions');
-      const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates);
+      const { data: allAdmins2 } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+      const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
       for (const admin of notifyAdmins2) {
         await transporter.sendMail({
-          from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
           to:      admin.email,
           subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
           html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
         });
       }
       await transporter.sendMail({
-        from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      email,
         subject: "RELAY 2026 — Complete your registration",
         html:    registrantPaymentEmail({
-          primaryName, totalLabel, qrUrl, heroUrl, siteUrl,
+          primaryName, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl,
           registrationId: primaryReg.id,
           group_id, isGroup, participants, breakdownTable,
           gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
@@ -284,7 +273,7 @@ function registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, partici
   });
 }
 
-function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, registrationId, group_id, isGroup, participants, breakdownTable, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl, registrationId, group_id, isGroup, participants, breakdownTable, gcashAccountName, gcashAccountHolder, gcashMobile }) {
   const uploadLink = `${siteUrl}/upload-receipt?id=${registrationId}${isGroup && group_id ? `&group_id=${group_id}` : ''}`;
   return emailShell({
     heroUrl,
@@ -299,7 +288,7 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
         <tr><td align="center">
           <table cellpadding="0" cellspacing="0" border="0" style="background:#0A8FD9;border-radius:16px;overflow:hidden;width:100%;max-width:360px;">
             <tr><td style="padding:0;line-height:0;">
-              <img src="${siteUrl}/assets/images/gcash-header.png" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
+              <img src="${imgUrl}/assets/images/gcash-header-email.jpg?v=${Date.now()}" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
             </td></tr>
             <tr><td style="padding:0 14px 14px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">

@@ -17,6 +17,8 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'DM Sans',sans-serif;background:var(--page-bg);color:var(--text);min-height:100vh;}
 
+  .hero{max-width:520px;margin:0 auto;display:block;line-height:0;}
+  .hero img{width:100%;height:auto;display:block;border-radius:0 0 12px 12px;}
   .confetti-bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);background-size:200%;animation:shimmer 3s linear infinite;}
   @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -132,12 +134,30 @@
     </div>
 
     <!-- Registrant details -->
-    <div class="card">
-      <div class="section-label">Your Registration</div>
-      <div class="detail-row"><span class="lbl">Name</span><span class="val" id="regName">—</span></div>
-      <div class="detail-row"><span class="lbl">Church</span><span class="val" id="regChurch">—</span></div>
-      <div class="detail-row"><span class="lbl">Status</span><span class="val" id="regStatus">—</span></div>
-      <div class="detail-row"><span class="lbl">Amount Due</span><span class="val" id="regFee" style="color:var(--sky);font-weight:700;">—</span></div>
+    <div class="card" id="regCard">
+      <div class="section-label" id="regCardLabel">Your Registration</div>
+      <!-- Single mode -->
+      <div id="singleDetails">
+        <div class="detail-row"><span class="lbl">Name</span><span class="val" id="regName">—</span></div>
+        <div class="detail-row"><span class="lbl">Church</span><span class="val" id="regChurch">—</span></div>
+        <div class="detail-row"><span class="lbl">Status</span><span class="val" id="regStatus">—</span></div>
+        <div class="detail-row"><span class="lbl">Amount Due</span><span class="val" id="regFee" style="color:var(--sky);font-weight:700;">—</span></div>
+      </div>
+      <!-- Group mode -->
+      <div id="groupDetails" style="display:none;">
+        <div class="detail-row"><span class="lbl">Church</span><span class="val" id="regChurchGroup">—</span></div>
+        <div class="detail-row"><span class="lbl">Participants</span><span class="val" id="regGroupSize">—</span></div>
+        <table class="breakdown-table" style="margin-top:12px;">
+          <thead><tr>
+            <th>Participant</th><th>Type</th><th style="text-align:right;">Amount</th>
+          </tr></thead>
+          <tbody id="groupBreakdownBody"></tbody>
+          <tfoot><tr class="breakdown-total">
+            <td colspan="2">Total Due</td>
+            <td style="text-align:right;" id="groupBreakdownTotal">—</td>
+          </tr></tfoot>
+        </table>
+      </div>
     </div>
 
     <!-- GCash QR -->
@@ -182,11 +202,13 @@
 
 <script>
   let registrationId = null;
+  let registrationGroupId = null;
 
   // ── On load: read ID from URL, fetch registration details ─────────────
   window.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
-    registrationId = params.get('id');
+    registrationId      = params.get('id');
+    registrationGroupId = params.get('group_id');
 
     if (!registrationId) { showError(); return; }
 
@@ -207,11 +229,35 @@
 
       if (reg.payment_verified) { showAlreadyPaid(); return; }
 
-      // Populate details
-      document.getElementById('regName').textContent   = reg.name;
-      document.getElementById('regChurch').textContent = reg.church;
-      document.getElementById('regStatus').textContent = reg.student_status === 'student' ? '🎓 Student' : '💼 Non-Student';
-      document.getElementById('regFee').textContent    = reg.student_status === 'student' ? 'PHP 3,000' : 'PHP 4,500';
+      // Group or single display
+      if (reg.members && reg.members.length > 1) {
+        // Group mode
+        document.getElementById('singleDetails').style.display = 'none';
+        document.getElementById('groupDetails').style.display  = 'block';
+        document.getElementById('regCardLabel').textContent    = 'Group Registration';
+        document.getElementById('regChurchGroup').textContent  = reg.church;
+        document.getElementById('regGroupSize').textContent    = reg.members.length + ' participants';
+
+        let total = 0;
+        const rows = reg.members.map(m => {
+          const isStudent = m.student_status === 'student';
+          const fee = isStudent ? 3000 : 4500;
+          total += fee;
+          return `<tr>
+            <td>${m.name}</td>
+            <td>${isStudent ? '🎓 Student' : '💼 Non-Student'}</td>
+            <td style="text-align:right;font-weight:600;">₱${fee.toLocaleString()}</td>
+          </tr>`;
+        }).join('');
+        document.getElementById('groupBreakdownBody').innerHTML = rows;
+        document.getElementById('groupBreakdownTotal').textContent = `₱${total.toLocaleString()}`;
+      } else {
+        // Single mode
+        document.getElementById('regName').textContent   = reg.name;
+        document.getElementById('regChurch').textContent = reg.church;
+        document.getElementById('regStatus').textContent = reg.student_status === 'student' ? '🎓 Student' : '💼 Non-Student';
+        document.getElementById('regFee').textContent    = reg.student_status === 'student' ? '₱3,000' : '₱4,500';
+      }
 
       // Show form
       document.getElementById('loadingState').style.display = 'none';
@@ -266,6 +312,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: registrationId,
+            group_id: registrationGroupId || null,
           receiptBase64: receiptData?.base64,
           receiptName: receiptData?.name,
         }),
@@ -313,22 +360,26 @@
   var ua = navigator.userAgent || '';
   var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
+  if (sessionStorage.getItem('iab_dismissed')) return;
   var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
-  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
-  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var closeBtn = '<button onclick="dismissIAB()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#2E7048;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
   var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
-  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
     btns.innerHTML = openBtn + closeBtn;
   } else {
-    btns.innerHTML = continueBtn + copyBtn;
+    btns.innerHTML = closeBtn + copyBtn;
   }
 })();
+function dismissIAB() {
+  sessionStorage.setItem('iab_dismissed', '1');
+  document.getElementById('iabModal').style.display = 'none';
+}
 function openInBrowser() {
   var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
@@ -338,7 +389,7 @@ function copyURL() {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function() {
       var btn = document.getElementById('copyUrlBtn');
-      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
+      if (btn) { btn.textContent = '\u2705 Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
     });
   } else {
     prompt('Copy this link and open it in Safari:', url);

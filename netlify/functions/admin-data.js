@@ -22,8 +22,8 @@ function getTransporter() {
 }
 
 async function getAdminsWithPermission(permission) {
-  const { data } = await supabase.from('admins').select('email, name, permissions');
-  return (data || []).filter(a => a.permissions?.[permission]);
+  const { data } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+  return (data || []).filter(a => a.permissions?.[permission] && !a.force_password_change);
 }
 
 export const handler = async (event) => {
@@ -38,7 +38,7 @@ export const handler = async (event) => {
       const { data, error } = await supabase.from('registrations').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
-      const { data: adminsData } = await supabase.from('admins').select('email, name');
+      const { data: adminsData } = await supabase.from('admins').select('email, name, force_password_change');
 
       const local = data.filter(r => r.registrant_type !== 'international');
       const intl  = data.filter(r => r.registrant_type === 'international');
@@ -68,7 +68,7 @@ export const handler = async (event) => {
 
       // ── Confirm payment ────────────────────────────────────────────────────
       if (action === 'confirm') {
-        if (!requester.permissions?.verify_payment) {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to verify payment' }) };
         }
 
@@ -76,32 +76,34 @@ export const handler = async (event) => {
         const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
+        const effectiveGroupId = group_id || reg.group_id || null;
+
         const confirmUpdate = {
           payment_verified: true,
           status: 'confirmed',
           verified_at: new Date().toISOString(),
           verified_by: requester.email,
         };
-        if (group_id) {
-          await supabase.from('registrations').update(confirmUpdate).eq('group_id', group_id);
+        if (effectiveGroupId) {
+          await supabase.from('registrations').update(confirmUpdate).eq('group_id', effectiveGroupId);
         } else {
           await supabase.from('registrations').update(confirmUpdate).eq('id', id);
         }
 
         // Fetch all group members for email
         let allMembers = [reg];
-        if (group_id) {
-          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', group_id);
+        if (effectiveGroupId) {
+          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveGroupId);
           if (members) allMembers = members;
         }
 
         const isGroup   = allMembers.length > 1;
         const totalAmt  = allMembers.reduce((s, r) => s + feeFor(r), 0);
-        const heroUrl   = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
+        const imgUrl    = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
+        const heroUrl   = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
         await getTransporter().sendMail({
-          from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
           to:      reg.email,
           subject: "RELAY 2026 — You're confirmed! 🎉",
           html:    confirmationEmail(reg, allMembers, `PHP ${totalAmt.toLocaleString()}`, heroUrl, isGroup),
@@ -112,7 +114,7 @@ export const handler = async (event) => {
 
       // ── Cancel registration ────────────────────────────────────────────────
       if (action === 'cancel') {
-        if (!requester.permissions?.verify_payment) {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to cancel registrations' }) };
         }
 
@@ -121,6 +123,7 @@ export const handler = async (event) => {
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
         const { notify, reason } = body;
+        const effectiveCancelGroupId = group_id || reg.group_id || null;
         const cancelUpdate = {
           status: 'cancelled',
           payment_verified: false,
@@ -128,23 +131,23 @@ export const handler = async (event) => {
           cancelled_at: new Date().toISOString(),
           cancellation_reason: reason || null,
         };
-        if (group_id) {
-          await supabase.from('registrations').update(cancelUpdate).eq('group_id', group_id);
+        if (effectiveCancelGroupId) {
+          await supabase.from('registrations').update(cancelUpdate).eq('group_id', effectiveCancelGroupId);
         } else {
           await supabase.from('registrations').update(cancelUpdate).eq('id', id);
         }
 
         if (notify) {
           let allMembers = [reg];
-          if (group_id) {
-            const { data: members } = await supabase.from('registrations').select('*').eq('group_id', group_id);
+          if (effectiveCancelGroupId) {
+            const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveCancelGroupId);
             if (members) allMembers = members;
           }
-          const heroUrl = `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/assets/images/hero-email.jpg`;
+          const imgUrl  = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
+          const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
           const names   = allMembers.map(m => m.name).join(', ');
           await getTransporter().sendMail({
-            from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+            from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
             to:      reg.email,
             subject: 'RELAY 2026 — Registration Cancelled',
             html: cancellationEmail(reg.name, names, allMembers.length > 1, heroUrl),
@@ -191,7 +194,6 @@ function statsFor(subset) {
     by_church:         active.reduce((acc, r) => { if (r.church) acc[r.church] = (acc[r.church]||0)+1; return acc; }, {}),
   };
 }
-}
 
 function cancellationEmail(primaryName, names, isGroup, heroUrl) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
@@ -212,7 +214,7 @@ function cancellationEmail(primaryName, names, isGroup, heroUrl) {
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>,</p>
       <p style="font-size:14px;color:#2A3D4A;line-height:1.7;">Your${isGroup ? ' group' : ''} registration for RELAY 2026 has been cancelled${isGroup ? ` (${names})` : ''}. If you believe this is a mistake or would like to re-register, please reach out to us.</p>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }
 
@@ -270,6 +272,6 @@ function confirmationEmail(primaryReg, allMembers, totalLabel, heroUrl, isGroup)
         <strong>✝️ Theme:</strong> Living for Christ Alone
       </div>
     </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Contact us at ${process.env.CONTACT_EMAIL || ''}.</div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }

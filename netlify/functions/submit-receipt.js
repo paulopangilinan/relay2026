@@ -1,10 +1,11 @@
 // netlify/functions/submit-receipt.js
+import jwt from 'jsonwebtoken';
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
 
 async function getAdminEmails(supabase, permission) {
-  const { data } = await supabase.from('admins').select('email, name, permissions');
+  const { data } = await supabase.from('admins').select('email, name, permissions, force_password_change');
   return (data || []).filter(a => a.permissions?.[permission]).map(a => a.email);
 }
 const supabase = createClient(
@@ -69,8 +70,10 @@ export const handler = async (event) => {
     const totalAmount = allMembers.reduce((s, r) => s + (r.student_status === "student" ? 3000 : 4500), 0);
     const totalLabel  = `PHP ${totalAmount.toLocaleString()}`;
     const siteUrl     = (process.env.SITE_URL || '').replace(/\/+$/, '');
-    const heroUrl     = `${siteUrl}/assets/images/hero-email.jpg`;
-    const verifyLink  = `${siteUrl}/.netlify/functions/verify?id=${id}${group_id ? `&group_id=${group_id}` : ""}`;
+    const imgUrl      = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
+    const heroUrl     = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+    const baseVerifyUrl = `${siteUrl}/.netlify/functions/verify?id=${id}${group_id ? `&group_id=${group_id}` : ''}`;
+    const JWT_SECRET  = process.env.JWT_SECRET || 'relay2026secret';
 
     const breakdownRows = allMembers.map(m => `
       <tr>
@@ -93,13 +96,16 @@ export const handler = async (event) => {
         </tr></tfoot>
       </table>`;
 
-    const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions');
-    const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates);
+    const { data: allAdmins } = await supabase.from('admins').select('email, name, permissions, force_password_change');
+    const notifyAdmins = (allAdmins || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
     for (const admin of notifyAdmins) {
       const canVerify = !!admin.permissions?.verify_payment;
+      const adminToken = canVerify
+        ? jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: '30d' })
+        : null;
+      const verifyLink = adminToken ? `${baseVerifyUrl}&atoken=${adminToken}` : baseVerifyUrl;
       await getTransporter().sendMail({
-        from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      admin.email,
         subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
       html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>

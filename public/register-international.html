@@ -15,10 +15,10 @@
     --input-bg: #F7FAFB; --shadow: 0 2px 12px rgba(26,58,82,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text); min-height: 100vh; margin: 0; padding: 0; overflow-x: hidden; }
 
-  .hero { width: 100%; display: block; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; }
+  .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
+  .hero img { width: 100%; height: auto; display: block; margin: 0; padding: 0; }
 
   .chips-bar { background: var(--dark); padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 50px; padding: 5px 13px; font-size: 12px; font-weight: 500; white-space: nowrap; }
@@ -158,6 +158,10 @@
   .upload-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .upload-text strong { color: var(--sky); }
   .upload-preview { margin-top: 8px; font-size: 12px; color: var(--green); display: none; font-weight: 500; }
+  .upload-done { display: none; align-items: center; gap: 10px; padding: 12px 16px; background: var(--green-light); border: 1.5px solid #B6DFC5; border-radius: 10px; }
+  .upload-done-name { flex: 1; font-size: 12px; font-weight: 600; color: #2E7048; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .upload-done-del { background: none; border: none; color: #E05050; font-size: 16px; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+  .upload-done-del:hover { color: #c0392b; }
 
   /* Note */
   .note { background: var(--gold-bg); border-left: 3px solid var(--gold-light); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 12px; }
@@ -397,12 +401,14 @@
       <div class="note" style="margin-bottom:16px;">Please use your full name as the payment reference. After transferring, attach a screenshot of your receipt below.</div>
       <div class="field">
         <label>Payment Receipt <span class="req">*</span></label>
-        <div class="upload-area">
-          <input type="file" id="receiptFile" accept="image/*" onchange="handleReceiptUpload(this)">
-          <div class="upload-icon">📸</div>
-          <div class="upload-text"><strong>Click to attach</strong> your BPI transfer receipt<br>PNG or JPG · make sure reference number is visible</div>
+        <div id="upload-receipt">
+          <div class="upload-area" id="upload-receipt-zone">
+            <input type="file" id="receiptFile" accept="image/*" onchange="handleSmartUpload(this,'upload-receipt')">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text"><strong>Click to attach</strong> your BPI transfer receipt<br>PNG or JPG · make sure reference number is visible</div>
+          </div>
+          <div class="upload-done" id="upload-receipt-done" style="display:none;"></div>
         </div>
-        <div class="upload-preview" id="receiptPreview"></div>
       </div>
       <button type="button" class="btn btn-gold" onclick="submitForm()" style="margin-top:16px;">Submit Registration + Payment</button>
     </div>
@@ -617,12 +623,24 @@
     return true;
   }
 
-  function handleReceiptUpload(input) {
-    if (input.files[0]) {
-      const p = document.getElementById('receiptPreview');
-      p.textContent = '✅ ' + input.files[0].name;
-      p.style.display = 'block';
-    }
+  function handleSmartUpload(input, wrapperId) {
+    const file = input.files[0];
+    if (!file) return;
+    const zone = document.getElementById(wrapperId + '-zone');
+    const done = document.getElementById(wrapperId + '-done');
+    if (!zone || !done) return;
+    zone.style.display = 'none';
+    done.style.display = 'flex';
+    done.innerHTML = `<span style="font-size:18px;">📎</span><span class="upload-done-name">✅ ${file.name}</span><button type="button" class="upload-done-del" onclick="clearSmartUpload('${wrapperId}','${input.id}')" title="Remove file">✕</button>`;
+  }
+
+  function clearSmartUpload(wrapperId, inputId) {
+    const zone  = document.getElementById(wrapperId + '-zone');
+    const done  = document.getElementById(wrapperId + '-done');
+    const input = document.getElementById(inputId);
+    if (zone)  zone.style.display  = '';
+    if (done)  { done.style.display = 'none'; done.innerHTML = ''; }
+    if (input) input.value = '';
   }
 
   function fileToBase64(fileInput) {
@@ -739,22 +757,26 @@
   var ua = navigator.userAgent || '';
   var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
+  if (sessionStorage.getItem('iab_dismissed')) return;
   var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
-  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
-  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var closeBtn = '<button onclick="dismissIAB()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#2E7048;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
   var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
-  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
     btns.innerHTML = openBtn + closeBtn;
   } else {
-    btns.innerHTML = continueBtn + copyBtn;
+    btns.innerHTML = closeBtn + copyBtn;
   }
 })();
+function dismissIAB() {
+  sessionStorage.setItem('iab_dismissed', '1');
+  document.getElementById('iabModal').style.display = 'none';
+}
 function openInBrowser() {
   var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
@@ -764,7 +786,7 @@ function copyURL() {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function() {
       var btn = document.getElementById('copyUrlBtn');
-      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
+      if (btn) { btn.textContent = '\u2705 Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
     });
   } else {
     prompt('Copy this link and open it in Safari:', url);

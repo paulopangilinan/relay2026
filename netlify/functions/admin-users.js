@@ -65,7 +65,7 @@ export const handler = async (event) => {
         email: email.toLowerCase().trim(),
         name,
         password_hash: hash,
-        permissions: permissions || { receive_updates: true, verify_payment: false, manage_admins: false },
+        permissions: permissions || { receive_updates: true, verify_payment: false, manage_admins: false, manage_churches: false },
         is_super_admin: makeSuperAdmin || false,
         force_password_change: true,
       }).select().single();
@@ -75,8 +75,7 @@ export const handler = async (event) => {
       // Send welcome email — non-blocking so timeout doesn't fail the invite
       const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
       getTransporter().sendMail({
-        from:    "RELAY 2026 <noreply@relay2026.org>",
-          replyTo: process.env.CONTACT_EMAIL || process.env.GMAIL_USER,
+        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
         to:      email,
         subject: 'RELAY 2026 — Your Admin Access',
         html: `

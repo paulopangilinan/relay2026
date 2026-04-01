@@ -4,5 +4,6 @@ export const handler = async () => ({
   headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   body: JSON.stringify({
     email: process.env.CONTACT_EMAIL || process.env.GMAIL_USER || '',
+    senderEmail: process.env.GMAIL_USER || process.env.CONTACT_EMAIL || '',
   }),
 });

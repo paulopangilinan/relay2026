@@ -24,8 +24,8 @@
   }
   @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
 
-  .hero { max-width: 600px; margin: 32px auto 0; padding: 0 20px; line-height: 0; }
-  .hero img { width: 100%; height: auto; display: block; border-radius: 12px; }
+  .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
+  .hero img { width: 100%; height: auto; display: block; margin: 0; padding: 0; }
 
   .page-wrap {
     max-width: 600px; margin: 0 auto; padding: 40px 20px 80px;
@@ -140,7 +140,7 @@
     <div class="card">
       <div class="section-label">Complete Your Registration</div>
       <div class="steps">
-        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from ccsgmprojects@gmail.com.</div></div>
+        <div class="step"><div class="step-num blue">1</div><div class="step-text" id="payInstructStep">Check your email for <strong>GCash payment instructions</strong> from <span class="sender-email">—</span>.</div></div>
         <div class="step"><div class="step-num gold">2</div><div class="step-text">Send your payment of the required fee and <strong>reply with your receipt screenshot</strong>.</div></div>
         <div class="step"><div class="step-num green">3</div><div class="step-text">Once verified, you'll receive a <strong>confirmation email</strong> with all event details.</div></div>
       </div>
@@ -152,10 +152,10 @@
       <div class="info-row"><span class="label">Venue</span><span class="val">CCT Tagaytay Retreat & Training Center</span></div>
       <div class="info-row"><span class="label">Theme</span><span class="val">Living for Christ Alone</span></div>
     </div>
+  </div>
 
-    <div class="note" style="margin-bottom:24px;">
-      Can't find the email? Check your spam/junk folder or contact us at <strong>ccsgmprojects@gmail.com</strong>
-    </div>
+  <div class="note" style="margin-bottom:24px;">
+    Questions? Check your spam/junk folder for our emails or contact us at <strong><span class="contact-email">—</span></strong>
   </div>
 
   <a id="backBtn" href="/register-ph" class="btn-back">← Back to Registration</a>
@@ -163,13 +163,27 @@
 
 <script>
   // Read query param ?type=paid or ?type=later
+  // Fetch contact email
+  fetch('/.netlify/functions/contact-info')
+    .then(r => r.json())
+    .then(d => {
+      document.querySelectorAll('.contact-email').forEach(el => {
+        el.textContent = d.email || '';
+      });
+      document.querySelectorAll('.sender-email').forEach(el => {
+        el.textContent = d.senderEmail || d.email || '';
+      });
+    }).catch(() => {});
+
   const params = new URLSearchParams(window.location.search);
-  const type = params.get('type') || 'paid';
-  const form = params.get('form') || 'ph';
-  const isIntl = form === 'intl';
+  const type    = params.get('type') || 'paid';
+  const form    = params.get('form') || 'ph';
+  const regType = params.get('regType') || 'single'; // single or group
+  const isIntl  = form === 'intl';
 
   document.getElementById(type === 'later' ? 'stateLater' : 'statePaid').style.display = 'block';
-  document.getElementById('backBtn').href = isIntl ? '/register-international' : '/register-ph';
+  // PH: return to picker (index); Intl: return to intl form
+  document.getElementById('backBtn').href = isIntl ? '/register-international' : `/?regType=${regType}`;
 
   // Swap payment method wording for international (BPI) vs PH (GCash)
   if (isIntl) {
@@ -177,7 +191,7 @@
     const payStep    = document.getElementById('payInstructStep');
     const subtitle   = document.getElementById('paidSubtitle');
     if (verifyStep) verifyStep.innerHTML = 'Our team will <strong>verify your BPI transfer</strong> and send you a confirmation email shortly.';
-    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from ccsgmprojects@gmail.com.';
+    if (payStep)    payStep.innerHTML    = 'Check your email for <strong>BPI bank transfer instructions</strong> from <span class="sender-email">—</span>.';
     if (subtitle)   subtitle.innerHTML  = 'Thank you for registering for RELAY Conference Asia Pacific 2026.<br>We received your payment receipt and will verify it shortly.';
   }
 </script>
@@ -196,22 +210,26 @@
   var ua = navigator.userAgent || '';
   var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
   if (!isIAB) return;
+  if (sessionStorage.getItem('iab_dismissed')) return;
   var modal = document.getElementById('iabModal');
   if (!modal) return;
   modal.style.display = 'flex';
   var isAndroid = /android/i.test(ua);
   var btns = document.getElementById('iabButtons');
   if (!btns) return;
-  var closeBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Continue Anyway</button>';
-  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var closeBtn = '<button onclick="dismissIAB()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#2E7048;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
   var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
-  var continueBtn = '<button onclick="document.getElementById('iabModal').style.display='none'" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
   if (isAndroid) {
     btns.innerHTML = openBtn + closeBtn;
   } else {
-    btns.innerHTML = continueBtn + copyBtn;
+    btns.innerHTML = closeBtn + copyBtn;
   }
 })();
+function dismissIAB() {
+  sessionStorage.setItem('iab_dismissed', '1');
+  document.getElementById('iabModal').style.display = 'none';
+}
 function openInBrowser() {
   var url = window.location.href;
   window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
@@ -221,7 +239,7 @@ function copyURL() {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function() {
       var btn = document.getElementById('copyUrlBtn');
-      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
+      if (btn) { btn.textContent = '\u2705 Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
     });
   } else {
     prompt('Copy this link and open it in Safari:', url);
