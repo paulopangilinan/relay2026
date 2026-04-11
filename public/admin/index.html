@@ -1036,12 +1036,12 @@
       if (!c) return;
       if (!intlChurches[c]) intlChurches[c] = { count: 0, fee: 0 };
       intlChurches[c].count++;
-      intlChurches[c].fee += 300;
+      intlChurches[c].fee += 250;
     });
     renderBarListExact('intl-church-breakdown', intlChurches, '$');
 
     // Intl country
-    renderBarList('intl-country-breakdown', intl.by_country, { symbol: '$', amount: 300 });
+    renderBarList('intl-country-breakdown', intl.by_country, { symbol: '$', amount: 250 });
   }
 
   function renderBarListGrouped(id, known, others, symbol) {
