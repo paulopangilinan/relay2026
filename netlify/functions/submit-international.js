@@ -140,7 +140,7 @@ function adminEmail({ name, email, mobile, age, country, church, allergenSummary
     headerSub: 'RELAY Conference Asia Pacific 2026',
     body: `
       ${rows(['Name',name],['Email',email],['Mobile',mobile],['Age',age],
-             ['Country',country],['Church',church],['Fee','USD $300'],
+             ['Country',country],['Church',church],['Fee','USD $250'],
              ['Dietary / Allergens', allergenSummary || 'None specified'])}
       <hr>
       ${receiptUrl ? `<p style="font-size:13px;margin-bottom:16px;">📎 <a href="${receiptUrl}" style="color:#3A8BBF;font-weight:600;">View payment receipt</a></p>` : ''}
@@ -160,7 +160,7 @@ function registrantEmail({ name, country, church, allergenSummary, bpiName, bpiN
     headerSub: 'RELAY Conference Asia Pacific 2026 · International',
     body: `
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:20px;">Hi <strong>${name}</strong>, thank you for registering for RELAY 2026! We're excited to welcome you from <strong>${country}</strong>. 🎉</p>
-      ${rows(['Church',church],['Country',country],['Conference Fee','USD $300'],
+      ${rows(['Church',church],['Country',country],['Conference Fee','USD $250'],
              ['Dietary Notes', allergenSummary || 'None specified'])}
       <hr>
       <div class="bpi-box">
@@ -168,7 +168,7 @@ function registrantEmail({ name, country, church, allergenSummary, bpiName, bpiN
         <div class="bpi-row"><span class="bpi-lbl">Account Name</span><span class="bpi-val">${bpiName}</span></div>
         <div class="bpi-row"><span class="bpi-lbl">Account Number</span><span class="bpi-val">${bpiNumber}</span></div>
         <div class="bpi-row"><span class="bpi-lbl">Account Type</span><span class="bpi-val">${bpiType}</span></div>
-        <div class="bpi-row"><span class="bpi-lbl">Amount</span><span class="bpi-val" style="color:#3A8BBF;">USD $300</span></div>
+        <div class="bpi-row"><span class="bpi-lbl">Amount</span><span class="bpi-val" style="color:#3A8BBF;">USD $250</span></div>
       </div>
       <div class="note">Please use your full name as the payment reference. Our team will verify your transfer and send a confirmation email once your slot is confirmed. For questions, reply to this email.</div>
       <div class="info-box" style="margin-top:16px;">

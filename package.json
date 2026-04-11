@@ -1,5 +1,6 @@
 {
   "name": "relay-conference",
+  "type": "module",
   "version": "1.0.0",
   "description": "RELAY Conference Registration System",
   "dependencies": {
