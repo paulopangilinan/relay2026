@@ -168,7 +168,7 @@ export const handler = async (event) => {
 };
 
 function feeFor(r) {
-  if (r.registrant_type === 'international') return 300;
+  if (r.registrant_type === 'international') return 250;
   return r.student_status === 'student' ? 3000 : 4500;
 }
 
