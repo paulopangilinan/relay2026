@@ -123,7 +123,8 @@ CREATE TABLE public.registrations (
   verified_by          TEXT,
   cancelled_at         TIMESTAMPTZ,
   cancelled_by         TEXT,
-  cancellation_reason  TEXT
+  cancellation_reason  TEXT,
+  last_followup_at     TIMESTAMPTZ
 );
 
 -- Row Level Security
