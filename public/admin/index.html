@@ -286,6 +286,7 @@
       <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;">Send Payment Reminder?</h3>
       <button onclick="closeFollowUpModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
     </div>
+    <div id="followUpWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:13px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
     <p style="font-size:13px;color:#6B8A9A;margin:0 0 20px;line-height:1.6;">This will resend GCash payment instructions to <strong id="followUpName" style="color:#2A3D4A;"></strong>.</p>
     <div style="display:flex;gap:10px;">
       <button onclick="doFollowUp()" id="followUpConfirmBtn" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send Reminder</button>
@@ -997,7 +998,7 @@
             : r.payment_verified
               ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${r.status === 'awaiting_payment' ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${r.status === 'awaiting_payment' ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
                 : '—'
           }
           </div>
@@ -1223,10 +1224,22 @@
     } catch (e) { showToast('Error: ' + e.message); }
   }
 
-  function openFollowUpModal(id, name, groupId) {
+  function openFollowUpModal(id, name, groupId, lastFollowupAt) {
     pendingFollowUpId = id;
     pendingFollowUpGroupId = groupId || null;
     document.getElementById('followUpName').textContent = groupId ? name + ' (Group)' : name;
+    const warningEl = document.getElementById('followUpWarning');
+    if (lastFollowupAt) {
+      const daysSince = (Date.now() - new Date(lastFollowupAt)) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) {
+        warningEl.innerHTML = `⚠️ A reminder was already sent on <strong>${formatDate(lastFollowupAt)}</strong>. Are you sure you want to send another?`;
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.style.display = 'none';
+      }
+    } else {
+      warningEl.style.display = 'none';
+    }
     document.getElementById('followUpModal').style.display = 'flex';
   }
 
