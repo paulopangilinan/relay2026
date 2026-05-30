@@ -157,6 +157,49 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
       }
 
+      // ── Follow-up payment reminder ─────────────────────────────────────────
+      if (action === 'follow_up') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+        if (reg.status !== 'awaiting_payment') {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Registration is not awaiting payment' }) };
+        }
+
+        const effectiveGroupId = group_id || reg.group_id || null;
+        let allMembers = [reg];
+        if (effectiveGroupId) {
+          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveGroupId);
+          if (members) allMembers = members;
+        }
+
+        const isGroup    = allMembers.length > 1;
+        const totalAmt   = allMembers.reduce((s, r) => s + feeFor(r), 0);
+        const totalLabel = `PHP ${totalAmt.toLocaleString()}`;
+        const siteUrl    = (process.env.SITE_URL || '').replace(/\/+$/, '');
+        const imgUrl     = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
+        const heroUrl    = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+        const qrUrl      = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
+
+        await getTransporter().sendMail({
+          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          to:      reg.email,
+          subject: 'RELAY 2026 — Payment Reminder',
+          html:    paymentReminderEmail({
+            primaryName: reg.name, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl,
+            registrationId: reg.id, group_id: effectiveGroupId, isGroup, allMembers,
+            gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
+            gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
+            gcashMobile:        process.env.GCASH_MOBILE,
+          }),
+        });
+
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+      }
+
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
     } catch (err) {
       console.error(err);
@@ -180,7 +223,7 @@ function statsFor(subset) {
   const awaitingPay   = subset.filter(r => r.status === 'awaiting_payment');
   const cancelled     = subset.filter(r => r.status === 'cancelled');
   return {
-    total:             subset.length,
+    total:             active.length,
     confirmed:         confirmed.length,
     pending_review:    pendingReview.length,
     awaiting_payment:  awaitingPay.length,
@@ -215,6 +258,85 @@ function cancellationEmail(primaryName, names, isGroup, heroUrl) {
       <p style="font-size:14px;color:#2A3D4A;line-height:1.7;">Your${isGroup ? ' group' : ''} registration for RELAY 2026 has been cancelled${isGroup ? ` (${names})` : ''}. If you believe this is a mistake or would like to re-register, please reach out to us.</p>
     </div>
     <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
+  </div></body></html>`;
+}
+
+function paymentReminderEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl, registrationId, group_id, isGroup, allMembers, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+  const uploadLink = `${siteUrl}/upload-receipt?id=${registrationId}${isGroup && group_id ? `&group_id=${group_id}` : ''}`;
+  const breakdownRows = allMembers.map(m => `
+    <tr>
+      <td style="padding:8px 12px;font-size:13px;color:#2A3D4A;">${m.name}</td>
+      <td style="padding:8px 12px;font-size:13px;color:#2A3D4A;text-align:center;">${m.student_status === 'student' ? 'Student' : 'Non-Student'}</td>
+      <td style="padding:8px 12px;font-size:13px;font-weight:600;color:#2A3D4A;text-align:right;">${m.student_status === 'student' ? 'PHP 3,000' : 'PHP 4,500'}</td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
+    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
+    .hero-img{width:100%;display:block;}
+    .header{background:linear-gradient(135deg,#1C2B38,#3A8BBF);padding:28px 32px;text-align:center;}
+    .header h1{color:#fff;font-size:22px;margin:0;}
+    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
+    .body{padding:32px;}
+    .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:16px 0;}
+    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
+  </style></head><body><div class="wrap">
+    <div class="bar"></div>
+    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
+    <div class="header"><h1>Payment Reminder</h1><p>RELAY Conference Asia Pacific 2026</p></div>
+    <div class="body">
+      <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>,</p>
+      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">Just a friendly reminder — your slot${isGroup ? 's are' : ' is'} still pending payment. To confirm your registration, please send <strong>${totalLabel}</strong> via GCash and submit your receipt.</p>
+      ${isGroup ? `
+        <div style="margin-bottom:4px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;">Registered Participants (${allMembers.length})</div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #D4E2EA;border-radius:10px;overflow:hidden;margin:12px 0 20px;">
+          <thead><tr style="background:#f7fafb;">
+            <th style="padding:8px 12px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;text-align:left;letter-spacing:0.08em;">Participant</th>
+            <th style="padding:8px 12px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;text-align:center;letter-spacing:0.08em;">Type</th>
+            <th style="padding:8px 12px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;text-align:right;letter-spacing:0.08em;">Amount</th>
+          </tr></thead>
+          <tbody>${breakdownRows}</tbody>
+          <tfoot><tr style="background:#f7fafb;border-top:2px solid #D4E2EA;">
+            <td colspan="2" style="padding:10px 12px;font-size:13px;font-weight:700;color:#2A3D4A;">Total</td>
+            <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#2E7048;text-align:right;">${totalLabel}</td>
+          </tr></tfoot>
+        </table>` : ''}
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+        <tr><td align="center">
+          <table cellpadding="0" cellspacing="0" border="0" style="background:#0A8FD9;border-radius:16px;overflow:hidden;width:100%;max-width:360px;">
+            <tr><td style="padding:0;line-height:0;">
+              <img src="${imgUrl}/assets/images/gcash-header-email.jpg?v=${Date.now()}" alt="GCash" width="360" style="display:block;width:100%;height:auto;">
+            </td></tr>
+            <tr><td style="padding:0 14px 14px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border-radius:14px;padding:24px 20px;text-align:center;">
+                <tr><td align="center" style="padding-bottom:16px;">
+                  <img src="${qrUrl}" alt="GCash QR" width="190" height="190" style="display:block;border-radius:10px;border:1px solid #e0e0e0;background:#fff;">
+                </td></tr>
+                <tr><td style="font-size:13px;color:#666;padding-bottom:14px;">Transfer fees may apply.</td></tr>
+                <tr><td style="border-top:1px solid #E0E0E0;padding-top:14px;">
+                  <div style="font-size:22px;font-weight:800;color:#0070E0;margin-bottom:4px;">${gcashAccountName || 'CCSGM'}</div>
+                  <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:8px;">${gcashAccountHolder || ''}</div>
+                  <div style="font-size:13px;padding:4px 0;">
+                    <span style="color:#888;">Mobile No.: </span>
+                    <span style="color:#444;font-weight:600;font-family:monospace;">${gcashMobile || ''}</span>
+                  </div>
+                  <div style="margin-top:14px;background:#E8F4FF;border-radius:8px;padding:10px 14px;font-size:13px;color:#0070E0;">
+                    💡 <strong>Send Money</strong> in GCash using the mobile number above
+                  </div>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+      <div class="note">After paying, click the button below to submit your GCash receipt screenshot.</div>
+      <div style="text-align:center;margin-top:20px;">
+        <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
+      </div>
+      <p style="font-size:11px;color:#6B8A9A;text-align:center;margin-top:10px;">Or copy this link: ${uploadLink}</p>
+    </div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
   </div></body></html>`;
 }
 
