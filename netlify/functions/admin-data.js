@@ -197,6 +197,13 @@ export const handler = async (event) => {
           }),
         });
 
+        const followupTs = new Date().toISOString();
+        if (effectiveGroupId) {
+          await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('group_id', effectiveGroupId);
+        } else {
+          await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('id', id);
+        }
+
         return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
       }
 
