@@ -146,7 +146,9 @@
     .btn-cancel-row .btn-label-icon{display:inline;}
     .btn-actions .btn-label-text{display:none;}
     .btn-actions .btn-label-icon{display:inline;}
-    .btn-confirm-row,.btn-cancel-row{padding:6px 8px;font-size:14px;margin-bottom:0;}
+    .btn-confirm-row,.btn-cancel-row,.btn-followup-row{padding:6px 8px;font-size:14px;margin-bottom:0;}
+    .btn-followup-row .btn-label-text{display:none;}
+    .btn-followup-row .btn-label-icon{display:inline;}
     .btn-label-text{display:none;}
     .btn-label-icon{display:inline;}
   }
@@ -184,6 +186,10 @@
   .btn-confirm-modal{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
   .btn-cancel-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;}
   .btn-cancel-row:hover{background:#E05050;color:#fff;}
+  .btn-followup-row{background:var(--sky-light);color:var(--sky);border:1px solid var(--sky);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;}
+  .btn-followup-row:hover{background:var(--sky);color:#fff;}
+  .btn-followup-row .btn-label-text{display:inline;}
+  .btn-followup-row .btn-label-icon{display:none;}
   .btn-actions{display:flex;flex-direction:row;gap:4px;align-items:center;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
@@ -269,6 +275,21 @@
     <div style="display:flex;gap:10px;">
       <button onclick="doCancel()" style="flex:1;padding:12px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Confirm Cancellation</button>
       <button onclick="closeCancelModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">No</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOLLOW UP PAYMENT MODAL -->
+<div id="followUpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;">Send Payment Reminder?</h3>
+      <button onclick="closeFollowUpModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
+    </div>
+    <p style="font-size:13px;color:#6B8A9A;margin:0 0 20px;line-height:1.6;">This will resend GCash payment instructions to <strong id="followUpName" style="color:#2A3D4A;"></strong>.</p>
+    <div style="display:flex;gap:10px;">
+      <button onclick="doFollowUp()" id="followUpConfirmBtn" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send Reminder</button>
+      <button onclick="closeFollowUpModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
     </div>
   </div>
 </div>
@@ -673,7 +694,7 @@
     } catch(e) { /* fail open */ }
   })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
-  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, activeTab = 'ph';
+  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, pendingFollowUpId = null, pendingFollowUpGroupId = null, activeTab = 'ph';
 
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
@@ -976,7 +997,7 @@
             : r.payment_verified
               ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${r.status === 'awaiting_payment' ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
                 : '—'
           }
           </div>
@@ -1200,6 +1221,39 @@
       showToast('Registration cancelled' + (notify ? ' and registrant notified.' : '.'));
       loadData();
     } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  function openFollowUpModal(id, name, groupId) {
+    pendingFollowUpId = id;
+    pendingFollowUpGroupId = groupId || null;
+    document.getElementById('followUpName').textContent = groupId ? name + ' (Group)' : name;
+    document.getElementById('followUpModal').style.display = 'flex';
+  }
+
+  function closeFollowUpModal() {
+    pendingFollowUpId = null;
+    pendingFollowUpGroupId = null;
+    document.getElementById('followUpModal').style.display = 'none';
+  }
+
+  async function doFollowUp() {
+    if (!pendingFollowUpId) return;
+    const btn = document.getElementById('followUpConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    const followUpId = pendingFollowUpId;
+    const followUpGroupId = pendingFollowUpGroupId;
+    closeFollowUpModal();
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'follow_up', id: followUpId, group_id: followUpGroupId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error);
+      showToast('💬 Payment reminder sent!');
+    } catch (e) { showToast('Error: ' + e.message); }
+    finally { btn.disabled = false; btn.textContent = '💬 Send Reminder'; }
   }
 
   async function doConfirm() {
