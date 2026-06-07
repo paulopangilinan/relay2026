@@ -1,0 +1,6 @@
+node_modules/
+.env
+*.env.local
+.netlify/
+relay-env-backup.env
+seed-superadmin.js
