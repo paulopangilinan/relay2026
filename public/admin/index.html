@@ -198,6 +198,13 @@
   .btn-partial-row:hover{background:var(--purple);color:#fff;}
   .btn-partial-row .btn-label-text{display:inline;}
   .btn-partial-row .btn-label-icon{display:none;}
+  /* Mobile overrides — must come after the above defaults */
+  @media(max-width:600px){
+    .btn-followup-row .btn-label-text{display:none;}
+    .btn-followup-row .btn-label-icon{display:inline;}
+    .btn-partial-row .btn-label-text{display:none;}
+    .btn-partial-row .btn-label-icon{display:inline;}
+  }
   .btn-actions{display:flex;flex-direction:row;gap:4px;align-items:center;}
   .btn-confirm-modal:hover{background:var(--green-bright);}
 
@@ -1069,7 +1076,7 @@
             : r.payment_verified
               ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">💰</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${r.status === 'awaiting_payment' ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">₱</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${r.status === 'awaiting_payment' ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
                 : '—'
           }
           </div>
