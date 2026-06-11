@@ -502,6 +502,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── Registration closed check ──────────────────────────────────────────────
+  (async function() {
+    try {
+      const res = await fetch('/.netlify/functions/site-settings');
+      if (!res.ok) return;
+      const settings = await res.json();
+      if (settings.reg_intl_closed) {
+        window.location.replace('/registration-closed?type=intl');
+      }
+    } catch(e) { /* fail open — don't block registration on network error */ }
+  })();
+
   // ── Prefill country from URL param ─────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
