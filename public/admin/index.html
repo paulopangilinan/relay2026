@@ -218,8 +218,8 @@
     .topbar-sub,.ts{display:none;}
     .topbar-right{width:100%;justify-content:space-evenly;gap:6px;}
     .btn-topbar-icon,.btn-topbar-action{flex:1;flex-direction:column;gap:2px;padding:8px 6px;font-size:10px;text-align:center;min-width:0;}
-    .tb-icon{font-size:18px;}
-    .btn-topbar-action svg{width:18px;height:18px;}
+    .tb-icon{width:24px;height:24px;font-size:18px;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+    .tb-icon svg{width:18px;height:18px;display:block;}
     .main{padding:16px;}
     .tiles-row{grid-template-columns:repeat(2,1fr);gap:10px;}
     .tiles-row.intl-tiles{grid-template-columns:repeat(2,1fr);}
@@ -374,8 +374,9 @@
       <span class="ts" id="lastRefresh"></span>
       <button class="btn-topbar-icon" id="tab-churches" onclick="switchTab('churches')"><span class="tb-icon">⛪</span><span class="tb-text">Churches</span></button>
       <button class="btn-topbar-icon" id="tab-admins" onclick="switchTab('admins')"><span class="tb-icon">🛡️</span><span class="tb-text">Admins</span></button>
+      <button class="btn-topbar-icon" id="tab-settings" onclick="switchTab('settings')"><span class="tb-icon">🔌</span><span class="tb-text">Site Settings</span></button>
       <button class="btn-sm btn-outline btn-topbar-action" onclick="loadData()"><span class="tb-icon">🔄</span><span class="tb-text">Refresh Data</span></button>
-      <button class="btn-sm btn-outline btn-topbar-action" onclick="logout()"><span class="tb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span class="tb-text">Sign Out</span></button>
+      <button class="btn-sm btn-outline btn-topbar-action" onclick="logout()"><span class="tb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span class="tb-text">Sign Out</span></button>
     </div>
     <div class="topbar-bar"></div>
   </div>
@@ -648,6 +649,46 @@
       </div>
     </div>
 
+    <!-- SETTINGS TAB -->
+    <div class="tab-content" id="content-settings">
+      <div style="margin-bottom:20px;">
+        <div style="font-size:16px;font-weight:700;color:var(--dark);">Registration Settings</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">When a registration is closed, users will be redirected to a closed notice page.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:520px;">
+
+        <!-- PH Toggle -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">🇵🇭 Philippine Registration</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-ph-status">Loading…</div>
+            </div>
+            <div onclick="toggleSetting('ph')" id="settings-ph-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-ph-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- International Toggle -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">🌏 International Registration</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-intl-status">Loading…</div>
+            </div>
+            <div onclick="toggleSetting('intl')" id="settings-intl-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-intl-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="saveSettings()" id="settings-save-btn" style="padding:12px 24px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s;" onmouseover="this.style.background='#4BAE6A'" onmouseout="this.style.background='var(--green)'">Save Settings</button>
+        <div id="settings-err" style="display:none;color:var(--red);font-size:12px;text-align:center;"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -839,8 +880,10 @@
   function applyPermissionUI() {
     const adminTab    = document.getElementById('tab-admins');
     const churchesTab = document.getElementById('tab-churches');
-    if (adminTab)    adminTab.style.display    = adminSession?.permissions?.manage_admins    ? 'flex' : 'none';
-    if (churchesTab) churchesTab.style.display = adminSession?.permissions?.manage_churches  ? 'flex' : 'none';
+    const settingsTab = document.getElementById('tab-settings');
+    if (adminTab)    adminTab.style.display    = adminSession?.permissions?.manage_admins   ? 'flex' : 'none';
+    if (churchesTab) churchesTab.style.display = adminSession?.permissions?.manage_churches ? 'flex' : 'none';
+    if (settingsTab) settingsTab.style.display = adminSession?.is_super_admin               ? 'flex' : 'none';
   }
 
   function logout() {
@@ -1246,8 +1289,9 @@
     const btn = document.getElementById(`tab-${tab}`);
     if (btn) btn.classList.add('active');
     document.getElementById(`content-${tab}`).classList.add('active');
-    if (tab === 'admins') loadAdmins();
+    if (tab === 'admins')   loadAdmins();
     if (tab === 'churches') loadChurches();
+    if (tab === 'settings') loadSettings();
   }
 
   function openModal(id, name, groupId) {
@@ -1948,6 +1992,66 @@
     // nothing — the page starts at the login screen as normal.
   })();
 
+  // ── Site Settings ──────────────────────────────────────────────────────────
+  let currentSettings = { reg_ph_closed: false, reg_intl_closed: false };
+
+  function renderSettingsUI() {
+    const phTrack   = document.getElementById('settings-ph-track');
+    const phThumb   = document.getElementById('settings-ph-thumb');
+    const phStatus  = document.getElementById('settings-ph-status');
+    const intlTrack = document.getElementById('settings-intl-track');
+    const intlThumb = document.getElementById('settings-intl-thumb');
+    const intlStatus = document.getElementById('settings-intl-status');
+    if (!phTrack) return;
+
+    const phClosed   = currentSettings.reg_ph_closed;
+    const intlClosed = currentSettings.reg_intl_closed;
+
+    phTrack.style.background = phClosed   ? '#C0392B' : '#D4E2EA';
+    phThumb.style.left       = phClosed   ? '22px'    : '2px';
+    phStatus.textContent     = phClosed   ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+
+    intlTrack.style.background = intlClosed ? '#C0392B' : '#D4E2EA';
+    intlThumb.style.left       = intlClosed ? '22px'    : '2px';
+    intlStatus.textContent     = intlClosed ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+  }
+
+  function toggleSetting(type) {
+    if (type === 'ph')   currentSettings.reg_ph_closed   = !currentSettings.reg_ph_closed;
+    if (type === 'intl') currentSettings.reg_intl_closed = !currentSettings.reg_intl_closed;
+    renderSettingsUI();
+  }
+
+  async function loadSettings() {
+    try {
+      const res = await fetch('/.netlify/functions/site-settings');
+      const data = await res.json();
+      currentSettings = { reg_ph_closed: !!data.reg_ph_closed, reg_intl_closed: !!data.reg_intl_closed };
+      renderSettingsUI();
+    } catch(e) { showToast('Could not load settings.'); }
+  }
+
+  async function saveSettings() {
+    const btn = document.getElementById('settings-save-btn');
+    const err = document.getElementById('settings-err');
+    err.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/.netlify/functions/site-settings', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentSettings),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Save failed');
+      showToast('Settings saved.');
+    } catch(e) {
+      err.textContent = e.message; err.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Settings';
+    }
+  }
+
   window.login                = login;
   window.submitNewPassword    = submitNewPassword;
   window.switchTab            = switchTab;
@@ -1985,6 +2089,8 @@
   window.closeAdminModal      = closeAdminModal;
   window.saveAdmin            = saveAdmin;
   window.removeAdmin          = removeAdmin;
+  window.toggleSetting        = toggleSetting;
+  window.saveSettings         = saveSettings;
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });

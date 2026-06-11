@@ -155,6 +155,21 @@ ALTER TABLE public.partial_payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow select partial_payments" ON public.partial_payments FOR SELECT USING (true);
 
 -- ============================================================
+-- Site Settings (single-row — id is always true, enforcing one row)
+-- ============================================================
+CREATE TABLE public.site_settings (
+  id               BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+  reg_ph_closed    BOOLEAN NOT NULL DEFAULT false,
+  reg_intl_closed  BOOLEAN NOT NULL DEFAULT false,
+  updated_at       TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO public.site_settings (id) VALUES (true) ON CONFLICT DO NOTHING;
+
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow select site_settings" ON public.site_settings FOR SELECT USING (true);
+
+-- ============================================================
 -- Storage bucket
 -- ============================================================
 INSERT INTO storage.buckets (id, name, public)

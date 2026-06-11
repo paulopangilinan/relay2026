@@ -979,6 +979,18 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── Registration closed check ──────────────────────────────────────────────
+  (async function() {
+    try {
+      const res = await fetch('/.netlify/functions/site-settings');
+      if (!res.ok) return;
+      const settings = await res.json();
+      if (settings.reg_ph_closed) {
+        window.location.replace('/registration-closed?type=ph');
+      }
+    } catch(e) { /* fail open — don't block registration on network error */ }
+  })();
+
   // ── IP Guard: redirect international users away from PH form ─────────────
   (async function() {
     try {
