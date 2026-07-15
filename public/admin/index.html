@@ -269,6 +269,33 @@
   </div>
 </div>
 
+<!-- GROUP SCOPE PICKER MODAL -->
+<div id="groupScopePicker" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+      <h3 id="scopePickerTitle" style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;"></h3>
+      <button onclick="closeGroupScopePicker()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">✕</button>
+    </div>
+    <p style="font-size:13px;color:#6B8A9A;margin:0 0 20px;line-height:1.6;">Who should this action apply to?</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="chooseGroupScope('group')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f7fafb;border:1.5px solid #D4E2EA;border-radius:10px;cursor:pointer;text-align:left;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#3A8BBF'" onmouseout="this.style.borderColor='#D4E2EA'">
+        <span style="font-size:24px;flex-shrink:0;">👥</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1C2B38;">Entire Group</div>
+          <div style="font-size:11px;color:#6B8A9A;margin-top:2px;">Apply to all members of this group</div>
+        </div>
+      </button>
+      <button onclick="chooseGroupScope('individual')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f7fafb;border:1.5px solid #D4E2EA;border-radius:10px;cursor:pointer;text-align:left;transition:border-color 0.15s;" onmouseover="this.style.borderColor='#3A8BBF'" onmouseout="this.style.borderColor='#D4E2EA'">
+        <span style="font-size:24px;flex-shrink:0;">👤</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1C2B38;">This Participant Only</div>
+          <div id="scopePickerParticipant" style="font-size:11px;color:#6B8A9A;margin-top:2px;"></div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- CANCEL REGISTRATION MODAL -->
 <div id="cancelModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
@@ -812,7 +839,8 @@
     } catch(e) { /* fail open */ }
   })();
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
-  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingCancelId = null, pendingCancelGroupId = null, pendingFollowUpId = null, pendingFollowUpGroupId = null, pendingPartialId = null, pendingPartialGroupId = null, activeTab = 'ph';
+  let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingConfirmScope = null, pendingCancelId = null, pendingCancelGroupId = null, pendingCancelScope = null, pendingFollowUpId = null, pendingFollowUpGroupId = null, pendingPartialId = null, pendingPartialGroupId = null, activeTab = 'ph';
+  let pendingScopeType = null, pendingScopeId = null, pendingScopeName = null, pendingScopeGroupId = null;
 
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
@@ -1295,13 +1323,22 @@
   }
 
   function openModal(id, name, groupId) {
-    pendingConfirmId = id;
-    pendingGroupId = groupId || null;
+    if (groupId) { openGroupScopePicker('confirm', id, name, groupId); return; }
+    pendingConfirmId    = id;
+    pendingGroupId      = null;
+    pendingConfirmScope = null;
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('confirmModal').classList.add('visible');
+  }
+  function openModalDirect(id, name, groupId, scope) {
+    pendingConfirmId    = id;
+    pendingGroupId      = groupId || null;
+    pendingConfirmScope = scope || null;
     const label = groupId ? `${name} (Group)` : name;
     document.getElementById('modalName').textContent = label;
     document.getElementById('confirmModal').classList.add('visible');
   }
-  function closeModal() { pendingConfirmId = null; pendingGroupId = null; document.getElementById('confirmModal').classList.remove('visible'); }
+  function closeModal() { pendingConfirmId = null; pendingGroupId = null; pendingConfirmScope = null; document.getElementById('confirmModal').classList.remove('visible'); }
 
   function toggleCancelNotify() {
     const track = document.getElementById('cancelToggleTrack');
@@ -1314,10 +1351,14 @@
   }
 
   function openCancelModal(id, name, groupId) {
+    if (groupId) { openGroupScopePicker('cancel', id, name, groupId); return; }
+    openCancelModalDirect(id, name, null, null);
+  }
+  function openCancelModalDirect(id, name, groupId, scope) {
     pendingCancelId      = id;
     pendingCancelGroupId = groupId || null;
+    pendingCancelScope   = scope || null;
     document.getElementById('cancelName').textContent = groupId ? name + ' (Group)' : name;
-    // Reset fields
     document.getElementById('cancelReason').value = '';
     document.getElementById('cancelNotifyToggle').value = 'false';
     document.getElementById('cancelToggleTrack').style.background = '#D4E2EA';
@@ -1326,23 +1367,24 @@
   }
 
   function closeCancelModal() {
-    pendingCancelId = null; pendingCancelGroupId = null;
+    pendingCancelId = null; pendingCancelGroupId = null; pendingCancelScope = null;
     document.getElementById('cancelModal').style.display = 'none';
   }
 
   async function doCancel(notify) {
     if (notify === undefined) notify = document.getElementById('cancelNotifyToggle').value === 'true';
     if (!pendingCancelId) return;
-    // Capture before closing modal (which resets these to null)
+    // Capture ALL pending state before closing modal (closeCancelModal nulls them)
     const cancelId      = pendingCancelId;
     const cancelGroupId = pendingCancelGroupId;
+    const cancelScope   = pendingCancelScope;
     const cancelReason  = document.getElementById('cancelReason').value.trim() || null;
     closeCancelModal();
     try {
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel', id: cancelId, group_id: cancelGroupId, notify, reason: cancelReason }),
+        body: JSON.stringify({ action: 'cancel', id: cancelId, group_id: cancelGroupId, notify, reason: cancelReason, ...(cancelScope ? { scope: cancelScope } : {}) }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
@@ -1356,7 +1398,7 @@
     pendingPartialGroupId = groupId || null;
     document.getElementById('partialModalName').textContent = groupId ? name + ' (Group)' : name;
     const members = groupId
-      ? localData.filter(r => r.group_id === groupId && r.status !== 'cancelled')
+      ? localData.filter(r => r.group_id === groupId && r.status !== 'cancelled' && r.status !== 'confirmed')
       : localData.filter(r => r.id === id);
     const totalFee   = members.reduce((s, r) => s + (r.student_status === 'student' ? 3000 : 4500), 0);
     const partialPaid = members[0]?.partial_paid_total || 0;
@@ -1455,7 +1497,7 @@
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: pendingConfirmId, group_id: pendingGroupId, action: 'confirm' }),
+        body: JSON.stringify({ id: pendingConfirmId, group_id: pendingGroupId, action: 'confirm', ...(pendingConfirmScope ? { scope: pendingConfirmScope } : {}) }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
@@ -1992,6 +2034,32 @@
     // nothing — the page starts at the login screen as normal.
   })();
 
+  // ── Group scope picker ─────────────────────────────────────────────────────
+  function openGroupScopePicker(type, id, name, groupId) {
+    pendingScopeType    = type;
+    pendingScopeId      = id;
+    pendingScopeName    = name;
+    pendingScopeGroupId = groupId;
+    document.getElementById('scopePickerTitle').textContent       = type === 'confirm' ? 'Mark as Paid' : 'Cancel Registration';
+    document.getElementById('scopePickerParticipant').textContent = name + ' only';
+    document.getElementById('groupScopePicker').style.display     = 'flex';
+  }
+
+  function closeGroupScopePicker() {
+    pendingScopeType = pendingScopeId = pendingScopeName = pendingScopeGroupId = null;
+    document.getElementById('groupScopePicker').style.display = 'none';
+  }
+
+  function chooseGroupScope(scope) {
+    const type    = pendingScopeType;
+    const id      = pendingScopeId;
+    const name    = pendingScopeName;
+    const groupId = scope === 'group' ? pendingScopeGroupId : null;
+    closeGroupScopePicker();
+    if (type === 'confirm') openModalDirect(id, name, groupId, scope === 'individual' ? 'individual' : null);
+    else                    openCancelModalDirect(id, name, groupId, scope === 'individual' ? 'individual' : null);
+  }
+
   // ── Site Settings ──────────────────────────────────────────────────────────
   let currentSettings = { reg_ph_closed: false, reg_intl_closed: false };
 
@@ -2091,6 +2159,8 @@
   window.removeAdmin          = removeAdmin;
   window.toggleSetting        = toggleSetting;
   window.saveSettings         = saveSettings;
+  window.closeGroupScopePicker = closeGroupScopePicker;
+  window.chooseGroupScope     = chooseGroupScope;
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
