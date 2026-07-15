@@ -14,6 +14,7 @@
         "npm:@supabase/supabase-js@^2.39.0",
         "npm:bcryptjs@^2.4.3",
         "npm:jsonwebtoken@9",
+        "npm:netlify-cli@^26.1.0",
         "npm:nodemailer@^6.9.0"
       ]
     }

@@ -62,7 +62,7 @@ export const handler = async (event) => {
   if (event.httpMethod === 'POST') {
     try {
       const body = JSON.parse(event.body);
-      const { action, id, group_id } = body;
+      const { action, id } = body;
 
       if (!action || !id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action or id' }) };
 
@@ -72,11 +72,12 @@ export const handler = async (event) => {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to verify payment' }) };
         }
 
-        // Fetch one row to get email/name for confirmation email
         const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
-        const effectiveGroupId = group_id || reg.group_id || null;
+        // Always derive group from DB — never trust client-supplied group_id
+        const { scope } = body;
+        const effectiveGroupId = scope === 'individual' ? null : (reg.group_id || null);
 
         const confirmUpdate = {
           payment_verified: true,
@@ -85,22 +86,27 @@ export const handler = async (event) => {
           verified_by: requester.email,
         };
         if (effectiveGroupId) {
-          await supabase.from('registrations').update(confirmUpdate).eq('group_id', effectiveGroupId);
+          // Never confirm already-cancelled participants — they were removed individually
+          await supabase.from('registrations').update(confirmUpdate)
+            .eq('group_id', effectiveGroupId)
+            .neq('status', 'cancelled');
         } else {
           await supabase.from('registrations').update(confirmUpdate).eq('id', id);
         }
 
-        // Fetch all group members for email
         let allMembers = [reg];
         if (effectiveGroupId) {
-          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveGroupId);
-          if (members) allMembers = members;
+          // Only include non-cancelled members in the confirmation email
+          const { data: members } = await supabase.from('registrations').select('*')
+            .eq('group_id', effectiveGroupId)
+            .neq('status', 'cancelled');
+          if (members?.length) allMembers = members;
         }
 
-        const isGroup   = allMembers.length > 1;
-        const totalAmt  = allMembers.reduce((s, r) => s + feeFor(r), 0);
-        const imgUrl    = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
-        const heroUrl   = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+        const isGroup  = allMembers.length > 1;
+        const totalAmt = allMembers.reduce((s, r) => s + feeFor(r), 0);
+        const imgUrl   = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
+        const heroUrl  = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
         await getTransporter().sendMail({
           from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
@@ -118,12 +124,13 @@ export const handler = async (event) => {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to cancel registrations' }) };
         }
 
-        // Fetch one row to get email for notification
         const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
-        const { notify, reason } = body;
-        const effectiveCancelGroupId = group_id || reg.group_id || null;
+        const { notify, reason, scope } = body;
+        // Always derive group from DB — never trust client-supplied group_id
+        const effectiveCancelGroupId = scope === 'individual' ? null : (reg.group_id || null);
+
         const cancelUpdate = {
           status: 'cancelled',
           payment_verified: false,
@@ -132,7 +139,10 @@ export const handler = async (event) => {
           cancellation_reason: reason || null,
         };
         if (effectiveCancelGroupId) {
-          await supabase.from('registrations').update(cancelUpdate).eq('group_id', effectiveCancelGroupId);
+          // Never cancel already-confirmed participants — they paid individually
+          await supabase.from('registrations').update(cancelUpdate)
+            .eq('group_id', effectiveCancelGroupId)
+            .neq('status', 'confirmed');
         } else {
           await supabase.from('registrations').update(cancelUpdate).eq('id', id);
         }
@@ -140,8 +150,11 @@ export const handler = async (event) => {
         if (notify) {
           let allMembers = [reg];
           if (effectiveCancelGroupId) {
-            const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveCancelGroupId);
-            if (members) allMembers = members;
+            // Only include members that were actually cancelled (exclude confirmed ones)
+            const { data: members } = await supabase.from('registrations').select('*')
+              .eq('group_id', effectiveCancelGroupId)
+              .neq('status', 'confirmed');
+            if (members?.length) allMembers = members;
           }
           const imgUrl  = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
           const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
@@ -169,11 +182,15 @@ export const handler = async (event) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: 'Registration is not awaiting payment' }) };
         }
 
-        const effectiveGroupId = group_id || reg.group_id || null;
+        const effectiveGroupId = reg.group_id || null;
         let allMembers = [reg];
         if (effectiveGroupId) {
-          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveGroupId);
-          if (members) allMembers = members;
+          // Only include members who still need to pay — skip confirmed and cancelled
+          const { data: members } = await supabase.from('registrations').select('*')
+            .eq('group_id', effectiveGroupId)
+            .neq('status', 'confirmed')
+            .neq('status', 'cancelled');
+          if (members?.length) allMembers = members;
         }
 
         const isGroup    = allMembers.length > 1;
@@ -199,7 +216,11 @@ export const handler = async (event) => {
 
         const followupTs = new Date().toISOString();
         if (effectiveGroupId) {
-          await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('group_id', effectiveGroupId);
+          // Only stamp the timestamp on members who still owe payment
+          await supabase.from('registrations').update({ last_followup_at: followupTs })
+            .eq('group_id', effectiveGroupId)
+            .neq('status', 'confirmed')
+            .neq('status', 'cancelled');
         } else {
           await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('id', id);
         }
@@ -224,16 +245,20 @@ export const handler = async (event) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: 'Cannot add partial payment to this registration' }) };
         }
 
-        const effectiveGroupId = group_id || reg.group_id || null;
+        const effectiveGroupId = reg.group_id || null;
         let allMembers = [reg];
         if (effectiveGroupId) {
-          const { data: members } = await supabase.from('registrations').select('*').eq('group_id', effectiveGroupId).neq('status', 'cancelled');
+          // Only count members who still owe — exclude confirmed (already paid) and cancelled
+          const { data: members } = await supabase.from('registrations').select('*')
+            .eq('group_id', effectiveGroupId)
+            .neq('status', 'cancelled')
+            .neq('status', 'confirmed');
           if (members?.length) allMembers = members;
         }
 
-        const totalFee       = allMembers.reduce((s, r) => s + feeFor(r), 0);
+        const totalFee        = allMembers.reduce((s, r) => s + feeFor(r), 0);
         const newPartialTotal = (reg.partial_paid_total || 0) + amount;
-        const remaining      = totalFee - newPartialTotal;
+        const remaining       = totalFee - newPartialTotal;
 
         await supabase.from('partial_payments').insert({
           registration_id: id,
@@ -247,7 +272,11 @@ export const handler = async (event) => {
 
         const partialUpdate = { partial_paid_total: newPartialTotal, status: 'partially_paid' };
         if (effectiveGroupId) {
-          await supabase.from('registrations').update(partialUpdate).eq('group_id', effectiveGroupId).neq('status', 'cancelled');
+          // Only update members who still owe — never revert a confirmed or cancelled status
+          await supabase.from('registrations').update(partialUpdate)
+            .eq('group_id', effectiveGroupId)
+            .neq('status', 'cancelled')
+            .neq('status', 'confirmed');
         } else {
           await supabase.from('registrations').update(partialUpdate).eq('id', id);
         }
