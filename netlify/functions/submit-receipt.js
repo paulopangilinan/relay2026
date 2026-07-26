@@ -1,7 +1,7 @@
 // netlify/functions/submit-receipt.js
 import jwt from 'jsonwebtoken';
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail } from "../lib/mailer.js";
 
 
 async function getAdminEmails(supabase, permission) {
@@ -12,13 +12,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
-}
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
@@ -104,8 +97,7 @@ export const handler = async (event) => {
         ? jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: '30d' })
         : null;
       const verifyLink = adminToken ? `${baseVerifyUrl}&atoken=${adminToken}` : baseVerifyUrl;
-      await getTransporter().sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+      await sendEmail({
         to:      admin.email,
         subject: isGroup ? `💰 Group Receipt Submitted — ${reg.name} (+${allMembers.length - 1})` : `💰 Payment Receipt Submitted — ${reg.name}`,
       html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>

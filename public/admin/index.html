@@ -230,12 +230,38 @@
     .filter-actions{width:100%;margin-left:0;}
     .btn-export,.btn-reset{flex:1;padding:10px;text-align:center;}
     .bottom-row{grid-template-columns:1fr;gap:12px;margin-top:14px;}
-    #content-ph th:nth-child(3),#content-ph td:nth-child(3),#content-intl th:nth-child(3),#content-intl td:nth-child(3),#content-ph th:nth-child(10),#content-ph td:nth-child(10),#content-intl th:nth-child(10),#content-intl td:nth-child(10){display:none;}
+    /* Hide Age + Receipt. PH carries a leading select column, so its indices
+       sit one to the right of the international table's. */
+    #content-ph th:nth-child(4),#content-ph td:nth-child(4),
+    #content-ph th:nth-child(11),#content-ph td:nth-child(11),
+    #content-intl th:nth-child(3),#content-intl td:nth-child(3),
+    #content-intl th:nth-child(10),#content-intl td:nth-child(10){display:none;}
     .toast{right:12px;left:12px;bottom:16px;text-align:center;border-radius:10px;}
     .church-bar-wrap{display:none;}
   }
   @media(max-width:480px){
-    #content-ph th:nth-child(4),#content-ph td:nth-child(4),#content-intl th:nth-child(4),#content-intl td:nth-child(4){display:none;}
+    /* Hide Mobile */
+    #content-ph th:nth-child(5),#content-ph td:nth-child(5),
+    #content-intl th:nth-child(4),#content-intl td:nth-child(4){display:none;}
+  }
+  /* SETTINGS TAB — use the available width instead of a narrow column */
+  .settings-wrap{display:flex;flex-direction:column;gap:14px;max-width:1180px;}
+  /* The two registration switches are small; sit them side by side. */
+  .settings-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  /* SMS editor: message on the left, reference material on the right. */
+  .sms-body-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start;}
+  @media(max-width:1000px){
+    .settings-row-2{grid-template-columns:1fr;}
+    .sms-body-grid{grid-template-columns:1fr;}
+  }
+
+  /* Bulk follow-up: full-width CTA above the table meta on small screens,
+     and roomier tap targets for the row checkboxes. */
+  #ph-bulk-followup{align-items:center;}
+  .fu-check,#ph-select-all{width:16px;height:16px;accent-color:#3A8BBF;}
+  @media(max-width:600px){
+    #ph-bulk-followup{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+    .fu-check,#ph-select-all{width:20px;height:20px;}
   }
 </style>
 </head>
@@ -379,10 +405,89 @@
       <button onclick="closeFollowUpModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
     </div>
     <div id="followUpWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:13px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
-    <p style="font-size:13px;color:#6B8A9A;margin:0 0 20px;line-height:1.6;">This will resend GCash payment instructions to <strong id="followUpName" style="color:#2A3D4A;"></strong>.</p>
+    <p style="font-size:13px;color:#6B8A9A;margin:0 0 14px;line-height:1.6;">This will resend GCash payment instructions to <strong id="followUpName" style="color:#2A3D4A;"></strong>.</p>
+
+    <!-- SMS companion — only rendered when SMS follow-ups are switched on in Site Settings -->
+    <div id="followUpSmsRow" style="display:none;align-items:center;justify-content:space-between;gap:12px;background:#f7fafb;border:1px solid #D4E2EA;border-radius:10px;padding:10px 14px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#2A3D4A;">📱 Also send SMS</div>
+        <div style="font-size:11px;color:#6B8A9A;margin-top:2px;" id="followUpSmsDetail"></div>
+      </div>
+      <div onclick="toggleFollowUpSms()" id="followUpSmsTrack" style="width:44px;height:24px;border-radius:50px;background:#2E7048;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <div id="followUpSmsThumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+      </div>
+    </div>
+
     <div style="display:flex;gap:10px;">
-      <button onclick="doFollowUp()" id="followUpConfirmBtn" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send Reminder</button>
+      <!-- Split button: main action sends with the selected provider, caret opens the picker -->
+      <div style="flex:1;position:relative;display:flex;">
+        <button onclick="doFollowUp()" id="followUpConfirmBtn" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px 0 0 8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send via Gmail</button>
+        <button onclick="toggleFollowUpProviderMenu(event)" id="followUpProviderBtn" title="Choose email provider" style="padding:12px 11px;background:var(--sky);color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;">▾</button>
+        <div id="followUpProviderMenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectFollowUpProvider('gmail')" id="followUpOpt-gmail" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✉️ Gmail <span id="followUpCheck-gmail" style="color:#2E7048;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;">Current method — sends from the RELAY inbox.</span>
+          </button>
+          <button onclick="selectFollowUpProvider('resend')" id="followUpOpt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="followUpCheck-resend" style="color:#2E7048;display:none;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;" id="followUpResendHint">Better deliverability for bulk reminders.</span>
+          </button>
+        </div>
+      </div>
       <button onclick="closeFollowUpModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK FOLLOW UP MODAL -->
+<div id="bulkFollowUpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;">Send Bulk Payment Reminders</h3>
+      <button onclick="closeBulkFollowUpModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
+    </div>
+
+    <div id="bulkFollowUpSummary" style="background:#EBF5FB;border-radius:10px;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;"></div>
+    <div id="bulkFollowUpWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
+
+    <!-- SMS companion -->
+    <div id="bulkSmsRow" style="display:none;align-items:center;justify-content:space-between;gap:12px;background:#f7fafb;border:1px solid #D4E2EA;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#2A3D4A;">📱 Also send SMS</div>
+        <div style="font-size:11px;color:#6B8A9A;margin-top:2px;" id="bulkSmsDetail"></div>
+      </div>
+      <div onclick="toggleBulkSms()" id="bulkSmsTrack" style="width:44px;height:24px;border-radius:50px;background:#2E7048;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <div id="bulkSmsThumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+      </div>
+    </div>
+
+    <!-- Progress + results, shown once sending starts -->
+    <div id="bulkProgressWrap" style="display:none;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B8A9A;margin-bottom:6px;">
+        <span id="bulkProgressLabel">Sending…</span><span id="bulkProgressPct">0%</span>
+      </div>
+      <div style="background:#EDF2F5;border-radius:50px;height:8px;overflow:hidden;">
+        <div id="bulkProgressBar" style="width:0%;height:8px;background:linear-gradient(90deg,#3A8BBF,#4BAE6A);border-radius:50px;transition:width 0.25s;"></div>
+      </div>
+      <div id="bulkResults" style="margin-top:12px;font-size:12px;color:#2A3D4A;line-height:1.7;"></div>
+    </div>
+
+    <div id="bulkActionRow" style="display:flex;gap:10px;">
+      <div style="flex:1;position:relative;display:flex;">
+        <button onclick="doBulkFollowUp()" id="bulkConfirmBtn" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px 0 0 8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send via Gmail</button>
+        <button onclick="toggleBulkProviderMenu(event)" id="bulkProviderBtn" title="Choose email provider" style="padding:12px 11px;background:var(--sky);color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;">▾</button>
+        <div id="bulkProviderMenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectBulkProvider('gmail')" id="bulkOpt-gmail" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✉️ Gmail <span id="bulkCheck-gmail" style="color:#2E7048;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;">Current method — sends from the RELAY inbox.</span>
+          </button>
+          <button onclick="selectBulkProvider('resend')" id="bulkOpt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="bulkCheck-resend" style="color:#2E7048;display:none;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;" id="bulkResendHint">Better deliverability for bulk reminders.</span>
+          </button>
+        </div>
+      </div>
+      <button onclick="closeBulkFollowUpModal()" id="bulkCancelBtn" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
     </div>
   </div>
 </div>
@@ -514,7 +619,11 @@
       <div class="table-wrap">
         <div class="table-header">
           <h2>Philippines Registrations</h2>
-          <div style="display:flex;align-items:center;gap:16px;">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <!-- Appears whenever the current view holds anyone still awaiting payment -->
+            <button id="ph-bulk-followup" onclick="openBulkFollowUpModal()" style="display:none;align-items:center;gap:7px;padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              <span>💬</span><span id="ph-bulk-label">Bulk Follow Up</span>
+            </button>
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
               <span class="hc-text">Hide Cancelled</span>
               <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
@@ -524,8 +633,8 @@
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th></tr></thead>
-            <tbody id="ph-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
+            <thead><tr><th style="width:34px;text-align:center;"><input type="checkbox" id="ph-select-all" onclick="toggleSelectAllFollowUp(this.checked)" title="Select all awaiting payment" style="cursor:pointer;"></th><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th></tr></thead>
+            <tbody id="ph-body"><tr><td colspan="15" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -683,8 +792,9 @@
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">When a registration is closed, users will be redirected to a closed notice page.</div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:12px;max-width:520px;">
+      <div class="settings-wrap">
 
+        <div class="settings-row-2">
         <!-- PH Toggle -->
         <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
@@ -709,6 +819,44 @@
               <div id="settings-intl-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
             </div>
           </div>
+        </div>
+        </div>
+
+        <!-- SMS Notifications -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">📱 SMS Notifications</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-sms-status">Loading…</div>
+            </div>
+            <div onclick="toggleSetting('sms')" id="settings-sms-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-sms-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+
+          <div id="settings-sms-events" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:12px;transition:opacity 0.2s;">
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Send an SMS when…</div>
+
+            <!-- Accordion: one collapsible item per event, built by renderSmsAccordion() -->
+            <div id="settings-sms-event-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+            <!-- Credit disclaimer -->
+            <div style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.6;">
+              ⚠️ <strong>The longer the message, the more it costs.</strong> Semaphore bills
+              <strong>1 credit per 160 characters</strong>, so a 400-character message costs 3 credits
+              <em>per recipient</em>. Watch each message's counter before saving.
+            </div>
+
+            <div id="settings-sms-sender" style="display:none;border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.6;"></div>
+            <div id="settings-sms-credits" style="display:none;background:#EBF5FB;border-radius:8px;padding:10px 14px;font-size:12px;color:#2A3D4A;"></div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5;">Philippine mobile numbers only (Semaphore). International registrants keep receiving email only.</div>
+          </div>
+        </div>
+
+        <!-- Follow-up email sender -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);">
+          <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">✉️ Follow-up Email Sender</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;" id="settings-resend-status">Loading…</div>
         </div>
 
         <button onclick="saveSettings()" id="settings-save-btn" style="padding:12px 24px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s;" onmouseover="this.style.background='#4BAE6A'" onmouseout="this.style.background='var(--green)'">Save Settings</button>
@@ -841,6 +989,10 @@
   let localData = [], intlData = [], filteredPH = [], filteredIntl = [];
   let adminToken = '', adminSession = null, pendingConfirmId = null, pendingGroupId = null, pendingConfirmScope = null, pendingCancelId = null, pendingCancelGroupId = null, pendingCancelScope = null, pendingFollowUpId = null, pendingFollowUpGroupId = null, pendingPartialId = null, pendingPartialGroupId = null, activeTab = 'ph';
   let pendingScopeType = null, pendingScopeId = null, pendingScopeName = null, pendingScopeGroupId = null;
+  // Notification config comes back with the dashboard payload (admin-data GET).
+  let notifyConfig = { sms_enabled: false, sms_on_followup: true, sms_configured: false, sms_ready: false, resend_configured: false };
+  let followUpProvider = 'gmail', followUpSmsOn = true, followUpSmsAvailable = false;
+  let bulkSelected = new Set();   // registration ids ticked for bulk follow-up
 
   async function login() {
     const email = document.getElementById('emailInput').value.trim();
@@ -942,6 +1094,7 @@
       localData  = json.local || [];
       intlData   = json.international || [];
       adminsList = json.admins || adminsList;
+      if (json.notifications) notifyConfig = { ...notifyConfig, ...json.notifications };
 
       // Tab badges (exclude cancelled)
       document.getElementById('badge-ph').textContent   = localData.filter(r => r.status !== 'cancelled').length;
@@ -1100,6 +1253,7 @@
       });
       renderTable('ph', filteredPH);
       document.getElementById('ph-count').textContent = filteredPH.length + ' of ' + localData.length + ' records';
+      syncBulkUI();
     } else {
       const s = document.getElementById('intl-search').value.toLowerCase();
       const st = document.getElementById('intl-status').value;
@@ -1118,7 +1272,7 @@
 
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
-    const cols = isPH ? 11 : 12;
+    const cols = isPH ? 15 : 12;
     const { col, dir } = sortState[tab];
     rows = sortData(rows, col, dir);
     const canVerify = adminSession?.permissions?.verify_payment || false;
@@ -1126,6 +1280,9 @@
     if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">No registrations match your filters.</td></tr>`; return; }
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
+        ${isPH ? `<td style="text-align:center;">${r.status === 'awaiting_payment' && canVerify
+            ? `<input type="checkbox" class="fu-check" value="${r.id}" ${bulkSelected.has(r.id) ? 'checked' : ''} onclick="toggleFollowUpSelection('${r.id}', this.checked)" style="cursor:pointer;">`
+            : ''}</td>` : ''}
         <td class="mono">${i+1}</td>
         <td><strong>${esc(r.name)}</strong>${r.group_id ? ` <span style="display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:50px;background:#EDE9FE;color:#6D28D9;letter-spacing:0.05em;vertical-align:middle;">👥 GROUP</span>` : ''}</td>
         <td>${r.age}</td>
@@ -1388,7 +1545,7 @@
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
-      showToast('Registration cancelled' + (notify ? ' and registrant notified.' : '.'));
+      showToast('Registration cancelled' + (notify ? ' and registrant notified.' : '.') + smsToastSuffix(json.sms));
       loadData();
     } catch (e) { showToast('Error: ' + e.message); }
   }
@@ -1444,10 +1601,140 @@
     finally { btn.disabled = false; btn.textContent = '💰 Record Payment'; }
   }
 
+  function findRegistration(id) {
+    return localData.find(r => r.id === id) || intlData.find(r => r.id === id) || null;
+  }
+
+  // Mirrors normalizePHMobile() in netlify/lib/sms.js — Semaphore only reaches PH numbers.
+  function normPHMobile(m) {
+    const d = String(m || '').replace(/\D/g, '');
+    if (/^639\d{9}$/.test(d)) return d;
+    if (/^09\d{9}$/.test(d))  return '63' + d.slice(1);
+    if (/^9\d{9}$/.test(d))   return '63' + d;
+    return null;
+  }
+  function isPHMobile(m) { return !!normPHMobile(m); }
+
+  // Who a follow-up actually texts: every member still awaiting payment,
+  // one message per distinct mobile. Mirrors runFollowUp() in admin-data.js.
+  function smsRecipientsFor(reg) {
+    if (!reg) return new Set();
+    const members = reg.group_id
+      ? localData.filter(r => r.group_id === reg.group_id)
+      : [reg];
+    const mobiles = new Set();
+    for (const m of members) {
+      if (m.status !== 'awaiting_payment') continue;
+      const n = normPHMobile(m.mobile);
+      if (n) mobiles.add(n);
+    }
+    return mobiles;
+  }
+
+  // Why SMS can't send yet, or null when it can. Drives the greyed-out state
+  // on both follow-up modals.
+  function smsNotReadyReason() {
+    if (notifyConfig.sms_ready) return null;
+    return notifyConfig.sms_configured
+      ? 'Feature not ready yet — waiting on Semaphore sender name approval.'
+      : 'Feature not ready yet — SMS is not set up.';
+  }
+
+  /**
+   * Paint one modal's SMS row. `prefix` is 'followUpSms' or 'bulkSms'.
+   * mode: 'hidden' | 'disabled' (greyed, cannot be toggled) | 'enabled'
+   */
+  function applySmsRow(prefix, mode, detail, on) {
+    const row   = document.getElementById(prefix + 'Row');
+    const track = document.getElementById(prefix + 'Track');
+    const thumb = document.getElementById(prefix + 'Thumb');
+    const info  = document.getElementById(prefix + 'Detail');
+    if (!row) return;
+
+    if (mode === 'hidden') { row.style.display = 'none'; return; }
+
+    row.style.display      = 'flex';
+    row.style.opacity      = mode === 'disabled' ? '0.6' : '1';
+    row.style.pointerEvents = mode === 'disabled' ? 'none' : 'auto';
+    if (info) info.textContent = detail || '';
+
+    const active = mode === 'enabled' && on;
+    if (track) track.style.background = active ? '#2E7048' : '#D4E2EA';
+    if (thumb) thumb.style.left       = active ? '22px'    : '2px';
+  }
+
+  function renderFollowUpSmsToggle() {
+    const track = document.getElementById('followUpSmsTrack');
+    const thumb = document.getElementById('followUpSmsThumb');
+    track.style.background = followUpSmsOn ? '#2E7048' : '#D4E2EA';
+    thumb.style.left       = followUpSmsOn ? '22px'    : '2px';
+  }
+
+  function toggleFollowUpSms() {
+    followUpSmsOn = !followUpSmsOn;
+    renderFollowUpSmsToggle();
+  }
+
+  function renderFollowUpProvider() {
+    const btn = document.getElementById('followUpConfirmBtn');
+    btn.textContent = followUpProvider === 'resend' ? '🚀 Send via Resend' : '💬 Send via Gmail';
+    document.getElementById('followUpCheck-gmail').style.display  = followUpProvider === 'gmail'  ? 'inline' : 'none';
+    document.getElementById('followUpCheck-resend').style.display = followUpProvider === 'resend' ? 'inline' : 'none';
+
+    const opt  = document.getElementById('followUpOpt-resend');
+    const hint = document.getElementById('followUpResendHint');
+    opt.disabled       = !notifyConfig.resend_configured;
+    opt.style.opacity  = notifyConfig.resend_configured ? '1' : '0.55';
+    opt.style.cursor   = notifyConfig.resend_configured ? 'pointer' : 'not-allowed';
+    hint.textContent   = notifyConfig.resend_configured
+      ? 'Alternative sender — better deliverability for bulk reminders.'
+      : 'Not configured — set RESEND_API_KEY and RESEND_FROM to enable.';
+  }
+
+  function toggleFollowUpProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('followUpProviderMenu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function selectFollowUpProvider(provider) {
+    if (provider === 'resend' && !notifyConfig.resend_configured) return;
+    followUpProvider = provider;
+    document.getElementById('followUpProviderMenu').style.display = 'none';
+    renderFollowUpProvider();
+  }
+
   function openFollowUpModal(id, name, groupId, lastFollowupAt) {
     pendingFollowUpId = id;
     pendingFollowUpGroupId = groupId || null;
     document.getElementById('followUpName').textContent = groupId ? name + ' (Group)' : name;
+    document.getElementById('followUpProviderMenu').style.display = 'none';
+    renderFollowUpProvider();
+
+    // SMS companion is offered only when it would actually go out.
+    const reg        = findRegistration(id);
+    const notReady   = smsNotReadyReason();
+    const recipients = smsRecipientsFor(reg);
+    const wouldSend  = !!(notifyConfig.sms_enabled && notifyConfig.sms_on_followup && recipients.size);
+    followUpSmsAvailable = !notReady && wouldSend;
+
+    if (notReady) {
+      // Show it greyed rather than hiding, so it's clear the feature exists
+      // and is simply not switched on yet.
+      followUpSmsOn = false;
+      applySmsRow('followUpSms', 'disabled', notReady, false);
+    } else if (wouldSend) {
+      followUpSmsOn = true;
+      const segs  = notifyConfig.followup_sms_segments || 1;
+      const total = recipients.size * segs;
+      const to    = recipients.size === 1
+        ? `To ${reg.mobile}`
+        : `To ${recipients.size} mobiles still awaiting payment`;
+      applySmsRow('followUpSms', 'enabled', `${to} · ~${total} credit${total === 1 ? '' : 's'}`, true);
+    } else {
+      applySmsRow('followUpSms', 'hidden');
+    }
+
     const warningEl = document.getElementById('followUpWarning');
     if (lastFollowupAt) {
       const daysSince = (Date.now() - new Date(lastFollowupAt)) / (1000 * 60 * 60 * 24);
@@ -1466,6 +1753,7 @@
   function closeFollowUpModal() {
     pendingFollowUpId = null;
     pendingFollowUpGroupId = null;
+    document.getElementById('followUpProviderMenu').style.display = 'none';
     document.getElementById('followUpModal').style.display = 'none';
   }
 
@@ -1475,18 +1763,302 @@
     btn.disabled = true; btn.textContent = 'Sending…';
     const followUpId = pendingFollowUpId;
     const followUpGroupId = pendingFollowUpGroupId;
+    const provider = followUpProvider;
+    const sendSms  = followUpSmsAvailable ? followUpSmsOn : null;
     closeFollowUpModal();
     try {
       const res = await fetch('/.netlify/functions/admin-data', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'follow_up', id: followUpId, group_id: followUpGroupId }),
+        body: JSON.stringify({
+          action: 'follow_up', id: followUpId, group_id: followUpGroupId,
+          email_provider: provider,
+          ...(sendSms === null ? {} : { send_sms: sendSms }),
+        }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
-      showToast('💬 Payment reminder sent!');
+      const via = json.fell_back
+        ? 'Gmail (Resend unavailable)'
+        : (json.provider === 'resend' ? 'Resend' : 'Gmail');
+      showToast(`💬 Reminder sent via ${via}${smsToastSuffix(json.sms)}`);
+      loadData();
     } catch (e) { showToast('Error: ' + e.message); }
-    finally { btn.disabled = false; btn.textContent = '💬 Send Reminder'; }
+    finally { btn.disabled = false; renderFollowUpProvider(); }
+  }
+
+  // ── Bulk follow-up ─────────────────────────────────────────────────────────
+  // Only awaiting_payment rows are ever selectable, and the server re-checks
+  // the status before sending, so a stale selection can't reach anyone else.
+  const BULK_CHUNK = 12;   // must stay <= BULK_LIMIT in admin-data.js (15)
+  let bulkProvider = 'gmail', bulkSmsOn = true, bulkSmsAvailable = false, bulkSending = false;
+
+  function awaitingRowsInView() {
+    return filteredPH.filter(r => r.status === 'awaiting_payment');
+  }
+
+  // Explicit ticks win; with nothing ticked the button acts on the whole filtered view.
+  function bulkTargets() {
+    const inView = awaitingRowsInView();
+    return bulkSelected.size ? inView.filter(r => bulkSelected.has(r.id)) : inView;
+  }
+
+  function toggleFollowUpSelection(id, checked) {
+    if (checked) bulkSelected.add(id); else bulkSelected.delete(id);
+    syncBulkUI();
+  }
+
+  function toggleSelectAllFollowUp(checked) {
+    const inView = awaitingRowsInView();
+    if (checked) inView.forEach(r => bulkSelected.add(r.id));
+    else         inView.forEach(r => bulkSelected.delete(r.id));
+    document.querySelectorAll('#ph-body .fu-check').forEach(cb => { cb.checked = checked; });
+    syncBulkUI();
+  }
+
+  function syncBulkUI() {
+    const btn = document.getElementById('ph-bulk-followup');
+    if (!btn) return;
+    const canVerify = adminSession?.permissions?.verify_payment || false;
+    const inView = awaitingRowsInView();
+
+    // Drop ticks for rows the current filter hides — what you see is what you send.
+    const visibleIds = new Set(inView.map(r => r.id));
+    for (const id of [...bulkSelected]) if (!visibleIds.has(id)) bulkSelected.delete(id);
+
+    const targets = bulkTargets();
+    btn.style.display = (canVerify && inView.length) ? 'inline-flex' : 'none';
+    document.getElementById('ph-bulk-label').textContent = bulkSelected.size
+      ? `Bulk Follow Up (${bulkSelected.size} selected)`
+      : `Bulk Follow Up (${targets.length})`;
+
+    const all = document.getElementById('ph-select-all');
+    if (all) {
+      all.checked = inView.length > 0 && bulkSelected.size === inView.length;
+      all.indeterminate = bulkSelected.size > 0 && bulkSelected.size < inView.length;
+    }
+  }
+
+  function renderBulkProvider() {
+    const btn = document.getElementById('bulkConfirmBtn');
+    btn.textContent = bulkProvider === 'resend' ? '🚀 Send via Resend' : '💬 Send via Gmail';
+    document.getElementById('bulkCheck-gmail').style.display  = bulkProvider === 'gmail'  ? 'inline' : 'none';
+    document.getElementById('bulkCheck-resend').style.display = bulkProvider === 'resend' ? 'inline' : 'none';
+
+    const opt  = document.getElementById('bulkOpt-resend');
+    const hint = document.getElementById('bulkResendHint');
+    opt.disabled      = !notifyConfig.resend_configured;
+    opt.style.opacity = notifyConfig.resend_configured ? '1' : '0.55';
+    opt.style.cursor  = notifyConfig.resend_configured ? 'pointer' : 'not-allowed';
+    hint.textContent  = notifyConfig.resend_configured
+      ? 'Alternative sender — better deliverability for bulk reminders.'
+      : 'Not configured — set RESEND_API_KEY and RESEND_FROM to enable.';
+  }
+
+  function toggleBulkProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('bulkProviderMenu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function selectBulkProvider(provider) {
+    if (provider === 'resend' && !notifyConfig.resend_configured) return;
+    bulkProvider = provider;
+    document.getElementById('bulkProviderMenu').style.display = 'none';
+    renderBulkProvider();
+  }
+
+  function toggleBulkSms() {
+    bulkSmsOn = !bulkSmsOn;
+    const track = document.getElementById('bulkSmsTrack');
+    const thumb = document.getElementById('bulkSmsThumb');
+    track.style.background = bulkSmsOn ? '#2E7048' : '#D4E2EA';
+    thumb.style.left       = bulkSmsOn ? '22px'    : '2px';
+  }
+
+  function openBulkFollowUpModal() {
+    const targets = bulkTargets();
+    if (!targets.length) { showToast('No one in this view is awaiting payment.'); return; }
+
+    // Group members share one email address — collapse them into a single send.
+    const emailCount = bulkSendIds(targets).length;
+    // SMS reaches every distinct mobile still awaiting payment, so it can
+    // exceed the email count on groups whose members gave different numbers.
+    const allMobiles = new Set();
+    for (const t of targets) for (const m of smsRecipientsFor(t)) allMobiles.add(m);
+    const phMobiles = allMobiles.size;
+    const recent     = targets.filter(r => r.last_followup_at &&
+                        (Date.now() - new Date(r.last_followup_at)) / 86400000 < 7).length;
+
+    document.getElementById('bulkFollowUpSummary').innerHTML =
+      `<strong>${emailCount}</strong> payment reminder${emailCount === 1 ? '' : 's'} will be sent`
+      + (targets.length !== emailCount ? ` to <strong>${targets.length}</strong> registrations (group members share one email).` : '.')
+      + `<br><span style="font-size:12px;color:#6B8A9A;">Everyone here has status <strong>Awaiting Payment</strong>.</span>`;
+
+    const warn = document.getElementById('bulkFollowUpWarning');
+    if (recent) {
+      warn.innerHTML = `⚠️ <strong>${recent}</strong> of these already got a reminder in the last 7 days.`;
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+
+    const notReady  = smsNotReadyReason();
+    const wouldSend = !!(notifyConfig.sms_enabled && notifyConfig.sms_on_followup && phMobiles > 0);
+    bulkSmsAvailable = !notReady && wouldSend;
+
+    if (notReady) {
+      bulkSmsOn = false;
+      applySmsRow('bulkSms', 'disabled', notReady, false);
+    } else if (wouldSend) {
+      bulkSmsOn = true;
+      const segs = notifyConfig.followup_sms_segments || 1;
+      applySmsRow('bulkSms', 'enabled',
+        `${phMobiles} PH mobile${phMobiles === 1 ? '' : 's'} · ~${phMobiles * segs} credits`, true);
+    } else {
+      applySmsRow('bulkSms', 'hidden');
+    }
+
+    document.getElementById('bulkProgressWrap').style.display = 'none';
+    document.getElementById('bulkResults').innerHTML = '';
+    document.getElementById('bulkProviderMenu').style.display = 'none';
+    document.getElementById('bulkActionRow').style.display = 'flex';
+    document.getElementById('bulkConfirmBtn').disabled = false;
+    // A previous run leaves this reading "Close" — restore it for a fresh send.
+    document.getElementById('bulkCancelBtn').textContent = 'Cancel';
+    document.getElementById('bulkProgressBar').style.width = '0%';
+    document.getElementById('bulkProgressPct').textContent = '0%';
+    renderBulkProvider();
+    document.getElementById('bulkFollowUpModal').style.display = 'flex';
+  }
+
+  function closeBulkFollowUpModal() {
+    if (bulkSending) return;   // don't let a half-finished batch be dismissed
+    document.getElementById('bulkProviderMenu').style.display = 'none';
+    document.getElementById('bulkFollowUpModal').style.display = 'none';
+  }
+
+  // One id per group. The server expands a group from whichever member it is
+  // given, so sending every member's id would let a group straddle a chunk
+  // boundary and be reminded twice — two emails and a duplicate SMS to each
+  // mobile, since the server's dedupe Set only spans a single request.
+  function bulkSendIds(targets) {
+    const perGroup = new Map();
+    for (const r of targets) {
+      const key = r.group_id || r.id;
+      if (!perGroup.has(key)) perGroup.set(key, r.id);
+    }
+    return [...perGroup.values()];
+  }
+
+  async function doBulkFollowUp() {
+    const targets = bulkTargets();
+    if (!targets.length) return;
+
+    const ids = bulkSendIds(targets);
+    const btn = document.getElementById('bulkConfirmBtn');
+    const cancelBtn = document.getElementById('bulkCancelBtn');
+    bulkSending = true;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    cancelBtn.style.opacity = '0.5';
+    document.getElementById('bulkProgressWrap').style.display = 'block';
+
+    const totals = { sent: 0, failed: 0, skipped: 0, sms_sent: 0, sms_credits: 0, sms_failed: 0, fell_back: false };
+    const failures = [];
+    let done = 0;   // reminders confirmed sent, so a mid-run failure can still report them
+
+    try {
+      // Chunked so each request finishes inside the function timeout.
+      for (let i = 0; i < ids.length; i += BULK_CHUNK) {
+        const chunk = ids.slice(i, i + BULK_CHUNK);
+        const res = await fetch('/.netlify/functions/admin-data', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'bulk_follow_up', ids: chunk,
+            email_provider: bulkProvider,
+            ...(bulkSmsAvailable ? { send_sms: bulkSmsOn } : {}),
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Bulk send failed');
+
+        totals.sent        += json.sent || 0;
+        totals.failed      += json.failed || 0;
+        totals.skipped     += json.skipped || 0;
+        totals.sms_sent    += json.sms_sent || 0;
+        totals.sms_credits += json.sms_credits || 0;
+        totals.sms_failed  += json.sms_failed || 0;
+        totals.fell_back    = totals.fell_back || !!json.fell_back;
+        failures.push(...(json.results || []).filter(r => !r.ok));
+
+        done = i + chunk.length;
+        const pct = Math.round(Math.min(100, (done / ids.length) * 100));
+        document.getElementById('bulkProgressBar').style.width = pct + '%';
+        document.getElementById('bulkProgressPct').textContent = pct + '%';
+        document.getElementById('bulkProgressLabel').textContent =
+          `Sent ${totals.sent} of ${ids.length} reminders…`;
+      }
+
+      document.getElementById('bulkProgressLabel').textContent = 'Done';
+      renderBulkResults(totals, failures);
+      bulkSelected.clear();
+      const via = totals.fell_back ? 'Gmail (Resend unavailable)' : (bulkProvider === 'resend' ? 'Resend' : 'Gmail');
+      showToast(`💬 ${totals.sent} reminder${totals.sent === 1 ? '' : 's'} sent via ${via}`);
+      loadData();
+    } catch (e) {
+      // Never discard what already went out — the admin needs to know who was
+      // contacted before deciding whether to retry the rest.
+      document.getElementById('bulkProgressLabel').textContent = 'Stopped early';
+      renderBulkResults(totals, failures, {
+        error: e.message,
+        remaining: ids.length - done,
+      });
+      showToast('Error: ' + e.message);
+      loadData();   // refresh last_followup_at so a retry shows the 7-day warning
+    } finally {
+      bulkSending = false;
+      cancelBtn.style.opacity = '1';
+      cancelBtn.textContent = 'Close';
+      btn.disabled = false;
+      renderBulkProvider();
+    }
+  }
+
+  // Shared by the success and failure paths so a run that stops early still
+  // reports everything that actually went out.
+  function renderBulkResults(totals, failures, stopped) {
+    const via = totals.fell_back ? 'Gmail (Resend unavailable)' : (bulkProvider === 'resend' ? 'Resend' : 'Gmail');
+    const lines = [
+      `✅ <strong>${totals.sent}</strong> reminder${totals.sent === 1 ? '' : 's'} sent via ${via}`,
+      totals.sms_sent   ? `📱 <strong>${totals.sms_sent}</strong> SMS sent (${totals.sms_credits} credits)` : '',
+      totals.sms_failed ? `⚠️ ${totals.sms_failed} SMS failed` : '',
+      totals.skipped    ? `↩️ ${totals.skipped} skipped — no longer awaiting payment` : '',
+      totals.failed     ? `❌ <strong>${totals.failed}</strong> failed: ${failures.slice(0, 5).map(f => esc(f.email)).join(', ')}` : '',
+    ];
+    if (stopped) {
+      lines.push(
+        `<div style="margin-top:8px;padding:8px 12px;background:#FDECEA;border-left:3px solid #C0392B;border-radius:0 6px 6px 0;color:#C0392B;">`
+        + `❌ Stopped after an error: ${esc(stopped.error)}<br>`
+        + `<strong>${stopped.remaining}</strong> reminder${stopped.remaining === 1 ? '' : 's'} not sent. `
+        + `The ones above already went out — re-running will contact them again.`
+        + `</div>`
+      );
+    }
+    document.getElementById('bulkResults').innerHTML = lines.filter(Boolean).join('<br>');
+  }
+
+  // Appends the SMS outcome to a toast. Returns '' when no SMS was attempted.
+  function smsToastSuffix(sms) {
+    if (!sms) return '';
+    if (sms.status === 'sent') {
+      const who = sms.sent > 1 ? `${sms.sent} SMS sent` : 'SMS sent';
+      return ` · 📱 ${who} (${sms.segments} credit${sms.segments === 1 ? '' : 's'})`;
+    }
+    if (sms.status === 'skipped') return sms.reason === 'not_ph_mobile' ? ' · 📱 SMS skipped (not a PH number)' : ' · 📱 SMS skipped';
+    // Show the provider's own words — "No active sender name found" is actionable,
+    // "SMS failed" sends you hunting through logs.
+    return ' · ⚠️ SMS failed: ' + (sms.reason || 'unknown error');
   }
 
   async function doConfirm() {
@@ -1502,7 +2074,7 @@
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error);
       closeModal();
-      showToast('✅ Marked as confirmed and email sent!');
+      showToast('✅ Marked as confirmed and email sent!' + smsToastSuffix(json.sms));
       loadData();
     } catch (e) { showToast('Error: ' + e.message); }
     finally { btn.disabled = false; btn.textContent = '✅ Confirm & Send Email'; }
@@ -2061,40 +2633,358 @@
   }
 
   // ── Site Settings ──────────────────────────────────────────────────────────
-  let currentSettings = { reg_ph_closed: false, reg_intl_closed: false };
+  // Toggle id (settings-<key>-track) → site_settings column.
+  const SETTING_TOGGLES = {
+    ph:               'reg_ph_closed',
+    intl:             'reg_intl_closed',
+    sms:              'sms_enabled',
+    sms_followup:     'sms_on_followup',
+    sms_cancelled:    'sms_on_cancelled',
+    sms_confirmed:    'sms_on_confirmed',
+    sms_registration: 'sms_on_registration',
+  };
 
-  function renderSettingsUI() {
-    const phTrack   = document.getElementById('settings-ph-track');
-    const phThumb   = document.getElementById('settings-ph-thumb');
-    const phStatus  = document.getElementById('settings-ph-status');
-    const intlTrack = document.getElementById('settings-intl-track');
-    const intlThumb = document.getElementById('settings-intl-thumb');
-    const intlStatus = document.getElementById('settings-intl-status');
-    if (!phTrack) return;
+  let currentSettings = {
+    reg_ph_closed: false, reg_intl_closed: false,
+    sms_enabled: false, sms_on_followup: true, sms_on_cancelled: true,
+    sms_on_confirmed: false, sms_on_registration: false,
+    sms_followup_template: '', sms_cancelled_template: '',
+    sms_confirmed_template: '', sms_registration_template: '',
+  };
+  let settingsProviders = { sms_configured: false, resend_configured: false };
+  let settingsSmsAccount = null;
+  let settingsSenderNames = null;      // null = not fetched / SMS off
+  let settingsSenderConfigured = null; // SEMAPHORE_SENDER_NAME value, if set
+  let settingsMigrationPending = false;
+  // Per-event SMS editors. The catalogue (labels, defaults, placeholder lists)
+  // comes from the server so the page can never document tokens the sender
+  // doesn't understand.
+  let smsEventCatalogue = [];
+  let smsTemplateMax    = 1600;
+  let openSmsEvent      = null;   // which accordion panel is expanded
 
-    const phClosed   = currentSettings.reg_ph_closed;
-    const intlClosed = currentSettings.reg_intl_closed;
-
-    phTrack.style.background = phClosed   ? '#C0392B' : '#D4E2EA';
-    phThumb.style.left       = phClosed   ? '22px'    : '2px';
-    phStatus.textContent     = phClosed   ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
-
-    intlTrack.style.background = intlClosed ? '#C0392B' : '#D4E2EA';
-    intlThumb.style.left       = intlClosed ? '22px'    : '2px';
-    intlStatus.textContent     = intlClosed ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+  // Mirrors fillPlaceholders() in netlify/lib/sms-templates.js — preview only.
+  function renderSmsPreview(template) {
+    const sample = {
+      name: 'Juan', full_name: 'Juan Dela Cruz', amount: 'PHP 4,500', count: '2',
+      contact: notifyConfig.sms_reply_number || '09XXXXXXXXX',
+      link: notifyConfig.sms_sample_link || (window.location.origin + '/upload-receipt?id=…'),
+    };
+    return String(template).replace(/\{(\w+)\}/g, (m, k) => (k in sample ? sample[k] : m));
   }
 
-  function toggleSetting(type) {
-    if (type === 'ph')   currentSettings.reg_ph_closed   = !currentSettings.reg_ph_closed;
-    if (type === 'intl') currentSettings.reg_intl_closed = !currentSettings.reg_intl_closed;
+  // Mirrors analyzeMessage() in netlify/lib/sms.js — keep the two in step.
+  // One character outside GSM-7 flips the whole message to UCS-2, which fits
+  // 70 per credit instead of 160.
+  const GSM7_SET = new Set([...'@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà']);
+  const GSM7_EXT_SET = new Set([...'^{}\\[~]|€']);
+
+  function analyzeSms(text) {
+    const s = text || '';
+    if (!s) return { encoding: 'GSM-7', units: 0, segments: 0, nonGsm: [] };
+    let units = 0;
+    const nonGsm = [];
+    for (const ch of s) {
+      if (GSM7_SET.has(ch))          units += 1;
+      else if (GSM7_EXT_SET.has(ch)) units += 2;
+      else if (!nonGsm.includes(ch)) nonGsm.push(ch);
+    }
+    if (nonGsm.length) {
+      const u = [...s].reduce((n, ch) => n + (ch.codePointAt(0) > 0xFFFF ? 2 : 1), 0);
+      return { encoding: 'UCS-2', units: u, segments: u <= 70 ? 1 : Math.ceil(u / 67), nonGsm };
+    }
+    return { encoding: 'GSM-7', units, segments: units <= 160 ? 1 : Math.ceil(units / 153), nonGsm };
+  }
+
+  function creditsFor(text) { return analyzeSms(text).segments; }
+
+  // Edits live in currentSettings, so collapsing a panel never loses unsaved work.
+  function onSmsTemplateInput(event) {
+    currentSettings[`sms_${event}_template`] = document.getElementById(`settings-sms-tpl-${event}`)?.value ?? '';
+    refreshSmsMetrics(event);
+  }
+
+  // Counter, preview and header only — deliberately does NOT touch
+  // currentSettings, so simply opening the page can't turn a built-in default
+  // into a stored value. An untouched template stays blank and saves as NULL,
+  // which is what keeps the "NULL means use the default" contract alive.
+  function refreshSmsMetrics(event) {
+    const el = document.getElementById(`settings-sms-tpl-${event}`);
+    if (!el) return;
+    const raw = el.value;
+
+    const rendered = renderSmsPreview(raw);
+    const info     = analyzeSms(rendered);
+    const credits  = info.segments;
+    const over     = raw.length > smsTemplateMax;
+    const perCredit = info.encoding === 'UCS-2' ? 70 : 160;
+
+    const encodingWarning = info.encoding === 'UCS-2'
+      ? `<div style="color:#7A5A10;margin-top:4px;">⚠️ Contains ${info.nonGsm.slice(0, 4).map(c => `<code>${esc(c)}</code>`).join(' ')} — outside the standard SMS alphabet, so capacity drops to <strong>${perCredit}</strong> characters per credit. Replace curly quotes, em dashes and emoji to halve the cost.</div>`
+      : '';
+
+    document.getElementById(`settings-sms-counter-${event}`).innerHTML = over
+      ? `<span style="color:var(--red);font-weight:700;">${raw.length} / ${smsTemplateMax} characters — too long to save</span>`
+      : `<strong>${info.units}</strong> of ${perCredit} chars per credit · <strong style="color:${credits >= 3 ? '#C0392B' : credits === 2 ? '#7A5A10' : '#2E7048'};">${credits} credit${credits === 1 ? '' : 's'}</strong> per recipient${encodingWarning}`;
+
+    document.getElementById(`settings-sms-preview-${event}`).textContent = rendered;
+    el.style.borderColor = over ? 'var(--red)' : 'var(--border)';
+    updateSmsHeader(event);   // keep the collapsed summary honest while typing
+  }
+
+  function insertPlaceholder(event, token) {
+    const el = document.getElementById(`settings-sms-tpl-${event}`);
+    const start = el.selectionStart ?? el.value.length;
+    const end   = el.selectionEnd   ?? el.value.length;
+    el.value = el.value.slice(0, start) + token + el.value.slice(end);
+    el.focus();
+    el.setSelectionRange(start + token.length, start + token.length);
+    onSmsTemplateInput(event);
+  }
+
+  function resetSmsTemplate(event) {
+    const config = smsEventCatalogue.find(c => c.event === event);
+    if (!config) return;
+    document.getElementById(`settings-sms-tpl-${event}`).value = config.default;
+    // Saved as NULL rather than a copy of the default, so this event keeps
+    // tracking the built-in text if it changes in a later deploy.
+    currentSettings[`sms_${event}_template`] = '';
+    refreshSmsMetrics(event);
+    showToast('Default message restored — remember to save.');
+  }
+
+  // Accordion — one panel open at a time keeps the section short.
+  function applySmsPanels() {
+    for (const c of smsEventCatalogue) {
+      const body  = document.getElementById(`settings-sms-body-${c.event}`);
+      const caret = document.getElementById(`settings-sms-caret-${c.event}`);
+      const open  = c.event === openSmsEvent;
+      if (body)  body.style.display = open ? 'block' : 'none';
+      if (caret) caret.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+    }
+  }
+
+  function toggleSmsPanel(event) {
+    openSmsEvent = (openSmsEvent === event) ? null : event;
+    applySmsPanels();
+  }
+
+  // Collapsed header summary: on/off chip + credit cost.
+  function updateSmsHeader(event) {
+    const badge = document.getElementById(`settings-sms-badge-${event}`);
+    if (!badge) return;
+    const config  = smsEventCatalogue.find(c => c.event === event);
+    const on      = !!currentSettings[`sms_on_${event}`];
+    const credits = creditsFor(renderSmsPreview(currentSettings[`sms_${event}_template`] || config.default));
+    badge.innerHTML =
+      `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:50px;background:${on ? '#EAF5EE' : '#F0F4F7'};color:${on ? '#2E7048' : '#8A9BA6'};">${on ? 'ON' : 'OFF'}</span>`
+      + `<span style="font-size:11px;color:${credits >= 3 ? '#C0392B' : 'var(--muted)'};">${credits} cr</span>`;
+  }
+
+  // One collapsible item per event: click the header to reveal its toggle,
+  // editor, placeholder guide and preview.
+  function renderSmsAccordion() {
+    const wrap = document.getElementById('settings-sms-event-list');
+    if (!wrap) return;
+
+    wrap.innerHTML = smsEventCatalogue.map(c => `
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;">
+
+        <div onclick="toggleSmsPanel('${c.event}')"
+             style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;background:#fbfdfe;"
+             onmouseover="this.style.background='#f4f8fa'" onmouseout="this.style.background='#fbfdfe'">
+          <span id="settings-sms-caret-${c.event}" style="color:var(--muted);font-size:11px;transition:transform 0.18s;flex-shrink:0;">▶</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:700;color:var(--dark);">${esc(c.label)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(c.hint)}</div>
+          </div>
+          <div id="settings-sms-badge-${c.event}" style="display:flex;align-items:center;gap:8px;flex-shrink:0;"></div>
+        </div>
+
+        <div id="settings-sms-body-${c.event}" style="display:none;border-top:1px solid var(--border);padding:18px;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;background:#f7fafb;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--dark);">Send this SMS</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">Off means registrants get the email only.</div>
+            </div>
+            <div onclick="toggleSetting('sms_${c.event}')" id="settings-sms_${c.event}-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-sms_${c.event}-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+
+          <div class="sms-body-grid">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Message</div>
+              <textarea id="settings-sms-tpl-${c.event}" rows="${c.event === 'followup' ? 12 : 7}" spellcheck="true"
+                oninput="onSmsTemplateInput('${c.event}')"
+                style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.6;outline:none;resize:vertical;box-sizing:border-box;color:#2A3D4A;background:#fff;"></textarea>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                <div style="font-size:12px;color:var(--muted);flex:1;min-width:200px;" id="settings-sms-counter-${c.event}">–</div>
+                <button onclick="resetSmsTemplate('${c.event}')" style="padding:6px 12px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">↺ Restore default</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Placeholders — click to insert</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                ${c.placeholders.map(p => `
+                  <div onclick="insertPlaceholder('${c.event}','${esc(p.token)}')" title="Click to insert"
+                       style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;cursor:pointer;padding:4px 6px;border-radius:6px;"
+                       onmouseover="this.style.background='#f0f4f7'" onmouseout="this.style.background=''">
+                    <code style="font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:2px 6px;border-radius:4px;white-space:nowrap;">${esc(p.token)}</code>
+                    <span style="font-size:12px;color:#2A3D4A;">${esc(p.label)}</span>
+                    <span style="font-size:11px;color:var(--muted);">e.g. ${esc(p.example)}</span>
+                  </div>`).join('')}
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;">Anything in <code>{curly braces}</code> that isn't listed is sent as-is.</div>
+
+              <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 6px;">Preview</div>
+              <div id="settings-sms-preview-${c.event}" style="background:#EBF5FB;border-radius:10px;padding:12px 14px;font-size:13px;color:#2A3D4A;line-height:1.6;white-space:pre-wrap;word-break:break-word;"></div>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+
+    // Show the saved body, or the built-in default when nothing is stored.
+    // The default is only displayed — it is not written into currentSettings,
+    // so an admin who never edits it leaves the column NULL and keeps following
+    // whatever the default becomes in a later deploy.
+    for (const c of smsEventCatalogue) {
+      const ta = document.getElementById(`settings-sms-tpl-${c.event}`);
+      if (ta) {
+        ta.value = currentSettings[`sms_${c.event}_template`] || c.default;
+        refreshSmsMetrics(c.event);
+      }
+    }
+    applySmsPanels();   // restore whichever panel was open
+  }
+
+  function paintToggle(key, on, onColor) {
+    const track = document.getElementById(`settings-${key}-track`);
+    const thumb = document.getElementById(`settings-${key}-thumb`);
+    if (!track || !thumb) return;
+    // Read the inline widths so this works while the tab is still hidden.
+    const travel = (parseInt(track.style.width, 10) || 44) - (parseInt(thumb.style.width, 10) || 20) - 2;
+    track.style.background = on ? onColor : '#D4E2EA';
+    thumb.style.left       = on ? `${travel}px` : '2px';
+  }
+
+  function renderSettingsUI() {
+    if (!document.getElementById('settings-ph-track')) return;
+
+    // Registration switches read as a warning: ON means closed.
+    paintToggle('ph',   currentSettings.reg_ph_closed,   '#C0392B');
+    paintToggle('intl', currentSettings.reg_intl_closed, '#C0392B');
+    document.getElementById('settings-ph-status').textContent =
+      currentSettings.reg_ph_closed   ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+    document.getElementById('settings-intl-status').textContent =
+      currentSettings.reg_intl_closed ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+
+    // SMS switches read the normal way: ON means enabled.
+    paintToggle('sms', currentSettings.sms_enabled, '#2E7048');
+    for (const c of smsEventCatalogue) {
+      paintToggle(`sms_${c.event}`, currentSettings[`sms_on_${c.event}`], '#2E7048');
+    }
+    // Collapsed headers carry the ON/OFF chip and credit cost.
+    for (const c of smsEventCatalogue) updateSmsHeader(c.event);
+
+    const smsStatus = document.getElementById('settings-sms-status');
+    if (settingsMigrationPending) {
+      smsStatus.textContent = 'A database migration is still pending — run the newest file in /migrations in Supabase.';
+    } else if (!settingsProviders.sms_configured) {
+      smsStatus.textContent = 'Not configured — add SEMAPHORE_API_KEY to send SMS.';
+    } else if (!settingsProviders.sms_ready) {
+      smsStatus.textContent = 'Not ready yet — set SEMAPHORE_SENDER_NAME to an approved sender name. Nothing will send until then.';
+    } else {
+      smsStatus.textContent = currentSettings.sms_enabled
+        ? 'SMS is on. Only the events ticked below will send.'
+        : 'SMS is off. Registrants receive email only.';
+    }
+
+    // Per-event switches stay visible but inert until the master switch is on.
+    const events = document.getElementById('settings-sms-events');
+    const live   = currentSettings.sms_enabled && settingsProviders.sms_configured && !settingsMigrationPending;
+    events.style.opacity       = live ? '1' : '0.45';
+    events.style.pointerEvents = live ? 'auto' : 'none';
+
+    // Philippine carriers block unregistered sender IDs, so an unapproved
+    // sender name is the single most common reason nothing arrives.
+    const senderBox = document.getElementById('settings-sms-sender');
+    if (senderBox) {
+      const names    = settingsSenderNames;
+      const approved = (names || []).find(n => /active|approved/i.test(n.status || ''));
+      const pending  = (names || []).find(n => /pending/i.test(n.status || ''));
+      if (!currentSettings.sms_enabled || !settingsProviders.sms_configured || names === null) {
+        senderBox.style.display = 'none';
+      } else if (approved) {
+        senderBox.style.background = '#EAF5EE'; senderBox.style.color = '#2E7048';
+        senderBox.innerHTML = `✅ Sender name <strong>${esc(approved.name)}</strong> is approved${settingsSenderConfigured ? '' : ' — set <code>SEMAPHORE_SENDER_NAME=' + esc(approved.name) + '</code> in Netlify to use it'}.`;
+        senderBox.style.display = 'block';
+      } else if (pending) {
+        senderBox.style.background = '#FDF6E0'; senderBox.style.color = '#7A5A10';
+        senderBox.innerHTML = `⏳ Sender name <strong>${esc(pending.name)}</strong> is <strong>pending approval</strong> (applied ${esc(pending.created || '')}). <strong>No SMS can send until Semaphore approves it</strong> — usually within 5 business days. Email follow-ups are unaffected.`;
+        senderBox.style.display = 'block';
+      } else {
+        senderBox.style.background = '#FDECEA'; senderBox.style.color = '#C0392B';
+        senderBox.innerHTML = `⚠️ <strong>No sender name registered.</strong> Semaphore rejects every message without one — apply for one in your Semaphore dashboard.`;
+        senderBox.style.display = 'block';
+      }
+    }
+
+    const credits = document.getElementById('settings-sms-credits');
+    if (settingsSmsAccount && settingsSmsAccount.credit_balance !== null && settingsSmsAccount.credit_balance !== undefined) {
+      credits.textContent   = `💳 Semaphore balance: ${settingsSmsAccount.credit_balance} credits`;
+      credits.style.display = 'block';
+    } else {
+      credits.style.display = 'none';
+    }
+
+    document.getElementById('settings-resend-status').innerHTML = settingsProviders.resend_configured
+      ? 'Gmail and <strong>Resend</strong> are both available. Pick the sender from the dropdown on the <strong>Send Reminder</strong> button when following up. Every other email keeps using Gmail.'
+      : 'Only <strong>Gmail</strong> is available. Set <code>RESEND_API_KEY</code> and <code>RESEND_FROM</code> in your Netlify environment variables to offer Resend as a second sender for follow-ups.';
+  }
+
+  function toggleSetting(key) {
+    const column = SETTING_TOGGLES[key];
+    if (!column) return;
+    if (key.startsWith('sms') && settingsMigrationPending) {
+      showToast('Run the SMS database migration first.');
+      return;
+    }
+    if (key === 'sms' && !settingsProviders.sms_configured) {
+      showToast('Add SEMAPHORE_API_KEY in Netlify to enable SMS.');
+      return;
+    }
+    currentSettings[column] = !currentSettings[column];
     renderSettingsUI();
   }
 
   async function loadSettings() {
     try {
-      const res = await fetch('/.netlify/functions/site-settings');
+      const res  = await fetch('/.netlify/functions/site-settings', {
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
       const data = await res.json();
-      currentSettings = { reg_ph_closed: !!data.reg_ph_closed, reg_intl_closed: !!data.reg_intl_closed };
+      for (const column of Object.values(SETTING_TOGGLES)) {
+        if (column in data) currentSettings[column] = !!data[column];
+      }
+      for (const key of ['sms_followup_template', 'sms_cancelled_template', 'sms_confirmed_template', 'sms_registration_template']) {
+        currentSettings[key] = data[key] || '';
+      }
+      settingsProviders  = { ...settingsProviders, ...(data.providers || {}) };
+      settingsSmsAccount = data.sms_account || null;
+      settingsSenderNames = data.sms_sender_names ?? null;
+      settingsSenderConfigured = data.sms_sender_configured || null;
+      settingsMigrationPending = !!data.migration_pending;
+
+      smsEventCatalogue = data.sms_events || [];
+      smsTemplateMax    = data.sms_template_max || smsTemplateMax;
+      notifyConfig.sms_reply_number = data.sms_reply_number || '';
+      notifyConfig.sms_sample_link  = data.sms_sample_link || '';
+      // Panels seed themselves from the saved body, or the default when empty.
+      renderSmsAccordion();
+      notifyConfig = { ...notifyConfig, ...currentSettings, ...settingsProviders };
       renderSettingsUI();
     } catch(e) { showToast('Could not load settings.'); }
   }
@@ -2108,10 +2998,15 @@
       const res = await fetch('/.netlify/functions/site-settings', {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentSettings),
+        // Don't send the SMS columns until the migration that creates them has run.
+        body: JSON.stringify(settingsMigrationPending
+          ? { reg_ph_closed: currentSettings.reg_ph_closed, reg_intl_closed: currentSettings.reg_intl_closed }
+          : currentSettings),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Save failed');
+      // Keep the follow-up modal in sync without a full dashboard reload
+      notifyConfig = { ...notifyConfig, ...currentSettings, ...settingsProviders };
       showToast('Settings saved.');
     } catch(e) {
       err.textContent = e.message; err.style.display = 'block';
@@ -2159,8 +3054,33 @@
   window.removeAdmin          = removeAdmin;
   window.toggleSetting        = toggleSetting;
   window.saveSettings         = saveSettings;
+  window.toggleFollowUpSms          = toggleFollowUpSms;
+  window.toggleFollowUpProviderMenu = toggleFollowUpProviderMenu;
+  window.selectFollowUpProvider     = selectFollowUpProvider;
+  window.toggleFollowUpSelection    = toggleFollowUpSelection;
+  window.toggleSelectAllFollowUp    = toggleSelectAllFollowUp;
+  window.openBulkFollowUpModal      = openBulkFollowUpModal;
+  window.closeBulkFollowUpModal     = closeBulkFollowUpModal;
+  window.doBulkFollowUp             = doBulkFollowUp;
+  window.toggleBulkProviderMenu     = toggleBulkProviderMenu;
+  window.selectBulkProvider         = selectBulkProvider;
+  window.toggleBulkSms              = toggleBulkSms;
+  window.onSmsTemplateInput         = onSmsTemplateInput;
+  window.insertPlaceholder          = insertPlaceholder;
+  window.resetSmsTemplate           = resetSmsTemplate;
+  window.toggleSmsPanel             = toggleSmsPanel;
   window.closeGroupScopePicker = closeGroupScopePicker;
   window.chooseGroupScope     = chooseGroupScope;
+
+  // Dismiss either provider dropdown on any click outside it
+  document.addEventListener('click', e => {
+    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn']]) {
+      const menu = document.getElementById(menuId);
+      if (!menu || menu.style.display !== 'block') continue;
+      if (menu.contains(e.target) || e.target.closest('#' + btnId)) continue;
+      menu.style.display = 'none';
+    }
+  });
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });

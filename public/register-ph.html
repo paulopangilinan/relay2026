@@ -801,7 +801,7 @@
           </div>
         </div>
       </label>
-      <label class="pay-option">
+      <label class="pay-option" id="payLaterOption">
         <input type="radio" name="paymentReady" id="payLater" value="later" onchange="handlePayment(this)">
         <div class="pay-card">
           <div class="pay-radio"></div>
@@ -1024,6 +1024,9 @@
     // Load churches dynamically
     loadChurches();
 
+    // Default payment state: GCash only until a listed church is chosen
+    applyPaymentOptions(document.getElementById('church').value);
+
     // Fetch GCash details
     fetch('/.netlify/functions/gcash-details')
       .then(r => r.json())
@@ -1083,6 +1086,33 @@
 
   function handleChurchChange(sel) {
     document.getElementById('other-church-wrap').classList.toggle('visible', sel.value === 'others');
+    applyPaymentOptions(sel.value);
+  }
+
+  // Pay-later is offered only once a listed partner church is chosen. The
+  // default state (nothing picked yet) and "Others" both show GCash alone —
+  // slots can't be held unpaid this close to the conference. Mirrored
+  // server-side in submit.js.
+  //
+  // Deliberately silent: spelling the rule out would just nudge people into
+  // picking a listed church they don't belong to, dirtying the data.
+  function applyPaymentOptions(churchValue) {
+    const allowLater = !!churchValue && churchValue !== 'others';
+    const option     = document.getElementById('payLaterOption');
+    const payLater   = document.getElementById('payLater');
+    const payNow     = document.getElementById('payNow');
+    if (!option || !payLater || !payNow) return;
+
+    option.style.display = allowLater ? '' : 'none';
+    payLater.disabled    = !allowLater;
+
+    // Only intervene when a choice they'd already made just became invalid —
+    // never auto-select on first load, which would pop the QR open unprompted.
+    if (!allowLater && payLater.checked) {
+      payLater.checked = false;
+      payNow.checked   = true;
+      handlePayment(payNow);
+    }
   }
 
   function handlePayment(radio) {
@@ -1498,6 +1528,13 @@
 
   async function submitLater() {
     if (!validateBase()) return;
+    // Belt and braces — the option is hidden for "Others", but never trust the DOM.
+    const churchValue = document.getElementById('church').value;
+    if (!churchValue || churchValue === 'others') {
+      applyPaymentOptions(churchValue);
+      showToast('⚠️ Please complete your GCash payment to reserve your slot.', true);
+      return;
+    }
     await doSubmit(false);
   }
 

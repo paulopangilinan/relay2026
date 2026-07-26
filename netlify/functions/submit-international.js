@@ -1,18 +1,11 @@
 // netlify/functions/submit-international.js
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
+import { sendEmail } from "../lib/mailer.js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
-}
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
@@ -23,7 +16,6 @@ export const handler = async (event) => {
     const body = JSON.parse(event.body);
     const { name, age, mobile, email, country, church, allergens, allergenOther, receiptBase64, receiptName } = body;
 
-    const transporter = getTransporter();
     const siteUrl     = process.env.SITE_URL;
     const imgUrl      = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
     const heroUrl     = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
@@ -71,16 +63,14 @@ export const handler = async (event) => {
     const bpiType    = process.env.BPI_ACCOUNT_TYPE   || "[Account Type]";
 
     // 3. Email admin
-    await transporter.sendMail({
-      from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+    await sendEmail({
       to:      process.env.ADMIN_EMAIL,
       subject: `🌏 New International Registration + Payment — ${name} (${country})`,
       html:    adminEmail({ name, email, mobile, age, country, church, allergenSummary, receiptUrl, verifyLink, heroUrl }),
     });
 
     // 4. Email registrant
-    await transporter.sendMail({
-      from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+    await sendEmail({
       to:      email,
       subject: "RELAY 2026 — We received your international registration!",
       html:    registrantEmail({ name, country, church, allergenSummary, bpiName, bpiNumber, bpiType, heroUrl }),
@@ -171,6 +161,10 @@ function registrantEmail({ name, country, church, allergenSummary, bpiName, bpiN
         <div class="bpi-row"><span class="bpi-lbl">Amount</span><span class="bpi-val" style="color:#3A8BBF;">USD $250</span></div>
       </div>
       <div class="note">Please use your full name as the payment reference. Our team will verify your transfer and send a confirmation email once your slot is confirmed. For questions, reply to this email.</div>
+      <div style="background:#EBF5FB;border-left:3px solid #3A8BBF;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.6;margin:16px 0;">
+        📬 <strong>Don't see our emails?</strong> Please check your <strong>junk</strong> or <strong>spam</strong> folder,
+        and mark us as “Not spam” so you receive your confirmation updates.
+      </div>
       <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center, Philippines<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
