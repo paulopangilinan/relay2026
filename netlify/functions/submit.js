@@ -1,8 +1,11 @@
 // netlify/functions/submit.js
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
 import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "../lib/mailer.js";
+import { sendToDistinctMobiles } from "../lib/sms.js";
+import { getNotificationSettings, smsAllowed, templateFor } from "../lib/notification-settings.js";
+import { registrationSMS } from "../lib/sms-templates.js";
 
 
 async function getAdminEmails(supabase, permission) {
@@ -13,13 +16,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
-}
 
 function feeFor(studentStatus) {
   return studentStatus === "student" ? 3000 : 4500;
@@ -38,7 +34,31 @@ export const handler = async (event) => {
             registrationType, participants } = body;
 
     const churchName = church === "others" ? otherChurch : church;
-    const transporter = getTransporter();
+
+    // With the conference close, slots can no longer be held unpaid for churches
+    // outside the listed partner churches. The form hides the "pay later" option
+    // for those, but the check has to live here too — the client is bypassable.
+    if (paymentReady !== "now") {
+      let mustPayUpfront = church === "others";
+      if (!mustPayUpfront) {
+        const { data: approved, error: churchErr } = await supabase
+          .from("churches").select("name").eq("is_archived", false);
+        // Only judge an unlisted church when we actually got the list back;
+        // a transient DB error must not block legitimate partner registrations.
+        if (!churchErr && approved) {
+          mustPayUpfront = !approved.some(c => c.name === church);
+        }
+      }
+      if (mustPayUpfront) {
+        return {
+          statusCode: 400, headers,
+          // Kept vague on purpose — naming the rule would invite people to
+          // switch to a listed church they don't belong to.
+          body: JSON.stringify({ error: "Please complete your GCash payment to reserve your slot." }),
+        };
+      }
+    }
+
     const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
     const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
     const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
@@ -119,15 +139,13 @@ export const handler = async (event) => {
           ? jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: '30d' })
           : null;
         const verifyLink = adminToken ? `${baseVerifyUrl}&atoken=${adminToken}` : baseVerifyUrl;
-        await transporter.sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        await sendEmail({
           to:      admin.email,
           subject: isGroup ? `New Group Registration + Payment — ${primaryName} (+${participants.length - 1})` : `New Registration + Payment — ${primaryName}`,
           html:    adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }),
         });
       }
-      await transporter.sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+      await sendEmail({
         to:      email,
         subject: "RELAY 2026 — We received your registration!",
         html:    registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, participants, breakdownTable, totalLabel }),
@@ -137,15 +155,13 @@ export const handler = async (event) => {
       const { data: allAdmins2 } = await supabase.from('admins').select('email, name, permissions, force_password_change');
       const notifyAdmins2 = (allAdmins2 || []).filter(a => a.permissions?.receive_updates && !a.force_password_change);
       for (const admin of notifyAdmins2) {
-        await transporter.sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        await sendEmail({
           to:      admin.email,
           subject: isGroup ? `New Group Registration (Awaiting Payment) — ${primaryName} (+${participants.length - 1})` : `New Registration (Awaiting Payment) — ${primaryName}`,
           html:    adminAwaitingEmail({ participants, churchName, totalLabel, heroUrl, isGroup, breakdownTable }),
         });
       }
-      await transporter.sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+      await sendEmail({
         to:      email,
         subject: "RELAY 2026 — Complete your registration",
         html:    registrantPaymentEmail({
@@ -155,6 +171,20 @@ export const handler = async (event) => {
           gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
           gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
           gcashMobile:        process.env.GCASH_MOBILE,
+        }),
+      });
+    }
+
+    // Optional SMS ack — every participant gave their own mobile, so each
+    // distinct number hears that their registration landed.
+    const settings = await getNotificationSettings(supabase);
+    if (smsAllowed(settings, 'registration')) {
+      await sendToDistinctMobiles(supabase, insertedRows, {
+        event:   'registration',
+        groupId: group_id,
+        buildMessage: (member) => registrationSMS({
+          name: member.name, totalLabel, count: participants.length,
+          template: templateFor(settings, 'registration'),
         }),
       });
     }
@@ -221,6 +251,14 @@ function emailShell({ heroUrl, headerBg, headerTitle, headerSub, body }) {
 
 function r(l, v) { return `<div class="row"><div class="lbl">${l}</div><div class="val">${v}</div></div>`; }
 
+// Registrants routinely miss our follow-ups in Gmail's Promotions/Spam tabs.
+function spamNotice() {
+  return `<div style="background:#EBF5FB;border-left:3px solid #3A8BBF;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.6;margin-top:16px;">
+    📬 <strong>Don't see our emails?</strong> Please check your <strong>junk</strong> or <strong>spam</strong> folder,
+    and mark us as “Not spam” so you receive your payment and confirmation updates.
+  </div>`;
+}
+
 function adminPaymentEmail({ participants, churchName, totalLabel, receiptUrl, verifyLink, heroUrl, isGroup, breakdownTable, canVerify }) {
   const primaryName = participants[0].name;
   return emailShell({
@@ -265,6 +303,7 @@ function registrantAckEmail({ primaryName, churchName, heroUrl, isGroup, partici
       <hr>
       <div class="note">Your payment screenshot has been received. Our team will verify it and send you a confirmation email shortly.</div>
       ${participants.some(p => p.studentStatus === 'student') ? '<div class="note" style="margin-top:8px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
+      ${spamNotice()}
       <div class="info-box" style="margin-top:16px;">
         <strong>📍 Location:</strong> CCT Tagaytay Retreat and Training Center<br>
         <strong>🗓 Date:</strong> September 23–26, 2026 (4 Days, 3 Nights)<br>
@@ -314,6 +353,7 @@ function registrantPaymentEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteU
       </table>
       <div class="note">After paying, click the button below to submit your GCash receipt screenshot.</div>
       ${participants.some(p => p.studentStatus === 'student') ? '<div class="note" style="margin-top:8px;">🪪 School IDs submitted will also be reviewed to confirm student discounts.</div>' : ''}
+      ${spamNotice()}
       <div style="text-align:center;margin-top:20px;">
         <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
       </div>

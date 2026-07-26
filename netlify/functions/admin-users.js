@@ -7,7 +7,7 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
+import { sendEmail } from '../lib/mailer.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
@@ -18,13 +18,6 @@ function getAdmin(event) {
     const token = (event.headers.authorization || '').replace('Bearer ', '');
     return jwt.verify(token, JWT_SECRET);
   } catch { return null; }
-}
-
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
 }
 
 function generatePassword() {
@@ -74,8 +67,7 @@ export const handler = async (event) => {
 
       // Send welcome email — non-blocking so timeout doesn't fail the invite
       const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, '');
-      getTransporter().sendMail({
-        from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+      sendEmail({
         to:      email,
         subject: 'RELAY 2026 — Your Admin Access',
         html: `

@@ -1,7 +1,10 @@
 // netlify/functions/admin-data.js
 import { createClient } from '@supabase/supabase-js';
-import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
+import { sendEmail, normalizeProvider, resendConfigured } from '../lib/mailer.js';
+import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimateSegments } from '../lib/sms.js';
+import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
+import { followUpSMS, confirmedSMS, cancelledSMS } from '../lib/sms-templates.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
@@ -12,13 +15,6 @@ function getAdmin(event) {
     const token = (event.headers.authorization || '').replace('Bearer ', '');
     return jwt.verify(token, JWT_SECRET);
   } catch { return null; }
-}
-
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
 }
 
 async function getAdminsWithPermission(permission) {
@@ -39,6 +35,7 @@ export const handler = async (event) => {
       if (error) throw error;
 
       const { data: adminsData } = await supabase.from('admins').select('email, name, force_password_change');
+      const notifySettings = await getNotificationSettings(supabase);
 
       const local = data.filter(r => r.registrant_type !== 'international');
       const intl  = data.filter(r => r.registrant_type === 'international');
@@ -51,6 +48,22 @@ export const handler = async (event) => {
           stats_intl:  statsFor(intl),
           admins: adminsData || [],
           admin: { name: requester.name, permissions: requester.permissions, is_super_admin: requester.is_super_admin },
+          notifications: {
+            ...notifySettings,
+            sms_configured:    smsConfigured(),
+            // Master gate — no approved sender name means nothing can send yet.
+            sms_ready:         smsReady(),
+            sms_sender_name:   smsSenderName(),
+            resend_configured: resendConfigured(),
+            // Derived from the saved template. The sample carries a full-length
+            // upload URL because a template using {link} costs materially more
+            // than one without, and the bulk modal multiplies this per mobile.
+            followup_sms_segments: estimateSegments(followUpSMS({
+              name: 'Juan Dela Cruz', totalLabel: 'PHP 4,500', count: 2,
+              uploadLink: `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/upload-receipt?id=3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d&group_id=8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d`,
+              template: templateFor(notifySettings, 'followup'),
+            })),
+          },
         }),
       };
     } catch (err) {
@@ -64,7 +77,12 @@ export const handler = async (event) => {
       const body = JSON.parse(event.body);
       const { action, id } = body;
 
-      if (!action || !id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action or id' }) };
+      // bulk_follow_up carries `ids` instead of a single `id` — it validates
+      // its own payload below rather than being forced to send a dummy id.
+      if (!action) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action' }) };
+      if (!id && action !== 'bulk_follow_up') {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
+      }
 
       // ── Confirm payment ────────────────────────────────────────────────────
       if (action === 'confirm') {
@@ -108,14 +126,29 @@ export const handler = async (event) => {
         const imgUrl   = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
         const heroUrl  = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
-        await getTransporter().sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        await sendEmail({
           to:      reg.email,
           subject: "RELAY 2026 — You're confirmed! 🎉",
           html:    confirmationEmail(reg, allMembers, `PHP ${totalAmt.toLocaleString()}`, heroUrl, isGroup),
         });
 
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        const confirmSettings = await getNotificationSettings(supabase);
+        let smsResult = null;
+        if (smsAllowed(confirmSettings, 'confirmed')) {
+          // Everyone just confirmed hears about it, on their own number.
+          smsResult = await sendToDistinctMobiles(supabase, allMembers, {
+            event:       'confirmed',
+            groupId:     effectiveGroupId,
+            triggeredBy: requester.email,
+            buildMessage: (member) => confirmedSMS({
+              name: member.name, count: allMembers.length,
+              totalLabel: `PHP ${totalAmt.toLocaleString()}`,
+              template: templateFor(confirmSettings, 'confirmed'),
+            }),
+          });
+        }
+
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, sms: smsSummary(smsResult) }) };
       }
 
       // ── Cancel registration ────────────────────────────────────────────────
@@ -147,6 +180,7 @@ export const handler = async (event) => {
           await supabase.from('registrations').update(cancelUpdate).eq('id', id);
         }
 
+        let smsResult = null;
         if (notify) {
           let allMembers = [reg];
           if (effectiveCancelGroupId) {
@@ -159,15 +193,32 @@ export const handler = async (event) => {
           const imgUrl  = (process.env.IMAGE_SITE_URL || (process.env.SITE_URL || '')).replace(/\/+$/, '');
           const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
           const names   = allMembers.map(m => m.name).join(', ');
-          await getTransporter().sendMail({
-            from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+          await sendEmail({
             to:      reg.email,
             subject: 'RELAY 2026 — Registration Cancelled',
-            html: cancellationEmail(reg.name, names, allMembers.length > 1, heroUrl),
+            html:    cancellationEmail(reg.name, names, allMembers.length > 1, heroUrl),
           });
+
+          const cancelSettings = await getNotificationSettings(supabase);
+          if (smsAllowed(cancelSettings, 'cancelled')) {
+            // allMembers is already exactly who got cancelled: the group query
+            // excludes confirmed members, and the solo path is the single row
+            // just cancelled. Re-filtering on status here would drop a solo
+            // registration that had been confirmed before it was cancelled,
+            // since reg is a snapshot taken before the update.
+            smsResult = await sendToDistinctMobiles(supabase, allMembers, {
+              event:       'cancelled',
+              groupId:     effectiveCancelGroupId,
+              triggeredBy: requester.email,
+              buildMessage: (member) => cancelledSMS({
+                name: member.name, count: allMembers.length,
+                template: templateFor(cancelSettings, 'cancelled'),
+              }),
+            });
+          }
         }
 
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, sms: smsSummary(smsResult) }) };
       }
 
       // ── Follow-up payment reminder ─────────────────────────────────────────
@@ -182,50 +233,106 @@ export const handler = async (event) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: 'Registration is not awaiting payment' }) };
         }
 
-        const effectiveGroupId = reg.group_id || null;
-        let allMembers = [reg];
-        if (effectiveGroupId) {
-          // Only include members who still need to pay — skip confirmed and cancelled
-          const { data: members } = await supabase.from('registrations').select('*')
-            .eq('group_id', effectiveGroupId)
-            .neq('status', 'confirmed')
-            .neq('status', 'cancelled');
-          if (members?.length) allMembers = members;
-        }
+        // Admin picks the sender from the dropdown on the Send Reminder button.
+        // Anything other than 'resend' (including nothing) keeps the Gmail path.
+        const provider = normalizeProvider(body.email_provider);
+        // send_sms lets the admin opt out for a single send; the settings toggle rules otherwise.
+        const followUpSettings = await getNotificationSettings(supabase);
 
-        const isGroup    = allMembers.length > 1;
-        const totalAmt   = allMembers.reduce((s, r) => s + feeFor(r), 0);
-        const totalLabel = `PHP ${totalAmt.toLocaleString()}`;
-        const siteUrl    = (process.env.SITE_URL || '').replace(/\/+$/, '');
-        const imgUrl     = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
-        const heroUrl    = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
-        const qrUrl      = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
-
-        await getTransporter().sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
-          to:      reg.email,
-          subject: 'RELAY 2026 — Payment Reminder',
-          html:    paymentReminderEmail({
-            primaryName: reg.name, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl,
-            registrationId: reg.id, group_id: effectiveGroupId, isGroup, allMembers,
-            gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
-            gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
-            gcashMobile:        process.env.GCASH_MOBILE,
-          }),
+        const { mailResult, smsResult } = await runFollowUp(reg, {
+          provider,
+          sendSms:        body.send_sms !== false,
+          settings:       followUpSettings,
+          requesterEmail: requester.email,
         });
 
-        const followupTs = new Date().toISOString();
-        if (effectiveGroupId) {
-          // Only stamp the timestamp on members who still owe payment
-          await supabase.from('registrations').update({ last_followup_at: followupTs })
-            .eq('group_id', effectiveGroupId)
-            .neq('status', 'confirmed')
-            .neq('status', 'cancelled');
-        } else {
-          await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('id', id);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success:  true,
+            provider: mailResult.provider,
+            fell_back: !!mailResult.fellBack,
+            sms:      smsSummary(smsResult),
+          }),
+        };
+      }
+
+      // ── Bulk follow-up ─────────────────────────────────────────────────────
+      // Takes a list of registration ids, collapses group members down to one
+      // send per group, and reminds everyone still awaiting payment.
+      if (action === 'bulk_follow_up') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
         }
 
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+        if (!ids.length) return { statusCode: 400, headers, body: JSON.stringify({ error: 'No registrations selected' }) };
+        if (ids.length > BULK_LIMIT) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: `Too many at once — send at most ${BULK_LIMIT} per batch` }) };
+        }
+
+        const { data: regs, error: fetchErr } = await supabase.from('registrations').select('*').in('id', ids);
+        if (fetchErr) throw fetchErr;
+
+        // One reminder per group (they share an email address), one per solo
+        // registrant. Collapse to distinct groups FIRST so `skipped` counts
+        // reminders not sent, not rows — otherwise a 3-member group that is no
+        // longer awaiting payment reports as 3 skips for 1 reminder.
+        const targets = [];
+        const seen    = new Set();
+        let skipped   = 0;
+        for (const reg of regs || []) {
+          const key = reg.group_id || reg.id;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (reg.status !== 'awaiting_payment') { skipped++; continue; }
+          targets.push(reg);
+        }
+
+        const provider = normalizeProvider(body.email_provider);
+        const settings = await getNotificationSettings(supabase);
+        const sendSms  = body.send_sms !== false;
+
+        const results = await mapWithConcurrency(targets, BULK_CONCURRENCY, async (reg) => {
+          try {
+            const { mailResult, smsResult } = await runFollowUp(reg, {
+              provider, sendSms, settings, requesterEmail: requester.email,
+            });
+            return {
+              id: reg.id, name: reg.name, email: reg.email, ok: true,
+              provider: mailResult.provider, fell_back: !!mailResult.fellBack,
+              sms: smsSummary(smsResult),
+            };
+          } catch (err) {
+            console.error(`[bulk_follow_up] ${reg.email} failed:`, err.message);
+            return { id: reg.id, name: reg.name, email: reg.email, ok: false, error: err.message };
+          }
+        });
+
+        const sent   = results.filter(r => r.ok);
+        const failed = results.filter(r => !r.ok);
+        // A single group can fan out to several mobiles, so count recipients
+        // and segments rather than sends.
+        const smsSentCount   = sent.reduce((s, r) => s + (r.sms?.sent || 0), 0);
+        const smsFailedCount = sent.reduce((s, r) => s + (r.sms?.failed || 0), 0);
+        const smsCredits     = sent.reduce((s, r) => s + (r.sms?.segments || 0), 0);
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success:      true,
+            sent:         sent.length,
+            failed:       failed.length,
+            skipped,                                   // not awaiting payment
+            grouped:      (regs?.length || 0) - targets.length - skipped,
+            sms_sent:     smsSentCount,
+            sms_credits:  smsCredits,
+            sms_failed:   smsFailedCount,
+            fell_back:    sent.some(r => r.fell_back),
+            provider,
+            results,
+          }),
+        };
       }
 
       // ── Record partial payment ─────────────────────────────────────────────
@@ -285,8 +392,7 @@ export const handler = async (event) => {
         const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
         const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
-        await getTransporter().sendMail({
-          from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+        await sendEmail({
           to:      reg.email,
           subject: 'RELAY 2026 — Partial Payment Received',
           html:    partialPaymentEmail({
@@ -313,6 +419,127 @@ export const handler = async (event) => {
 function feeFor(r) {
   if (r.registrant_type === 'international') return 250;
   return r.student_status === 'student' ? 3000 : 4500;
+}
+
+// Bulk sends run inside the normal 10s function budget, so the dashboard
+// chunks its selection and each chunk stays small enough to finish in time.
+// Each bulk item is now one whole group: an email plus a parallel SMS fan-out
+// to every member's mobile. Smaller batches with more concurrency keep a run
+// inside the 10s function budget.
+const BULK_LIMIT       = 15;
+const BULK_CONCURRENCY = 6;
+
+async function mapWithConcurrency(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await fn(items[i], i);
+      }
+    })
+  );
+  return out;
+}
+
+/**
+ * Send one payment reminder (email + optional SMS) and stamp last_followup_at.
+ * Shared by the single-row action and the bulk action so both behave identically.
+ * Assumes the caller has already checked status === 'awaiting_payment'.
+ */
+async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail }) {
+  const effectiveGroupId = reg.group_id || null;
+
+  let allMembers = [reg];
+  if (effectiveGroupId) {
+    // Only include members who still need to pay — skip confirmed and cancelled
+    const { data: members } = await supabase.from('registrations').select('*')
+      .eq('group_id', effectiveGroupId)
+      .neq('status', 'confirmed')
+      .neq('status', 'cancelled');
+    if (members?.length) allMembers = members;
+  }
+
+  const isGroup    = allMembers.length > 1;
+  const totalAmt   = allMembers.reduce((s, r) => s + feeFor(r), 0);
+  const totalLabel = `PHP ${totalAmt.toLocaleString()}`;
+  const siteUrl    = (process.env.SITE_URL || '').replace(/\/+$/, '');
+  const imgUrl     = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
+  const heroUrl    = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+  const qrUrl      = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
+
+  const mailResult = await sendEmail({
+    provider,
+    to:      reg.email,
+    subject: 'RELAY 2026 — Payment Reminder',
+    html:    paymentReminderEmail({
+      primaryName: reg.name, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl,
+      registrationId: reg.id, group_id: effectiveGroupId, isGroup, allMembers,
+      gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
+      gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
+      gcashMobile:        process.env.GCASH_MOBILE,
+    }),
+  });
+
+  // One email per group (they share an address) but SMS goes to every distinct
+  // mobile — group members each gave their own number, and a reminder that only
+  // reaches the contact person leaves the rest unaware they still owe payment.
+  //
+  // Only members actually awaiting payment are texted. Participants can now be
+  // marked paid individually, and allMembers still carries partially_paid and
+  // payment_pending_review rows that shouldn't be chased for payment.
+  let smsResult = null;
+  if (sendSms && smsAllowed(settings, 'followup')) {
+    const smsRecipients = allMembers.filter(m => m.status === 'awaiting_payment');
+    const uploadLink = `${siteUrl}/upload-receipt?id=${reg.id}${isGroup && effectiveGroupId ? `&group_id=${effectiveGroupId}` : ''}`;
+    smsResult = await sendToDistinctMobiles(supabase, smsRecipients, {
+      event:       'followup',
+      groupId:     effectiveGroupId,
+      triggeredBy: requesterEmail,
+      buildMessage: (member) => followUpSMS({
+        name: member.name, totalLabel, uploadLink,
+        // The people this reminder is actually chasing — allMembers still
+        // carries partially_paid and payment_pending_review rows.
+        count: smsRecipients.length,
+        template: templateFor(settings, 'followup'),
+      }),
+    });
+  }
+
+  const followupTs = new Date().toISOString();
+  if (effectiveGroupId) {
+    // Only stamp the timestamp on members who still owe payment
+    await supabase.from('registrations').update({ last_followup_at: followupTs })
+      .eq('group_id', effectiveGroupId)
+      .neq('status', 'confirmed')
+      .neq('status', 'cancelled');
+  } else {
+    await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('id', reg.id);
+  }
+
+  return { mailResult, smsResult };
+}
+
+// Compact shape the dashboard uses for its toast. null = SMS was not attempted.
+// Accepts one result or a list, since group sends fan out to several mobiles.
+function smsSummary(result) {
+  if (!result) return null;
+  const list = Array.isArray(result) ? result : [result];
+  if (!list.length) return null;
+
+  const sent    = list.filter(r => r.sent);
+  const skipped = list.filter(r => !r.sent && r.skipped);
+  const failed  = list.filter(r => !r.sent && !r.skipped);
+
+  return {
+    status:     sent.length ? 'sent' : (failed.length ? 'failed' : 'skipped'),
+    recipients: list.length,
+    sent:       sent.length,
+    failed:     failed.length,
+    segments:   sent.reduce((s, r) => s + (r.segments || 0), 0),
+    reason:     failed[0]?.error || skipped[0]?.skipped || undefined,
+  };
 }
 
 function statsFor(subset) {

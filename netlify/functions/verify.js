@@ -1,20 +1,16 @@
 // netlify/functions/verify.js
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "../lib/mailer.js";
+import { sendToDistinctMobiles } from "../lib/sms.js";
+import { getNotificationSettings, smsAllowed, templateFor } from "../lib/notification-settings.js";
+import { confirmedSMS } from "../lib/sms-templates.js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 const JWT_SECRET = process.env.JWT_SECRET || 'relay2026secret';
-
-function getTransporter() {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-  });
-}
 
 export const handler = async (event) => {
   const { id, group_id, atoken } = event.queryStringParameters || {};
@@ -66,12 +62,24 @@ export const handler = async (event) => {
     const siteUrl = (process.env.SITE_URL || '').replace(/\/+$/, ''); const imgUrl = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, ''); const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
     // Send one confirmation email to the shared address
-    await getTransporter().sendMail({
-      from:    `"RELAY 2026" <${process.env.GMAIL_USER}>`,
+    await sendEmail({
       to:      reg.email,
       subject: "RELAY 2026 — You're confirmed! 🎉",
       html:    confirmationEmail(reg, allMembers, totalLabel, heroUrl, isGroup),
     });
+
+    const settings = await getNotificationSettings(supabase);
+    if (smsAllowed(settings, 'confirmed')) {
+      await sendToDistinctMobiles(supabase, allMembers, {
+        event:       'confirmed',
+        groupId:     effectiveGroupId,
+        triggeredBy: verifiedBy,
+        buildMessage: (member) => confirmedSMS({
+          name: member.name, count: allMembers.length, totalLabel,
+          template: templateFor(settings, 'confirmed'),
+        }),
+      });
+    }
 
     const msg = isGroup
       ? `${allMembers.length} participants confirmed. A confirmation email has been sent to ${reg.email}.`
