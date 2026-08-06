@@ -689,7 +689,7 @@ async function runAttendanceInvite(reg, { provider, sendSms, settings, requester
   const mailResult = await sendEmail({
     provider,
     to:      reg.email,
-    subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, you're invited to the Aspiring Leader Pre-Conference Sessions`,
+    subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, you're invited to the Aspiring Leaders Pre-Conference Session`,
     html:    attendanceEmail({ name: reg.name, heroUrl, links: attendanceLinks(siteUrl, reg.id) }),
   });
 
@@ -897,12 +897,12 @@ function attendanceEmail({ name, heroUrl, links }) {
 
       <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:4px;">
         As part of the conference, male participants are invited to the
-        <strong>Aspiring Leader Pre-Conference Sessions</strong>, held on the first day
+        <strong>Aspiring Leaders Pre-Conference Session</strong>, held on the first day
         before the main programme begins.
       </p>
 
       <div class="session-box">
-        <div class="session-title">Aspiring Leader Pre-Conference Sessions</div>
+        <div class="session-title">Aspiring Leaders Pre-Conference Session</div>
         <div class="session-row">
           🗓 <strong>Tuesday, September 23, 2026</strong><br>
           🕑 <strong>2:00 PM to 6:00 PM</strong><br>

@@ -68,13 +68,13 @@ export const handler = async (event) => {
     if (r === 'attending') {
       return page(
         changed ? 'Answer Updated' : "You're all set!",
-        `Thanks ${firstName} — we've got you down for the <strong>Aspiring Leader Pre-Conference Sessions</strong> on <strong>Tuesday, September 23</strong>, 2:00 PM to 6:00 PM at CCT Tagaytay. See you there!`,
+        `Thanks ${firstName} — we've got you down for the <strong>Aspiring Leaders Pre-Conference Session</strong> on <strong>Tuesday, September 23</strong>, 2:00 PM to 6:00 PM at CCT Tagaytay. See you there!`,
         true
       );
     }
     return page(
       changed ? 'Answer Updated' : 'Thanks for letting us know',
-      `Thanks ${firstName} — we've noted that you won't be joining the Aspiring Leader Pre-Conference Sessions. Your conference registration is unaffected. If your plans change, use the other button in your email.`,
+      `Thanks ${firstName} — we've noted that you won't be joining the Aspiring Leaders Pre-Conference Session. Your conference registration is unaffected. If your plans change, use the other button in your email.`,
       true
     );
   } catch (err) {
@@ -132,7 +132,7 @@ function confirmPage(firstName, token, response, existing) {
     <div class="icon">${yes ? '🎟️' : '🗓'}</div>
     <h1>${yes ? 'See you there?' : 'Cannot make it?'}</h1>
     <p>Hi ${firstName}, please confirm that you <strong>${yes ? 'will be joining' : 'will not be joining'}</strong>
-       the Aspiring Leader Pre-Conference Sessions on Tuesday, September 23.</p>
+       the Aspiring Leaders Pre-Conference Session on Tuesday, September 23.</p>
     ${already}
     <form method="POST">
       <input type="hidden" name="t" value="${escapeHtml(token)}">

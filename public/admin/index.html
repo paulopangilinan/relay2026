@@ -471,7 +471,7 @@
 
     <div id="attendanceSummary" style="background:#EBF5FB;border-radius:10px;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;"></div>
     <div id="attendanceDisclaimer" onclick="toggleAttendanceBreakdown()" style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.6;margin-bottom:14px;">
-      ℹ️ Only <strong>male participants</strong> are encouraged to attend the Aspiring Leader Pre-Conference Sessions.
+      ℹ️ Only <strong>male participants</strong> are encouraged to attend the Aspiring Leaders Pre-Conference Session.
     </div>
     <div id="attendanceBreakdown" style="display:none;background:#F7FAFB;border:1px solid #D4E2EA;border-radius:8px;padding:12px 14px;margin-bottom:14px;max-height:200px;overflow-y:auto;"></div>
     <div id="attendanceWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
@@ -2508,7 +2508,7 @@
     attendanceIds = [id];
     document.getElementById('attendanceTitle').textContent = 'Pre-Conference Attendance';
     document.getElementById('attendanceSummary').innerHTML =
-      `Invites <strong>${esc(name)}</strong> to the <strong>Aspiring Leader Pre-Conference Sessions</strong>.`
+      `Invites <strong>${esc(name)}</strong> to the <strong>Aspiring Leaders Pre-Conference Session</strong>.`
       + `<br><span style="font-size:12px;color:#6B8A9A;">They reply joining or not joining straight from the email.</span>`;
 
     // Spell it out when we don't actually know — the admin is vouching here.
@@ -2524,7 +2524,7 @@
       disc.style.background = '#FDF6E0';
       disc.style.borderLeft = '3px solid #E8B830';
       disc.style.color      = '#7A5A10';
-      disc.innerHTML = `ℹ️ Only <strong>male participants</strong> are encouraged to attend the Aspiring Leader Pre-Conference Sessions.`;
+      disc.innerHTML = `ℹ️ Only <strong>male participants</strong> are encouraged to attend the Aspiring Leaders Pre-Conference Session.`;
     }
 
     prepAttendanceModal([reg].filter(Boolean));
