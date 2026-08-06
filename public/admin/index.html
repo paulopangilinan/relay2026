@@ -272,11 +272,16 @@
   /* Bulk follow-up: full-width CTA above the table meta on small screens,
      and roomier tap targets for the row checkboxes. */
   #ph-bulk-followup{align-items:center;}
+  #ph-attendance-split{align-items:center;}
+  .preset-opt{display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;}
+  .preset-opt:hover{background:#F4F8FA;}
+  .preset-sub{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
   .fu-check,#ph-select-all{width:16px;height:16px;accent-color:#3A8BBF;}
   @media(max-width:600px){
     /* Each CTA takes its own full-width row. Sharing a line with the Hide
        Cancelled toggle squeezes both labels down to an ellipsis. */
-    #ph-bulk-followup,#ph-bulk-attendance{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+    #ph-bulk-followup,#ph-attendance-split{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+    #ph-attendance-split #ph-bulk-attendance{flex:1;justify-content:center;}
     .fu-check,#ph-select-all{width:20px;height:20px;}
   }
 </style>
@@ -707,12 +712,33 @@
           <h2>Philippines Registrations</h2>
           <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
             <!-- Appears whenever the current view holds anyone still awaiting payment -->
-            <button id="ph-bulk-followup" onclick="openBulkFollowUpModal()" style="display:none;align-items:center;gap:7px;padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+            <button id="ph-bulk-followup" onclick="openBulkFollowUpModal()" style="display:none;align-items:center;gap:7px;padding:0 16px;height:34px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
               <span>💬</span><span id="ph-bulk-label">Bulk Follow Up</span>
             </button>
-            <button id="ph-bulk-attendance" onclick="openBulkAttendanceModal()" style="display:none;align-items:center;gap:7px;padding:8px 16px;background:#2A6E9E;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-              <span>🎟️</span><span id="ph-attendance-label">Pre-Conference Attendance</span>
-            </button>
+            <!-- height matched to the split button beside it -->
+            <!-- Split button: main action sends, caret offers selection presets -->
+            <div id="ph-attendance-split" style="display:none;align-items:stretch;position:relative;">
+              <button id="ph-bulk-attendance" onclick="openBulkAttendanceModal()" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2A6E9E;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
+                <span>🎟️</span><span id="ph-attendance-label">Pre-Conference Attendance</span>
+              </button>
+              <button id="ph-attendance-caret" onclick="toggleAttendancePresetMenu(event)" title="Selection presets" style="display:inline-flex;align-items:center;justify-content:center;padding:0 11px;height:34px;background:#2A6E9E;color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.35);border-radius:0 8px 8px 0;font-size:11px;font-weight:700;line-height:1;cursor:pointer;">▾</button>
+              <div id="ph-attendance-presets" style="display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:230px;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:20;">
+                <div style="padding:8px 14px 2px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Select rows in this view</div>
+                <div style="padding:0 14px 6px;font-size:10px;color:var(--muted);line-height:1.4;">Replaces the current selection — both bulk actions use it.</div>
+                <button onclick="applyAttendancePreset('all')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">All</span>
+                  <span class="preset-sub">Every row currently shown</span>
+                </button>
+                <button onclick="applyAttendancePreset('male')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">♂️ Verified Male Attendees</span>
+                  <span class="preset-sub">Gender recorded as male</span>
+                </button>
+                <button onclick="applyAttendancePreset('nogender')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">❓ No gender data</span>
+                  <span class="preset-sub">Needs verifying before sending</span>
+                </button>
+              </div>
+            </div>
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
               <span class="hc-text">Hide Cancelled</span>
               <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
@@ -2057,6 +2083,41 @@
     return selectedRows().filter(r => r.status === 'awaiting_payment');
   }
 
+  function toggleAttendancePresetMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('ph-attendance-presets');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  /**
+   * Selection presets. These tick rows — they don't send anything, so the
+   * admin still reviews the modal before committing.
+   * Scoped to the current filtered view, so filters and presets compose.
+   */
+  function applyAttendancePreset(mode) {
+    document.getElementById('ph-attendance-presets').style.display = 'none';
+    const match = {
+      all:      () => true,
+      male:     (r) => r.gender === 'male',
+      nogender: (r) => !r.gender,
+    }[mode] || (() => true);
+
+    bulkSelected.clear();
+    filteredPH.filter(match).forEach(r => bulkSelected.add(r.id));
+    document.querySelectorAll('#ph-body .fu-check').forEach(cb => { cb.checked = bulkSelected.has(cb.value); });
+    syncBulkUI();
+
+    const label = { all: 'all rows', male: 'verified male attendees', nogender: 'rows with no gender data' }[mode];
+    if (!bulkSelected.size) { showToast(`No ${label} in this view.`); return; }
+
+    // Report both eligible counts, not just the tick count. The presets change
+    // what BOTH bulk actions will send, and the button labels show eligibility
+    // rather than ticks — so a bare "selected N" reads as a contradiction.
+    const pre = attendanceTargets().length;
+    const fu  = bulkTargets().length;
+    showToast(`Selected ${bulkSelected.size} ${label} · Pre-Con ${pre} · Follow Up ${fu}`);
+  }
+
   function toggleRowSelection(id, checked) {
     if (checked) bulkSelected.add(id); else bulkSelected.delete(id);
     syncBulkUI();
@@ -2081,17 +2142,31 @@
     // Each button counts who its own action would actually reach, not the raw
     // selection — a count that doesn't match what gets sent is worse than none.
     const selected = bulkSelected.size;
-    for (const [id, labelId, label, count] of [
+    for (const [id, labelId, label, count, wrapperId] of [
       ['ph-bulk-followup',   'ph-bulk-label',       'Bulk Follow Up',            bulkTargets().length],
-      ['ph-bulk-attendance', 'ph-attendance-label', 'Pre-Conference Attendance', attendanceTargets().length],
+      ['ph-bulk-attendance', 'ph-attendance-label', 'Pre-Conference Attendance', attendanceTargets().length, 'ph-attendance-split'],
     ]) {
       const el = document.getElementById(id);
       if (!el) continue;
-      el.style.display  = canVerify ? 'inline-flex' : 'none';
-      el.disabled       = count === 0;
-      el.style.opacity  = count === 0 ? '0.45' : '1';
-      el.style.cursor   = count === 0 ? 'not-allowed' : 'pointer';
-      el.title          = selected === 0
+      // The attendance action is a split button, so visibility lives on its
+      // wrapper. The caret stays usable even at a zero count — that's how you
+      // pick a preset in the first place.
+      const shell = wrapperId ? document.getElementById(wrapperId) : el;
+      shell.style.display = canVerify ? 'inline-flex' : 'none';
+
+      // Mute the background rather than the opacity, and mute the caret with
+      // it — a grey half beside a blue one is the same discontinuity in a
+      // different colour. The caret stays clickable; that's how you pick a
+      // preset when nothing is selected yet.
+      const base  = id === 'ph-bulk-followup' ? 'var(--sky)' : '#2A6E9E';
+      const muted = '#9FB6C6';
+      el.disabled         = count === 0;
+      el.style.opacity    = '1';
+      el.style.background = count === 0 ? muted : base;
+      el.style.cursor     = count === 0 ? 'not-allowed' : 'pointer';
+      const caret = wrapperId ? document.getElementById('ph-attendance-caret') : null;
+      if (caret) caret.style.background = count === 0 ? muted : base;
+      el.title            = selected === 0
         ? 'Select one or more registrants first'
         : (count === 0 ? `None of the ${selected} selected are eligible for this` : '');
       document.getElementById(labelId).textContent = count ? `${label} (${count})` : label;
@@ -2498,15 +2573,17 @@
 
     if (list) {
       list.innerHTML =
-        section('No recorded gender', unknown, '#C0392B')
-        + (males.length ? section('Recorded male', males, '#2E7048') : '');
+        section('No recorded gender', unknown, '#C0392B', '#FDECEA')
+        + (males.length ? section('Recorded male', males, '#2E7048', '#EAF5EE') : '');
     }
   }
 
-  function section(title, rows, colour) {
-    return `<div style="margin-bottom:8px;">`
-      + `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${colour};margin-bottom:3px;">${title} (${rows.length})</div>`
-      + `<div style="font-size:12px;color:#2A3D4A;line-height:1.6;">${rows.map(r => esc(r.name)).join('<br>')}</div>`
+  // Each group is its own bordered card with a tinted header — a bare coloured
+  // heading runs straight into the list above it and the boundary disappears.
+  function section(title, rows, colour, tint) {
+    return `<div style="border:1px solid ${colour}33;border-radius:8px;overflow:hidden;margin-bottom:10px;">`
+      + `<div style="background:${tint};color:${colour};padding:6px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">${title} (${rows.length})</div>`
+      + `<div style="padding:8px 10px;font-size:12px;color:#2A3D4A;line-height:1.7;background:#fff;">${rows.map(r => esc(r.name)).join('<br>')}</div>`
       + `</div>`;
   }
 
@@ -3749,6 +3826,8 @@
   window.doAttendanceInvite         = doAttendanceInvite;
   window.toggleAttendanceSms        = toggleAttendanceSms;
   window.toggleAttendanceBreakdown  = toggleAttendanceBreakdown;
+  window.toggleAttendancePresetMenu = toggleAttendancePresetMenu;
+  window.applyAttendancePreset      = applyAttendancePreset;
   window.toggleAttendanceProviderMenu = toggleAttendanceProviderMenu;
   window.selectAttendanceProvider   = selectAttendanceProvider;
   window.closeGroupScopePicker = closeGroupScopePicker;
@@ -3756,7 +3835,7 @@
 
   // Dismiss either provider dropdown on any click outside it
   document.addEventListener('click', e => {
-    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn'], ['attendanceProviderMenu', 'attendanceProviderBtn']]) {
+    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn'], ['attendanceProviderMenu', 'attendanceProviderBtn'], ['ph-attendance-presets', 'ph-attendance-caret']]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
       if (menu.contains(e.target) || e.target.closest('#' + btnId)) continue;
