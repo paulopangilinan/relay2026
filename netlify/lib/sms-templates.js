@@ -79,7 +79,7 @@ Thank you! We look forward to seeing you at the conference.`,
     tokens:  ['name', 'full_name', 'count', 'contact'],
     default: `Hi {name},
 
-As part of the Asia-Pacific RELAY Conference 2026, male participants are invited to the Aspiring Leader Pre-Conference Sessions on Sept 23, 2PM to 6PM.
+As part of the Asia-Pacific RELAY Conference 2026, male participants are invited to the Aspiring Leaders Pre-Conference Session on Sept 23, 2PM to 6PM.
 
 Please let us know if you can join, using the link in your email. Check your inbox, junk or spam folder. Questions? Text {contact}.`,
   },
