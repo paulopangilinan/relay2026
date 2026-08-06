@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import { sendEmail, normalizeProvider, resendConfigured } from '../lib/mailer.js';
-import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimateSegments } from '../lib/sms.js';
+import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimateSegments, getSMSAccount } from '../lib/sms.js';
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
 import { followUpSMS, confirmedSMS, cancelledSMS, attendanceSMS } from '../lib/sms-templates.js';
 import { attendanceLinks } from '../lib/attendance.js';
@@ -46,6 +46,21 @@ export const handler = async (event) => {
 
   const requester = getAdmin(event);
   if (!requester) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+
+  // ── GET ?sms_balance=1 : just the Semaphore credit balance ────────────────
+  // Kept off the main dashboard payload on purpose — loadData() runs on every
+  // refresh and after every action, and this is a third-party HTTP round trip.
+  // The send modals ask for it when they open instead.
+  if (event.httpMethod === 'GET' && event.queryStringParameters?.sms_balance) {
+    if (!smsConfigured()) {
+      return { statusCode: 200, headers, body: JSON.stringify({ credit_balance: null }) };
+    }
+    const account = await getSMSAccount();
+    return {
+      statusCode: 200, headers,
+      body: JSON.stringify({ credit_balance: account?.credit_balance ?? null }),
+    };
+  }
 
   // ── GET: fetch all registrations ──────────────────────────────────────────
   if (event.httpMethod === 'GET') {
@@ -440,17 +455,9 @@ export const handler = async (event) => {
         const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
 
-        const eligible = attendanceEligibleStatuses(!!body.include_partial);
-        if (reg.registrant_type === 'international') {
-          return { statusCode: 400, headers, body: JSON.stringify({ error: 'The pre-conference invitation is for Philippine participants only' }) };
-        }
-        // Female participants are excluded; an unrecorded gender is allowed
-        // through because the admin makes that call per person in the UI.
-        if (reg.gender === 'female') {
-          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registrant is recorded as female' }) };
-        }
-        if (!eligible.includes(reg.status)) {
-          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registrant has not paid yet' }) };
+        const ineligible = attendanceIneligibleReason(reg);
+        if (ineligible) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: ineligible }) };
         }
 
         const settings = await getNotificationSettings(supabase);
@@ -489,14 +496,12 @@ export const handler = async (event) => {
         const { data: regs, error: fetchErr } = await supabase.from('registrations').select('*').in('id', ids);
         if (fetchErr) throw fetchErr;
 
-        const eligible = attendanceEligibleStatuses(!!body.include_partial);
+        // Same rule as the single send — the admin picked these people, so the
+        // only exclusions are the ones that would be wrong to contact.
         const targets = [];
         let skipped = 0;
         for (const reg of regs || []) {
-          const ok = reg.registrant_type !== 'international'
-                  && reg.gender === 'male'
-                  && eligible.includes(reg.status);
-          if (ok) targets.push(reg); else skipped++;
+          if (attendanceIneligibleReason(reg)) skipped++; else targets.push(reg);
         }
 
         const provider = normalizeProvider(body.email_provider);
@@ -655,11 +660,21 @@ async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail, s
   return { mailResult, smsResult };
 }
 
-// Statuses that count as "already paid" for the attendance invite. Partially
-// paid is opt-in per send, because whether a part-payment counts is a judgement
-// call the admin makes at the time.
-function attendanceEligibleStatuses(includePartial) {
-  return includePartial ? ['confirmed', 'partially_paid'] : ['confirmed'];
+/**
+ * Can this registrant be invited to the pre-conference sessions?
+ *
+ * Payment status is deliberately not a factor — the sessions are open to every
+ * participant, paid or not. Only recorded females and cancelled registrations
+ * are excluded; an unrecorded gender is allowed because the admin selects
+ * people explicitly and the dashboard warns them.
+ *
+ * Returns null when eligible, or a reason string.
+ */
+function attendanceIneligibleReason(reg) {
+  if (reg.registrant_type === 'international') return 'The pre-conference invitation is for Philippine participants only';
+  if (reg.status === 'cancelled')              return 'This registration has been cancelled';
+  if (reg.gender === 'female')                 return 'This registrant is recorded as female';
+  return null;
 }
 
 /**
