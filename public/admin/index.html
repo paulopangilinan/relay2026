@@ -192,6 +192,20 @@
   .btn-cancel-row:hover{background:#E05050;color:#fff;}
   .btn-followup-row{background:var(--sky-light);color:var(--sky);border:1px solid var(--sky);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;}
   .btn-followup-row:hover{background:var(--sky);color:#fff;}
+  /* Solid fill: on a confirmed row this is the only action left, so it should
+     read as a button rather than blend into the status text beside it. */
+  /* Sized to its label, not the cell — the siblings stretch because several
+     share the row, but on a confirmed row this is the only control. */
+  .btn-attendance-row{background:#2A6E9E;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 12px;display:inline-block;width:auto;flex:0 0 auto;align-self:center;text-align:center;white-space:nowrap;box-shadow:0 1px 3px rgba(42,110,158,0.35);transition:all 0.15s;}
+  .btn-attendance-row:hover{background:#1F5478;box-shadow:0 2px 6px rgba(42,110,158,0.45);}
+  .btn-attendance-row:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(42,110,158,0.35);}
+  /* Answered — a result, not an action, so it gets a flat pill instead. */
+  .attendance-state{display:inline-block;width:auto;flex:0 0 auto;align-self:center;text-align:center;border-radius:6px;font-size:11px;font-weight:700;padding:5px 12px;white-space:nowrap;}
+  .attendance-state.yes{background:#EAF5EE;color:#2E7048;}
+  .attendance-state.no{background:#FDECEA;color:#C0392B;}
+  .attendance-state.sent{background:#FDF6E0;color:#7A5A10;}
+  .btn-attendance-row .btn-label-text{display:inline;}
+  @media(max-width:600px){.btn-attendance-row .btn-label-text{display:none;}}
   .btn-followup-row .btn-label-text{display:inline;}
   .btn-followup-row .btn-label-icon{display:none;}
   .btn-partial-row{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;}
@@ -260,7 +274,9 @@
   #ph-bulk-followup{align-items:center;}
   .fu-check,#ph-select-all{width:16px;height:16px;accent-color:#3A8BBF;}
   @media(max-width:600px){
-    #ph-bulk-followup{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+    /* Each CTA takes its own full-width row. Sharing a line with the Hide
+       Cancelled toggle squeezes both labels down to an ellipsis. */
+    #ph-bulk-followup,#ph-bulk-attendance{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
     .fu-check,#ph-select-all{width:20px;height:20px;}
   }
 </style>
@@ -439,6 +455,71 @@
   </div>
 </div>
 
+<!-- PRE-CONFERENCE INVITATION MODAL (single + bulk) -->
+<div id="attendanceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;" id="attendanceTitle">Pre-Conference Attendance</h3>
+      <button onclick="closeAttendanceModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
+    </div>
+
+    <div id="attendanceSummary" style="background:#EBF5FB;border-radius:10px;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;"></div>
+    <div id="attendanceDisclaimer" style="background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.6;margin-bottom:14px;">
+      ℹ️ Only <strong>male participants</strong> are encouraged to attend the Aspiring Leader Pre-Conference Sessions.
+    </div>
+    <div id="attendanceWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
+
+    <!-- Include partially paid — opt in, since whether it counts is a judgement call -->
+    <div id="attendancePartialRow" style="display:none;align-items:center;justify-content:space-between;gap:12px;background:#f7fafb;border:1px solid #D4E2EA;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#2A3D4A;">Include partially paid</div>
+        <div style="font-size:11px;color:#6B8A9A;margin-top:2px;" id="attendancePartialDetail"></div>
+      </div>
+      <div onclick="toggleAttendancePartial()" id="attendancePartialTrack" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <div id="attendancePartialThumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+      </div>
+    </div>
+
+    <!-- SMS companion -->
+    <div id="attendanceSmsRow" style="display:none;align-items:center;justify-content:space-between;gap:12px;background:#f7fafb;border:1px solid #D4E2EA;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#2A3D4A;">📱 Also send SMS</div>
+        <div style="font-size:11px;color:#6B8A9A;margin-top:2px;" id="attendanceSmsDetail"></div>
+      </div>
+      <div onclick="toggleAttendanceSms()" id="attendanceSmsTrack" style="width:44px;height:24px;border-radius:50px;background:#2E7048;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <div id="attendanceSmsThumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+      </div>
+    </div>
+
+    <div id="attendanceProgressWrap" style="display:none;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B8A9A;margin-bottom:6px;">
+        <span id="attendanceProgressLabel">Sending…</span><span id="attendanceProgressPct">0%</span>
+      </div>
+      <div style="background:#EDF2F5;border-radius:50px;height:8px;overflow:hidden;">
+        <div id="attendanceProgressBar" style="width:0%;height:8px;background:linear-gradient(90deg,#3A8BBF,#4BAE6A);border-radius:50px;transition:width 0.25s;"></div>
+      </div>
+      <div id="attendanceResults" style="margin-top:12px;font-size:12px;color:#2A3D4A;line-height:1.7;"></div>
+    </div>
+
+    <div id="attendanceActionRow" style="display:flex;gap:10px;">
+      <div style="flex:1;position:relative;display:flex;">
+        <button onclick="doAttendanceInvite()" id="attendanceConfirmBtn" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px 0 0 8px;font-weight:700;cursor:pointer;font-size:13px;">🎟️ Send via Gmail</button>
+        <button onclick="toggleAttendanceProviderMenu(event)" id="attendanceProviderBtn" title="Choose email provider" style="padding:12px 11px;background:var(--sky);color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;">▾</button>
+        <div id="attendanceProviderMenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectAttendanceProvider('gmail')" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✉️ Gmail <span id="attendanceCheck-gmail" style="color:#2E7048;">✓</span></span>
+          </button>
+          <button onclick="selectAttendanceProvider('resend')" id="attendanceOpt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="attendanceCheck-resend" style="color:#2E7048;display:none;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;" id="attendanceResendHint">Alternative sender.</span>
+          </button>
+        </div>
+      </div>
+      <button onclick="closeAttendanceModal()" id="attendanceCancelBtn" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- BULK FOLLOW UP MODAL -->
 <div id="bulkFollowUpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:88vh;overflow-y:auto;">
@@ -601,6 +682,17 @@
             <option value="non-student">💼 Non-Student</option>
           </select>
         </div>
+        <div class="filter-group"><label>Pre-Con</label>
+          <select id="ph-precon" onchange="applyFilters('ph')">
+            <option value="">All</option>
+            <option value="eligible">🎟️ Eligible to invite</option>
+            <option value="not_sent">📭 Not yet invited</option>
+            <option value="awaiting">📨 Awaiting reply</option>
+            <option value="attending">✅ Joining</option>
+            <option value="not_attending">🚫 Not joining</option>
+            <option value="no_gender">❓ Gender not recorded</option>
+          </select>
+        </div>
         <div class="filter-group" style="position:relative;">
           <label>Church</label>
           <div id="ph-church-trigger" onclick="toggleChurchDropdown()" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:180px;user-select:none;">
@@ -624,6 +716,9 @@
             <button id="ph-bulk-followup" onclick="openBulkFollowUpModal()" style="display:none;align-items:center;gap:7px;padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
               <span>💬</span><span id="ph-bulk-label">Bulk Follow Up</span>
             </button>
+            <button id="ph-bulk-attendance" onclick="openBulkAttendanceModal()" style="display:none;align-items:center;gap:7px;padding:8px 16px;background:#2A6E9E;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              <span>🎟️</span><span id="ph-attendance-label">Pre-Conference Attendance</span>
+            </button>
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('ph')">
               <span class="hc-text">Hide Cancelled</span>
               <div class="toggle-track on" id="ph-hide-cancelled-track"><div class="toggle-thumb"></div></div>
@@ -633,8 +728,8 @@
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th style="width:34px;text-align:center;"><input type="checkbox" id="ph-select-all" onclick="toggleSelectAllFollowUp(this.checked)" title="Select all awaiting payment" style="cursor:pointer;"></th><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th></tr></thead>
-            <tbody id="ph-body"><tr><td colspan="15" class="loading">Loading…</td></tr></tbody>
+            <thead><tr><th style="width:34px;text-align:center;"><input type="checkbox" id="ph-select-all" onclick="toggleSelectAllFollowUp(this.checked)" title="Select all awaiting payment" style="cursor:pointer;"></th><th>#</th><th class="sortable" data-col="name" data-tab="ph">Name</th><th class="sortable" data-col="age" data-tab="ph">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="church" data-tab="ph">Church</th><th class="sortable" data-col="status" data-tab="ph">Status</th><th class="sortable" data-col="student_status" data-tab="ph">Type</th><th>School ID</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="ph">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th><th>Pre-Conference</th></tr></thead>
+            <tbody id="ph-body"><tr><td colspan="16" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1243,11 +1338,13 @@
       const s = document.getElementById('ph-search').value.toLowerCase();
       const st = document.getElementById('ph-status').value;
       const stu = document.getElementById('ph-student').value;
+      const pre = document.getElementById('ph-precon').value;
       filteredPH = localData.filter(r => {
         if (hideCancelled.ph && r.status === 'cancelled') return false;
         if (s && !`${r.name} ${r.email} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (stu && r.student_status !== stu) return false;
+        if (pre && !matchesPreCon(r, pre)) return false;
         if (selectedChurches.size > 0 && !selectedChurches.has(r.church)) return false;
         return true;
       });
@@ -1272,7 +1369,7 @@
 
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
-    const cols = isPH ? 15 : 12;
+    const cols = isPH ? 16 : 12;
     const { col, dir } = sortState[tab];
     rows = sortData(rows, col, dir);
     const canVerify = adminSession?.permissions?.verify_payment || false;
@@ -1309,8 +1406,52 @@
           }
           </div>
         </td>
+        ${isPH ? `<td style="min-width:120px;">${attendanceCell(r, canVerify)}</td>` : ''}
       </tr>
     `).join('');
+  }
+
+  // Owns the Pre-Con column: the send control while an answer is outstanding,
+  // the result once it arrives. Kept out of the Action column, which is for
+  // payment operations.
+  function attendanceCell(r, canVerify) {
+    const dash = '<span style="color:#C9D6DE;font-size:12px;">—</span>';
+    if (r.registrant_type === 'international') return dash;
+
+    // The pre-conference sessions are for male participants, so say so rather
+    // than leaving an empty cell that reads like missing data.
+    if (r.gender === 'female') {
+      return '<span style="color:#A9B8C2;font-size:11px;font-style:italic;white-space:nowrap;">Not applicable</span>';
+    }
+
+    if (r.attendance_response === 'attending') {
+      return `<span class="attendance-state yes" title="Confirmed attending on ${formatDate(r.attendance_responded_at)}">✅ Pre-Conference Confirmed</span>`;
+    }
+    if (r.attendance_response === 'not_attending') {
+      return `<span class="attendance-state no" title="Declined on ${formatDate(r.attendance_responded_at)}">🚫 Pre-Conference Declined</span>`;
+    }
+
+    // Not answered yet. Anyone paid who isn't recorded female can be invited —
+    // an unrecorded gender is a gap in our data, not a reason to leave someone
+    // out, so the admin decides per person and the modal carries the caveat.
+    // Partially paid is allowed too; the modal passes include_partial.
+    const sendable = r.gender !== 'female'
+                  && (r.status === 'confirmed' || r.status === 'partially_paid');
+
+    // Read-only admins still see where things stand, they just can't act.
+    if (!sendable || !canVerify) {
+      return r.attendance_invited_at
+        ? `<span class="attendance-state sent" title="Sent ${formatDate(r.attendance_invited_at)} — no reply yet">📨 Awaiting reply</span>`
+        : dash;
+    }
+
+    // Short label — the Attendance column beside it carries the status, and the
+    // modal spells out what actually gets sent.
+    const label = r.attendance_invited_at ? 'Resend Pre-Con' : 'Send Pre-Con';
+    const title = r.attendance_invited_at
+      ? `Pre-conference attendance request already sent ${formatDate(r.attendance_invited_at)} — no reply yet`
+      : 'Send the pre-conference session invitation';
+    return `<button class="btn-attendance-row" title="${title}" onclick="openAttendanceModal('${r.id}','${esc(r.name)}')"><span class="btn-label-icon">🎟️</span><span class="btn-label-text">${label}</span></button>`;
   }
 
   function statusBadge(r) {
@@ -1832,6 +1973,14 @@
       ? `Bulk Follow Up (${bulkSelected.size} selected)`
       : `Bulk Follow Up (${targets.length})`;
 
+    // Attendance CTA appears whenever the view holds eligible paid male participants
+    const attBtn = document.getElementById('ph-bulk-attendance');
+    if (attBtn) {
+      const eligible = attendanceTargets(false).length;
+      attBtn.style.display = (canVerify && eligible) ? 'inline-flex' : 'none';
+      document.getElementById('ph-attendance-label').textContent = `Pre-Conference Attendance (${eligible})`;
+    }
+
     const all = document.getElementById('ph-select-all');
     if (all) {
       all.checked = inView.length > 0 && bulkSelected.size === inView.length;
@@ -2048,6 +2197,282 @@
     document.getElementById('bulkResults').innerHTML = lines.filter(Boolean).join('<br>');
   }
 
+  // ── Pre-conference invitation ────────────────────────────────────────────────
+  // PH male participants who have paid. Gender is only ever an explicitly
+  // recorded value — a blank gender means not eligible, never a guess.
+  let attendanceProvider = 'gmail', attendanceSmsOn = true, attendanceSmsAvailable = false;
+  let attendancePartial = false, attendanceIds = [], attendanceSending = false;
+  // 'single' routes to attendance_invite, which allows an unrecorded gender
+  // because the admin is vouching for that one person. 'bulk' uses the
+  // stricter male-only handler.
+  let attendanceMode = 'bulk';
+
+  // Pre-Con filter. "Eligible" means could be invited today; the reply states
+  // stand on their own so you can chase non-responders or count the room.
+  function matchesPreCon(r, mode) {
+    const paid = r.status === 'confirmed' || r.status === 'partially_paid';
+    const male = r.gender === 'male';
+    switch (mode) {
+      case 'eligible':      return male && paid && !r.attendance_response;
+      case 'not_sent':      return male && paid && !r.attendance_response && !r.attendance_invited_at;
+      case 'awaiting':      return !!r.attendance_invited_at && !r.attendance_response;
+      case 'attending':     return r.attendance_response === 'attending';
+      case 'not_attending': return r.attendance_response === 'not_attending';
+      case 'no_gender':     return !r.gender;
+      default:              return true;
+    }
+  }
+
+  function attendanceEligible(r, includePartial) {
+    if (!r || r.registrant_type === 'international') return false;
+    if (r.gender !== 'male') return false;
+    return r.status === 'confirmed' || (includePartial && r.status === 'partially_paid');
+  }
+
+  // Everyone in the current view still owing an answer. Those who already
+  // replied are excluded — chasing someone who has answered is just noise.
+  function attendanceTargets(includePartial) {
+    return filteredPH.filter(r => attendanceEligible(r, includePartial) && !r.attendance_response);
+  }
+
+  function renderAttendanceProvider() {
+    const btn = document.getElementById('attendanceConfirmBtn');
+    btn.textContent = attendanceProvider === 'resend' ? '🚀 Send via Resend' : '🎟️ Send via Gmail';
+    document.getElementById('attendanceCheck-gmail').style.display  = attendanceProvider === 'gmail'  ? 'inline' : 'none';
+    document.getElementById('attendanceCheck-resend').style.display = attendanceProvider === 'resend' ? 'inline' : 'none';
+    const opt  = document.getElementById('attendanceOpt-resend');
+    const hint = document.getElementById('attendanceResendHint');
+    opt.disabled      = !notifyConfig.resend_configured;
+    opt.style.opacity = notifyConfig.resend_configured ? '1' : '0.55';
+    opt.style.cursor  = notifyConfig.resend_configured ? 'pointer' : 'not-allowed';
+    hint.textContent  = notifyConfig.resend_configured ? 'Alternative sender.' : 'Not configured.';
+  }
+
+  function toggleAttendanceProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('attendanceProviderMenu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function selectAttendanceProvider(provider) {
+    if (provider === 'resend' && !notifyConfig.resend_configured) return;
+    attendanceProvider = provider;
+    document.getElementById('attendanceProviderMenu').style.display = 'none';
+    renderAttendanceProvider();
+  }
+
+  function toggleAttendanceSms() {
+    attendanceSmsOn = !attendanceSmsOn;
+    document.getElementById('attendanceSmsTrack').style.background = attendanceSmsOn ? '#2E7048' : '#D4E2EA';
+    document.getElementById('attendanceSmsThumb').style.left       = attendanceSmsOn ? '22px'    : '2px';
+  }
+
+  function toggleAttendancePartial() {
+    attendancePartial = !attendancePartial;
+    document.getElementById('attendancePartialTrack').style.background = attendancePartial ? '#2E7048' : '#D4E2EA';
+    document.getElementById('attendancePartialThumb').style.left       = attendancePartial ? '22px'    : '2px';
+    // Only recount in bulk mode — refreshAttendanceModal rebuilds attendanceIds
+    // from the whole filtered view, which would turn a single send into a batch.
+    if (attendanceMode === 'bulk') refreshAttendanceModal();
+  }
+
+  // Single-registrant send
+  function openAttendanceModal(id, name) {
+    const reg = findRegistration(id);
+    attendanceMode = 'single';
+    attendanceIds = [id];
+    // The server rejects partially-paid unless told to allow it, so mirror the
+    // row's own status rather than making the admin flip a toggle they can't see.
+    attendancePartial = reg?.status === 'partially_paid';
+    document.getElementById('attendanceTitle').textContent = 'Pre-Conference Attendance';
+    document.getElementById('attendancePartialRow').style.display = 'none';
+    document.getElementById('attendanceSummary').innerHTML =
+      `Invites <strong>${esc(name)}</strong> to the <strong>Aspiring Leader Pre-Conference Sessions</strong>.`
+      + `<br><span style="font-size:12px;color:#6B8A9A;">They reply joining or not joining straight from the email.</span>`;
+
+    // Spell it out when we don't actually know — the admin is vouching here.
+    document.getElementById('attendanceDisclaimer').innerHTML = reg && !reg.gender
+      ? `⚠️ Only <strong>male participants</strong> are encouraged to attend. <strong>${esc(name)}</strong>'s gender isn't recorded, so please check before sending.`
+      : `ℹ️ Only <strong>male participants</strong> are encouraged to attend the Aspiring Leader Pre-Conference Sessions.`;
+
+    prepAttendanceModal([reg].filter(Boolean));
+  }
+
+  // Bulk send across the filtered view
+  function openBulkAttendanceModal() {
+    attendanceMode = 'bulk';
+    attendancePartial = false;
+    document.getElementById('attendanceTitle').textContent = 'Pre-Conference Attendance';
+    // Bulk stays male-only — sending to unrecorded genders one at a time is a
+    // considered choice, doing it to a whole batch is not.
+    document.getElementById('attendanceDisclaimer').innerHTML =
+      `ℹ️ Only <strong>male participants</strong> are encouraged to attend. This batch covers recorded males only — invite anyone with an unrecorded gender from their own row.`;
+    refreshAttendanceModal();
+    document.getElementById('attendancePartialTrack').style.background = '#D4E2EA';
+    document.getElementById('attendancePartialThumb').style.left = '2px';
+  }
+
+  function refreshAttendanceModal() {
+    const targets = attendanceTargets(attendancePartial);
+    attendanceIds = targets.map(r => r.id);
+
+    const partialAvailable = filteredPH.filter(r =>
+      r.registrant_type !== 'international' && r.gender === 'male' && r.status === 'partially_paid').length;
+    const partialRow = document.getElementById('attendancePartialRow');
+    partialRow.style.display = partialAvailable ? 'flex' : 'none';
+    document.getElementById('attendancePartialDetail').textContent =
+      `${partialAvailable} paid-in-part male participant${partialAvailable === 1 ? '' : 's'} in this view`;
+
+    const already = targets.filter(r => r.attendance_invited_at).length;
+    const warn = document.getElementById('attendanceWarning');
+    if (already) {
+      warn.innerHTML = `⚠️ <strong>${already}</strong> of these were already sent a request. Re-sending gives them a fresh link.`;
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+
+    document.getElementById('attendanceSummary').innerHTML =
+      `<strong>${targets.length}</strong> invitation${targets.length === 1 ? '' : 's'} will be sent to `
+      + `<strong>paid male participants</strong> in this view.`
+      + `<br><span style="font-size:12px;color:#6B8A9A;">Anyone without a recorded gender is excluded.</span>`;
+
+    prepAttendanceModal(targets);
+  }
+
+  function prepAttendanceModal(targets) {
+    const notReady  = smsNotReadyReason();
+    const phMobiles = new Set();
+    for (const t of targets) { const n = normPHMobile(t.mobile); if (n) phMobiles.add(n); }
+    const wouldSend = !!(notifyConfig.sms_enabled && notifyConfig.sms_on_attendance && phMobiles.size);
+    attendanceSmsAvailable = !notReady && wouldSend;
+
+    if (notReady) {
+      attendanceSmsOn = false;
+      applySmsRow('attendanceSms', 'disabled', notReady, false);
+    } else if (wouldSend) {
+      attendanceSmsOn = true;
+      const segs = notifyConfig.attendance_sms_segments || 1;
+      applySmsRow('attendanceSms', 'enabled',
+        `${phMobiles.size} mobile${phMobiles.size === 1 ? '' : 's'} · ~${phMobiles.size * segs} credits`, true);
+    } else {
+      applySmsRow('attendanceSms', 'hidden');
+    }
+
+    document.getElementById('attendanceProgressWrap').style.display = 'none';
+    document.getElementById('attendanceResults').innerHTML = '';
+    document.getElementById('attendanceProviderMenu').style.display = 'none';
+    document.getElementById('attendanceActionRow').style.display = 'flex';
+    document.getElementById('attendanceConfirmBtn').disabled = false;
+    document.getElementById('attendanceCancelBtn').textContent = 'Cancel';
+    document.getElementById('attendanceProgressBar').style.width = '0%';
+    document.getElementById('attendanceProgressPct').textContent = '0%';
+    renderAttendanceProvider();
+    document.getElementById('attendanceModal').style.display = 'flex';
+  }
+
+  function closeAttendanceModal() {
+    if (attendanceSending) return;
+    document.getElementById('attendanceProviderMenu').style.display = 'none';
+    document.getElementById('attendanceModal').style.display = 'none';
+  }
+
+  async function doAttendanceInvite() {
+    if (!attendanceIds.length) { showToast('Nobody in this view is eligible.'); return; }
+    const ids = [...attendanceIds];
+    const btn = document.getElementById('attendanceConfirmBtn');
+    const cancelBtn = document.getElementById('attendanceCancelBtn');
+    attendanceSending = true;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    cancelBtn.style.opacity = '0.5';
+    document.getElementById('attendanceProgressWrap').style.display = 'block';
+
+    const totals = { sent: 0, failed: 0, skipped: 0, sms_sent: 0, sms_credits: 0, sms_failed: 0, fell_back: false };
+    const failures = [];
+    let done = 0;
+
+    try {
+      for (let i = 0; i < ids.length; i += BULK_CHUNK) {
+        const chunk = ids.slice(i, i + BULK_CHUNK);
+        // A single-row send goes to attendance_invite, which permits an
+        // unrecorded gender. Posting it to the bulk handler would silently
+        // skip exactly the person the admin was just asked to vouch for.
+        const single = attendanceMode === 'single' && ids.length === 1;
+        const res = await fetch('/.netlify/functions/admin-data', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...(single
+              ? { action: 'attendance_invite', id: ids[0] }
+              : { action: 'bulk_attendance_invite', ids: chunk }),
+            email_provider: attendanceProvider,
+            include_partial: attendancePartial,
+            ...(attendanceSmsAvailable ? { send_sms: attendanceSmsOn } : {}),
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Send failed');
+
+        if (single) {
+          // Normalise the single-send shape onto the same totals the bulk
+          // renderer reads.
+          totals.sent      += 1;
+          totals.sms_sent  += json.sms?.sent || 0;
+          totals.sms_credits += json.sms?.segments || 0;
+          totals.sms_failed += json.sms?.failed || 0;
+          totals.fell_back  = totals.fell_back || !!json.fell_back;
+        } else {
+          totals.sent        += json.sent || 0;
+          totals.failed      += json.failed || 0;
+          totals.skipped     += json.skipped || 0;
+          totals.sms_sent    += json.sms_sent || 0;
+          totals.sms_credits += json.sms_credits || 0;
+          totals.sms_failed  += json.sms_failed || 0;
+          totals.fell_back    = totals.fell_back || !!json.fell_back;
+          failures.push(...(json.results || []).filter(r => !r.ok));
+        }
+
+        done = i + chunk.length;
+        const pct = Math.round(Math.min(100, (done / ids.length) * 100));
+        document.getElementById('attendanceProgressBar').style.width = pct + '%';
+        document.getElementById('attendanceProgressPct').textContent = pct + '%';
+        document.getElementById('attendanceProgressLabel').textContent = `Sent ${totals.sent} of ${ids.length}…`;
+      }
+      document.getElementById('attendanceProgressLabel').textContent = 'Done';
+      renderAttendanceResults(totals, failures);
+      showToast(`🎟️ ${totals.sent} pre-conference invitation${totals.sent === 1 ? '' : 's'} sent`);
+      loadData();
+    } catch (e) {
+      document.getElementById('attendanceProgressLabel').textContent = 'Stopped early';
+      renderAttendanceResults(totals, failures, { error: e.message, remaining: ids.length - done });
+      showToast('Error: ' + e.message);
+      loadData();
+    } finally {
+      attendanceSending = false;
+      cancelBtn.style.opacity = '1';
+      cancelBtn.textContent = 'Close';
+      btn.disabled = false;
+      renderAttendanceProvider();
+    }
+  }
+
+  function renderAttendanceResults(totals, failures, stopped) {
+    const via = totals.fell_back ? 'Gmail (Resend unavailable)' : (attendanceProvider === 'resend' ? 'Resend' : 'Gmail');
+    const lines = [
+      `✅ <strong>${totals.sent}</strong> request${totals.sent === 1 ? '' : 's'} sent via ${via}`,
+      totals.sms_sent   ? `📱 <strong>${totals.sms_sent}</strong> SMS sent (${totals.sms_credits} credits)` : '',
+      totals.sms_failed ? `⚠️ ${totals.sms_failed} SMS failed` : '',
+      totals.skipped    ? `↩️ ${totals.skipped} skipped — not an eligible paid male participant` : '',
+      totals.failed     ? `❌ <strong>${totals.failed}</strong> failed: ${failures.slice(0, 5).map(f => esc(f.email)).join(', ')}` : '',
+    ];
+    if (stopped) {
+      lines.push(`<div style="margin-top:8px;padding:8px 12px;background:#FDECEA;border-left:3px solid #C0392B;border-radius:0 6px 6px 0;color:#C0392B;">`
+        + `❌ Stopped after an error: ${esc(stopped.error)}<br>`
+        + `<strong>${stopped.remaining}</strong> not sent. The ones above already went out.</div>`);
+    }
+    document.getElementById('attendanceResults').innerHTML = lines.filter(Boolean).join('<br>');
+  }
+
   // Appends the SMS outcome to a toast. Returns '' when no SMS was attempted.
   function smsToastSuffix(sms) {
     if (!sms) return '';
@@ -2101,7 +2526,7 @@
   }
 
   function resetFilters(tab) {
-    if (tab === 'ph') { ['ph-search','ph-status','ph-student'].forEach(id => document.getElementById(id).value='');
+    if (tab === 'ph') { ['ph-search','ph-status','ph-student','ph-precon'].forEach(id => document.getElementById(id).value='');
       hideCancelled.ph = true;
       const phTrack = document.getElementById('ph-hide-cancelled-track');
       if (phTrack) phTrack.classList.add('on'); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
@@ -2114,7 +2539,9 @@
   }
 
   function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
-  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  // Apostrophes matter: row buttons embed names inside single-quoted JS string
+  // literals in onclick handlers, so an unescaped O'Brien breaks the handler.
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function churchDisplay(church, isPH) {
     const val = (church || '').trim();
     if (!val || !isPH) return val;
@@ -2642,14 +3069,16 @@
     sms_cancelled:    'sms_on_cancelled',
     sms_confirmed:    'sms_on_confirmed',
     sms_registration: 'sms_on_registration',
+    sms_attendance:   'sms_on_attendance',
   };
 
   let currentSettings = {
     reg_ph_closed: false, reg_intl_closed: false,
     sms_enabled: false, sms_on_followup: true, sms_on_cancelled: true,
-    sms_on_confirmed: false, sms_on_registration: false,
+    sms_on_confirmed: false, sms_on_registration: false, sms_on_attendance: true,
     sms_followup_template: '', sms_cancelled_template: '',
     sms_confirmed_template: '', sms_registration_template: '',
+    sms_attendance_template: '',
   };
   let settingsProviders = { sms_configured: false, resend_configured: false };
   let settingsSmsAccount = null;
@@ -2969,8 +3398,10 @@
       for (const column of Object.values(SETTING_TOGGLES)) {
         if (column in data) currentSettings[column] = !!data[column];
       }
-      for (const key of ['sms_followup_template', 'sms_cancelled_template', 'sms_confirmed_template', 'sms_registration_template']) {
-        currentSettings[key] = data[key] || '';
+      // Derive the template keys from the server catalogue so a new event never
+      // needs this list updating by hand.
+      for (const c of (data.sms_events || [])) {
+        currentSettings[c.column] = data[c.column] || '';
       }
       settingsProviders  = { ...settingsProviders, ...(data.providers || {}) };
       settingsSmsAccount = data.sms_account || null;
@@ -3069,12 +3500,20 @@
   window.insertPlaceholder          = insertPlaceholder;
   window.resetSmsTemplate           = resetSmsTemplate;
   window.toggleSmsPanel             = toggleSmsPanel;
+  window.openAttendanceModal        = openAttendanceModal;
+  window.openBulkAttendanceModal    = openBulkAttendanceModal;
+  window.closeAttendanceModal       = closeAttendanceModal;
+  window.doAttendanceInvite         = doAttendanceInvite;
+  window.toggleAttendanceSms        = toggleAttendanceSms;
+  window.toggleAttendancePartial    = toggleAttendancePartial;
+  window.toggleAttendanceProviderMenu = toggleAttendanceProviderMenu;
+  window.selectAttendanceProvider   = selectAttendanceProvider;
   window.closeGroupScopePicker = closeGroupScopePicker;
   window.chooseGroupScope     = chooseGroupScope;
 
   // Dismiss either provider dropdown on any click outside it
   document.addEventListener('click', e => {
-    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn']]) {
+    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn'], ['attendanceProviderMenu', 'attendanceProviderBtn']]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
       if (menu.contains(e.target) || e.target.closest('#' + btnId)) continue;

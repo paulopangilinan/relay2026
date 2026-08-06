@@ -290,6 +290,16 @@
           <input type="number" id="age" placeholder="e.g. 22" min="17" max="45" required>
         </div>
       </div>
+      <div class="field">
+        <label>Gender <span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="gender" required>
+            <option value="" disabled selected>Select…</option>
+            <option value="male">♂️ Male</option>
+            <option value="female">♀️ Female</option>
+          </select>
+        </div>
+      </div>
       <div class="grid-2">
         <div class="field">
           <label>Mobile Number <span class="req">*</span></label>
@@ -617,8 +627,9 @@
     const age     = document.getElementById('age').value;
     const country = document.getElementById('country').value;
     const church  = document.getElementById('church').value.trim();
+    const gender  = document.getElementById('gender').value;
 
-    if (!name || !age || !country || !church) {
+    if (!name || !age || !country || !church || !gender) {
       showToast('⚠️ Please fill in all required fields.', true); return false;
     }
     if (country === 'Others' && !document.getElementById('otherCountry').value.trim()) {
@@ -685,6 +696,7 @@
         registrantType: 'international',
         name:     document.getElementById('name').value.trim(),
         age:      document.getElementById('age').value,
+        gender:   document.getElementById('gender').value || null,
         mobile:   document.getElementById('countryCode').value + document.getElementById('mobile').value.trim(),
         email:    document.getElementById('email').value.trim(),
         country:  country === 'Others' ? document.getElementById('otherCountry').value.trim() : country,

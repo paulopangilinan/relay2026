@@ -686,6 +686,15 @@
           <div class="field-msg" id="mobileMsg"></div>
         </div>
         <div class="field" style="margin-top:8px;">
+          <div class="section-label" style="margin-bottom:8px;">Gender <span class="req">*</span></div>
+          <div class="toggle-wrap">
+            <input type="radio" name="p-gender-0" id="p-male-0" value="male">
+            <label for="p-male-0">♂️ Male</label>
+            <input type="radio" name="p-gender-0" id="p-female-0" value="female">
+            <label for="p-female-0">♀️ Female</label>
+          </div>
+        </div>
+        <div class="field" style="margin-top:8px;">
           <div class="section-label" style="margin-bottom:8px;">Participant Category <span class="req">*</span></div>
           <div class="toggle-wrap">
             <input type="radio" name="p-status-0" id="p-student-0" value="student" onchange="document.getElementById('p-schoolIdWrap-0').style.display='block'">
@@ -753,6 +762,15 @@
             <input type="tel" id="m-mobile" placeholder="9XX XXX XXXX" oninput="validateModalMobile()">
           </div>
           <div class="field-msg" id="m-mobileMsg"></div>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <div class="section-label" style="margin-bottom:8px;">Gender <span class="req">*</span></div>
+          <div class="toggle-wrap">
+            <input type="radio" name="m-gender" id="m-male" value="male">
+            <label for="m-male">♂️ Male</label>
+            <input type="radio" name="m-gender" id="m-female" value="female">
+            <label for="m-female">♀️ Female</label>
+          </div>
         </div>
         <div class="field" style="margin-top:8px;">
           <div class="section-label" style="margin-bottom:8px;">Participant Category <span class="req">*</span></div>
@@ -1285,6 +1303,7 @@
     document.getElementById('m-mobile').value  = '';
     document.getElementById('m-mobileMsg').textContent = '';
     document.querySelectorAll('input[name="m-status"]').forEach(r => r.checked = false);
+    document.querySelectorAll('input[name="m-gender"]').forEach(r => r.checked = false);
     document.getElementById('m-schoolIdWrap').style.display = 'none';
     clearSmartUpload('upload-modal-id', 'm-schoolIdFile');
 
@@ -1296,6 +1315,8 @@
       document.getElementById('m-mobile').value = p.mobile.replace(/^\+63/, '');
       const radio = document.querySelector(`input[name="m-status"][value="${p.studentStatus}"]`);
       if (radio) { radio.checked = true; }
+      const genderRadio = document.querySelector(`input[name="m-gender"][value="${p.gender}"]`);
+      if (genderRadio) { genderRadio.checked = true; }
       if (p.studentStatus === 'student') {
         document.getElementById('m-schoolIdWrap').style.display = 'block';
         if (p.schoolIdName) {
@@ -1352,12 +1373,14 @@
     const age    = document.getElementById('m-age').value.trim();
     const mobile = document.getElementById('m-mobile').value.trim();
     const status = document.querySelector('input[name="m-status"]:checked');
+    const gender = document.querySelector('input[name="m-gender"]:checked');
 
     if (!name)   { showToast('⚠️ Please enter a name.', true); return; }
     if (!age)    { showToast('⚠️ Please enter an age.', true); return; }
     if (!mobile || !/^9\d{9}$/.test(mobile.replace(/[\s\-().]/g,''))) {
       showToast('⚠️ Please enter a valid mobile number (e.g. 9171234567).', true); return;
     }
+    if (!gender) { showToast('⚠️ Please select a gender.', true); return; }
     if (!status) { showToast('⚠️ Please select a Participant Category.', true); return; }
 
     const schoolFile = document.getElementById('m-schoolIdFile').files[0];
@@ -1370,19 +1393,19 @@
     // If new school ID selected, read it then save; else save immediately
     if (schoolFile) {
       fileToBase64(document.getElementById('m-schoolIdFile')).then(function(data) {
-        _commitParticipant(name, age, mobile, status.value, data?.base64||null, data?.name||null);
+        _commitParticipant(name, age, mobile, status.value, gender.value, data?.base64||null, data?.name||null);
       });
     } else {
       const schoolIdBase64 = existingId || null;
       const schoolIdName   = editingIndex !== null ? groupParticipants[editingIndex]?.schoolIdName || null : null;
-      _commitParticipant(name, age, mobile, status.value, schoolIdBase64, schoolIdName);
+      _commitParticipant(name, age, mobile, status.value, gender.value, schoolIdBase64, schoolIdName);
     }
   }
 
-  function _commitParticipant(name, age, mobile, studentStatus, schoolIdBase64, schoolIdName) {
+  function _commitParticipant(name, age, mobile, studentStatus, gender, schoolIdBase64, schoolIdName) {
     const participant = {
       name, age, mobile: '+63' + mobile,
-      studentStatus, schoolIdBase64, schoolIdName,
+      studentStatus, gender, schoolIdBase64, schoolIdName,
     };
     if (editingIndex !== null) {
       groupParticipants[editingIndex] = participant;
@@ -1458,7 +1481,8 @@
       const name   = document.getElementById('p-name-0')?.value.trim();
       const age    = document.getElementById('p-age-0')?.value;
       const status = document.querySelector('input[name="p-status-0"]:checked');
-      if (!name || !age || !status) {
+      const gender = document.querySelector('input[name="p-gender-0"]:checked');
+      if (!name || !age || !status || !gender) {
         showToast('⚠️ Please fill in all required fields.', true); return false;
       }
       if (!validateMobileField()) {
@@ -1495,12 +1519,14 @@
       participants = groupParticipants; // already has all data including schoolIdBase64
     } else {
       const status = document.querySelector('input[name="p-status-0"]:checked').value;
+      const gender = document.querySelector('input[name="p-gender-0"]:checked')?.value || null;
       const schoolIdData = status === 'student' ? await fileToBase64(document.getElementById('p-schoolIdFile-0')) : null;
       participants = [{
         name:           document.getElementById('p-name-0').value.trim(),
         age:            document.getElementById('p-age-0').value,
         mobile:         '+63' + document.getElementById('p-mobile-0').value.trim(),
         studentStatus:  status,
+        gender,
         schoolIdBase64: schoolIdData?.base64 || null,
         schoolIdName:   schoolIdData?.name   || null,
       }];

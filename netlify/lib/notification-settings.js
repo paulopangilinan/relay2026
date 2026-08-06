@@ -9,6 +9,7 @@ export const NOTIFICATION_DEFAULTS = {
   sms_on_cancelled:    true,
   sms_on_confirmed:    false,
   sms_on_registration: false,
+  sms_on_attendance:   true,
 };
 
 // Free-text columns are kept apart from the boolean switches because the
@@ -19,6 +20,7 @@ export const NOTIFICATION_TEXT_DEFAULTS = {
   sms_cancelled_template:    null,
   sms_confirmed_template:    null,
   sms_registration_template: null,
+  sms_attendance_template:   null,
 };
 
 /** Body an event should send with, or undefined to use the built-in default. */

@@ -71,6 +71,19 @@ Thank you! We look forward to seeing you at the conference.`,
     default: `RELAY 2026: Hi {name}, your payment is verified and your slot is confirmed! Sept 23-26, CCT Tagaytay. See you there!`,
   },
 
+  attendance: {
+    column:  'sms_attendance_template',
+    label:   'Pre-conference invitation is sent',
+    tab:     'Pre-Con Invite',
+    hint:    'Invites paid male participants to the pre-conference sessions.',
+    tokens:  ['name', 'full_name', 'count', 'contact'],
+    default: `Hi {name},
+
+As part of the Asia-Pacific RELAY Conference 2026, male participants are invited to the Aspiring Leader Pre-Conference Sessions on Sept 23, 2PM to 6PM.
+
+Please let us know if you can join, using the link in your email. Check your inbox, junk or spam folder. Questions? Text {contact}.`,
+  },
+
   registration: {
     column:  'sms_registration_template',
     label:   'A new registration comes in',
@@ -127,6 +140,9 @@ export function renderEventSMS(event, vars = {}, template) {
 // Named wrappers keep the call sites readable.
 export const followUpSMS     = ({ name, totalLabel, count, uploadLink, template }) =>
   renderEventSMS('followup', { name, totalLabel, count, uploadLink }, template);
+
+export const attendanceSMS   = ({ name, count, template }) =>
+  renderEventSMS('attendance', { name, count }, template);
 
 export const cancelledSMS    = ({ name, count, template }) =>
   renderEventSMS('cancelled', { name, count }, template);
