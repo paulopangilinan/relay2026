@@ -4,3 +4,7 @@ node_modules/
 .netlify/
 relay-env-backup.env
 seed-superadmin.js
+
+# Gender review export (contains registrant PII — not for version control)
+gender-review.csv
+gender-review-*.csv

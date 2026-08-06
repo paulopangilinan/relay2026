@@ -105,6 +105,7 @@ export const handler = async (event) => {
           mobile:           p.mobile,
           email:            email.toLowerCase().trim(),
           student_status:   p.studentStatus,
+          gender:           p.gender === 'male' || p.gender === 'female' ? p.gender : null,
           church:           churchName,
           payment_ready:    paymentReady === "now",
           school_id_url:    schoolIdUrl,

@@ -14,7 +14,7 @@ export const handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { name, age, mobile, email, country, church, allergens, allergenOther, receiptBase64, receiptName } = body;
+    const { name, age, gender, mobile, email, country, church, allergens, allergenOther, receiptBase64, receiptName } = body;
 
     const siteUrl     = process.env.SITE_URL;
     const imgUrl      = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
@@ -43,6 +43,7 @@ export const handler = async (event) => {
       .from("registrations")
       .insert({
         name, age: parseInt(age), mobile, email,
+        gender: gender === 'male' || gender === 'female' ? gender : null,
         registrant_type: "international",
         country,
         church,

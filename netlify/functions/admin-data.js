@@ -4,7 +4,8 @@ import jwt from 'jsonwebtoken';
 import { sendEmail, normalizeProvider, resendConfigured } from '../lib/mailer.js';
 import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimateSegments } from '../lib/sms.js';
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
-import { followUpSMS, confirmedSMS, cancelledSMS } from '../lib/sms-templates.js';
+import { followUpSMS, confirmedSMS, cancelledSMS, attendanceSMS } from '../lib/sms-templates.js';
+import { attendanceLinks } from '../lib/attendance.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
@@ -15,6 +16,24 @@ function getAdmin(event) {
     const token = (event.headers.authorization || '').replace('Bearer ', '');
     return jwt.verify(token, JWT_SECRET);
   } catch { return null; }
+}
+
+/**
+ * Base URL for links we put in emails.
+ *
+ * SITE_URL points at the deployed site, so a link generated while running
+ * locally sends the recipient to production — where the function may not exist
+ * yet, giving a 404. When the request itself came from localhost we're clearly
+ * in dev, so point links back at the running instance.
+ *
+ * Only localhost is trusted from the Host header. Honouring an arbitrary host
+ * in production would let a request forge the links inside outgoing email.
+ */
+function linkBase(event) {
+  const host = (event?.headers?.host || '').toLowerCase();
+  const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  if (isLocal) return `http://${event.headers.host}`;
+  return (process.env.SITE_URL || '').replace(/\/+$/, '');
 }
 
 async function getAdminsWithPermission(permission) {
@@ -63,6 +82,10 @@ export const handler = async (event) => {
               uploadLink: `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/upload-receipt?id=3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d&group_id=8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d`,
               template: templateFor(notifySettings, 'followup'),
             })),
+            attendance_sms_segments: estimateSegments(attendanceSMS({
+              name: 'Juan Dela Cruz', count: 1,
+              template: templateFor(notifySettings, 'attendance'),
+            })),
           },
         }),
       };
@@ -80,7 +103,7 @@ export const handler = async (event) => {
       // bulk_follow_up carries `ids` instead of a single `id` — it validates
       // its own payload below rather than being forced to send a dummy id.
       if (!action) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action' }) };
-      if (!id && action !== 'bulk_follow_up') {
+      if (!id && !['bulk_follow_up', 'bulk_attendance_invite'].includes(action)) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
       }
 
@@ -244,6 +267,7 @@ export const handler = async (event) => {
           sendSms:        body.send_sms !== false,
           settings:       followUpSettings,
           requesterEmail: requester.email,
+          siteUrl:        linkBase(event),
         });
 
         return {
@@ -297,6 +321,7 @@ export const handler = async (event) => {
           try {
             const { mailResult, smsResult } = await runFollowUp(reg, {
               provider, sendSms, settings, requesterEmail: requester.email,
+              siteUrl: linkBase(event),
             });
             return {
               id: reg.id, name: reg.name, email: reg.email, ok: true,
@@ -406,6 +431,115 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
       }
 
+      // ── Attendance invitation (single) ─────────────────────────────────────
+      if (action === 'attendance_invite') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+
+        const eligible = attendanceEligibleStatuses(!!body.include_partial);
+        if (reg.registrant_type === 'international') {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'The pre-conference invitation is for Philippine participants only' }) };
+        }
+        // Female participants are excluded; an unrecorded gender is allowed
+        // through because the admin makes that call per person in the UI.
+        if (reg.gender === 'female') {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registrant is recorded as female' }) };
+        }
+        if (!eligible.includes(reg.status)) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registrant has not paid yet' }) };
+        }
+
+        const settings = await getNotificationSettings(supabase);
+        const { mailResult, smsResult } = await runAttendanceInvite(reg, {
+          provider:       normalizeProvider(body.email_provider),
+          sendSms:        body.send_sms !== false,
+          settings,
+          requesterEmail: requester.email,
+          siteUrl:        linkBase(event),
+        });
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success: true,
+            provider: mailResult.provider,
+            fell_back: !!mailResult.fellBack,
+            sms: smsSummary(smsResult),
+          }),
+        };
+      }
+
+      // ── Attendance invitation (bulk) ───────────────────────────────────────
+      // Per person, not per group: each man needs his own signed link.
+      if (action === 'bulk_attendance_invite') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : [];
+        if (!ids.length) return { statusCode: 400, headers, body: JSON.stringify({ error: 'No registrations selected' }) };
+        if (ids.length > BULK_LIMIT) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: `Too many at once — send at most ${BULK_LIMIT} per batch` }) };
+        }
+
+        const { data: regs, error: fetchErr } = await supabase.from('registrations').select('*').in('id', ids);
+        if (fetchErr) throw fetchErr;
+
+        const eligible = attendanceEligibleStatuses(!!body.include_partial);
+        const targets = [];
+        let skipped = 0;
+        for (const reg of regs || []) {
+          const ok = reg.registrant_type !== 'international'
+                  && reg.gender === 'male'
+                  && eligible.includes(reg.status);
+          if (ok) targets.push(reg); else skipped++;
+        }
+
+        const provider = normalizeProvider(body.email_provider);
+        const settings = await getNotificationSettings(supabase);
+        const sendSms  = body.send_sms !== false;
+
+        const results = await mapWithConcurrency(targets, BULK_CONCURRENCY, async (reg) => {
+          try {
+            const { mailResult, smsResult } = await runAttendanceInvite(reg, {
+              provider, sendSms, settings, requesterEmail: requester.email,
+              siteUrl: linkBase(event),
+            });
+            return {
+              id: reg.id, name: reg.name, email: reg.email, ok: true,
+              provider: mailResult.provider, fell_back: !!mailResult.fellBack,
+              sms: smsSummary(smsResult),
+            };
+          } catch (err) {
+            console.error(`[bulk_attendance_invite] ${reg.email} failed:`, err.message);
+            return { id: reg.id, name: reg.name, email: reg.email, ok: false, error: err.message };
+          }
+        });
+
+        const sent   = results.filter(r => r.ok);
+        const failed = results.filter(r => !r.ok);
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success:     true,
+            sent:        sent.length,
+            failed:      failed.length,
+            skipped,
+            sms_sent:    sent.reduce((s, r) => s + (r.sms?.sent || 0), 0),
+            sms_failed:  sent.reduce((s, r) => s + (r.sms?.failed || 0), 0),
+            sms_credits: sent.reduce((s, r) => s + (r.sms?.segments || 0), 0),
+            fell_back:   sent.some(r => r.fell_back),
+            provider,
+            results,
+          }),
+        };
+      }
+
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
     } catch (err) {
       console.error(err);
@@ -448,7 +582,7 @@ async function mapWithConcurrency(items, limit, fn) {
  * Shared by the single-row action and the bulk action so both behave identically.
  * Assumes the caller has already checked status === 'awaiting_payment'.
  */
-async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail }) {
+async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail, siteUrl: baseUrl }) {
   const effectiveGroupId = reg.group_id || null;
 
   let allMembers = [reg];
@@ -464,7 +598,7 @@ async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail })
   const isGroup    = allMembers.length > 1;
   const totalAmt   = allMembers.reduce((s, r) => s + feeFor(r), 0);
   const totalLabel = `PHP ${totalAmt.toLocaleString()}`;
-  const siteUrl    = (process.env.SITE_URL || '').replace(/\/+$/, '');
+  const siteUrl    = (baseUrl || process.env.SITE_URL || '').replace(/\/+$/, '');
   const imgUrl     = (process.env.IMAGE_SITE_URL || siteUrl).replace(/\/+$/, '');
   const heroUrl    = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
   const qrUrl      = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
@@ -517,6 +651,49 @@ async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail })
   } else {
     await supabase.from('registrations').update({ last_followup_at: followupTs }).eq('id', reg.id);
   }
+
+  return { mailResult, smsResult };
+}
+
+// Statuses that count as "already paid" for the attendance invite. Partially
+// paid is opt-in per send, because whether a part-payment counts is a judgement
+// call the admin makes at the time.
+function attendanceEligibleStatuses(includePartial) {
+  return includePartial ? ['confirmed', 'partially_paid'] : ['confirmed'];
+}
+
+/**
+ * Send one attendance invitation: email with the two CTA links, plus the
+ * optional SMS pointing at it. Unlike a follow-up this is strictly per person —
+ * every man needs his own signed link, so group members are NOT collapsed.
+ */
+async function runAttendanceInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl }) {
+  const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl || '').replace(/\/+$/, '');
+  const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+
+  const mailResult = await sendEmail({
+    provider,
+    to:      reg.email,
+    subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, you're invited to the Aspiring Leader Pre-Conference Sessions`,
+    html:    attendanceEmail({ name: reg.name, heroUrl, links: attendanceLinks(siteUrl, reg.id) }),
+  });
+
+  let smsResult = null;
+  if (sendSms && smsAllowed(settings, 'attendance')) {
+    smsResult = await sendToDistinctMobiles(supabase, [reg], {
+      event:       'attendance',
+      groupId:     reg.group_id || null,
+      triggeredBy: requesterEmail,
+      buildMessage: (member) => attendanceSMS({
+        name: member.name, count: 1,
+        template: templateFor(settings, 'attendance'),
+      }),
+    });
+  }
+
+  await supabase.from('registrations')
+    .update({ attendance_invited_at: new Date().toISOString() })
+    .eq('id', reg.id);
 
   return { mailResult, smsResult };
 }
@@ -671,6 +848,77 @@ function paymentReminderEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl
         <a href="${uploadLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#C49A1A,#E8B830);">📎 Submit Payment Receipt</a>
       </div>
       <p style="font-size:11px;color:#6B8A9A;text-align:center;margin-top:10px;">Or copy this link: ${uploadLink}</p>
+    </div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
+  </div></body></html>`;
+}
+
+function attendanceEmail({ name, heroUrl, links }) {
+  const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
+    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
+    .hero-img{width:100%;display:block;}
+    .header{background:linear-gradient(135deg,#1C2B38,#3A8BBF);padding:28px 32px;text-align:center;}
+    .header h1{color:#fff;font-size:22px;margin:0;}
+    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
+    .body{padding:32px;}
+    .session-box{background:#EBF5FB;border-radius:10px;padding:18px 22px;margin:18px 0;}
+    .session-title{font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:10px;}
+    .session-row{font-size:13px;color:#2A3D4A;line-height:1.9;}
+    .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:18px 0;}
+    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
+  </style></head><body><div class="wrap">
+    <div class="bar"></div>
+    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
+    <div class="header"><h1>You're Invited</h1><p>RELAY Conference Asia Pacific 2026</p></div>
+    <div class="body">
+      <p style="font-size:15px;color:#2A3D4A;margin-bottom:14px;">Hi <strong>${firstName}</strong>,</p>
+
+      <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;">
+        Your slot at <strong>RELAY Conference Asia Pacific 2026</strong> is confirmed — thank you for registering.
+      </p>
+
+      <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:4px;">
+        As part of the conference, male participants are invited to the
+        <strong>Aspiring Leader Pre-Conference Sessions</strong>, held on the first day
+        before the main programme begins.
+      </p>
+
+      <div class="session-box">
+        <div class="session-title">Aspiring Leader Pre-Conference Sessions</div>
+        <div class="session-row">
+          🗓 <strong>Tuesday, September 23, 2026</strong><br>
+          🕑 <strong>2:00 PM to 6:00 PM</strong><br>
+          📍 CCT Tagaytay Retreat and Training Center
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin:0 0 4px;">
+        Please let us know whether you'll be joining. Your answer helps us prepare
+        the room and materials for everyone attending.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px;">
+        <tr>
+          <td align="center" style="padding-bottom:10px;">
+            <a href="${links.attending}" style="display:inline-block;padding:15px 34px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Yes, I'll be there</a>
+          </td>
+        </tr>
+        <tr>
+          <td align="center">
+            <a href="${links.not_attending}" style="display:inline-block;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;color:#6B8A9A;background:#f0f4f7;border:1px solid #D4E2EA;">🚫 I can't make it</a>
+          </td>
+        </tr>
+      </table>
+
+      <div class="note">You can change your answer any time by clicking the other button in this email.</div>
+      <p style="font-size:11px;color:#6B8A9A;line-height:1.6;margin-top:14px;">
+        Buttons not working? Copy one of these into your browser:<br>
+        <strong>Joining:</strong> ${links.attending}<br>
+        <strong>Not joining:</strong> ${links.not_attending}
+      </p>
     </div>
     <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
   </div></body></html>`;
