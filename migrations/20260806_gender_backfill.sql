@@ -1,5 +1,5 @@
--- Gender backfill — generated 2026-08-06T05:24:50.904Z from gender-review.csv
--- 136 registration rows (64 male, 72 female).
+-- Gender backfill — generated 2026-08-06T10:15:50.561Z from gender-review.csv
+-- 156 registration rows (69 male, 87 female).
 -- Rows, not people: someone who registered more than once appears once per
 -- registration, so don't read these as a headcount.
 -- Values were set by hand; nothing here was inferred from names.
@@ -73,38 +73,56 @@ UPDATE public.registrations SET gender = 'female' WHERE id = 'c330dc7d-243e-40dc
 UPDATE public.registrations SET gender = 'female' WHERE id = 'e9a91876-d342-47df-bdcc-87f95f0d4036' AND gender IS DISTINCT FROM 'female';  -- Maridel Tuazon
 UPDATE public.registrations SET gender = 'male' WHERE id = '43e59f66-9e06-4c5e-9243-1b66efa01182' AND gender IS DISTINCT FROM 'male';  -- Mark Razel Martinez
 UPDATE public.registrations SET gender = 'female' WHERE id = '05da8d82-c6c1-4cd9-bbda-ffdde58a0a02' AND gender IS DISTINCT FROM 'female';  -- MEEKY GLYN T. BAUTISTA
+UPDATE public.registrations SET gender = 'female' WHERE id = '3bb1dec2-ed47-409a-b2a0-d29a554504b9' AND gender IS DISTINCT FROM 'female';  -- Merrynol Iluzada
+UPDATE public.registrations SET gender = 'female' WHERE id = 'c43afb10-81b6-477e-ba6f-bfbe25aef843' AND gender IS DISTINCT FROM 'female';  -- Miraquel Centino
 UPDATE public.registrations SET gender = 'female' WHERE id = '78762bb6-f32e-454b-a031-a665fd4098e3' AND gender IS DISTINCT FROM 'female';  -- Monique Gonzales
 UPDATE public.registrations SET gender = 'female' WHERE id = '346433e2-7bb1-4bd8-a990-858e89bf0130' AND gender IS DISTINCT FROM 'female';  -- PATRICIA JOY YANSON BELLEZA
 UPDATE public.registrations SET gender = 'female' WHERE id = '246ac0c0-5cf0-4adf-986d-c9ac984d1e01' AND gender IS DISTINCT FROM 'female';  -- Princess Joy Nodado
+UPDATE public.registrations SET gender = 'male' WHERE id = 'b27157a8-f3bb-49ea-8f5c-838e1d80fd06' AND gender IS DISTINCT FROM 'male';  -- Rehm Rustico M. Prijoles
+UPDATE public.registrations SET gender = 'male' WHERE id = '8aeb400c-170c-4c9f-9230-849828364367' AND gender IS DISTINCT FROM 'male';  -- Rencel Manib
 UPDATE public.registrations SET gender = 'male' WHERE id = 'b5352096-43f0-4bc9-a0d2-237c90467025' AND gender IS DISTINCT FROM 'male';  -- Reynaldo Jr. Bañares
 UPDATE public.registrations SET gender = 'female' WHERE id = '0b2d542e-b4e9-472d-b177-0155b24e4fc5' AND gender IS DISTINCT FROM 'female';  -- Reynalyn Medina
+UPDATE public.registrations SET gender = 'male' WHERE id = '4aaddc08-8831-49f1-9ff1-534d4412eaf8' AND gender IS DISTINCT FROM 'male';  -- Rhance Manabat
 UPDATE public.registrations SET gender = 'female' WHERE id = '756996e6-cf4b-47a5-b732-452a0e950871' AND gender IS DISTINCT FROM 'female';  -- Rica Jeneth Vidal-Batilo
 UPDATE public.registrations SET gender = 'male' WHERE id = '2dcad5ad-e939-4ab7-b6e4-dff0fe2ca577' AND gender IS DISTINCT FROM 'male';  -- Ryan daging mollanida
 UPDATE public.registrations SET gender = 'female' WHERE id = '7edb9a17-c86e-4214-9864-42b1483c7c2f' AND gender IS DISTINCT FROM 'female';  -- Sheila Jessen Yparraguirre
 UPDATE public.registrations SET gender = 'female' WHERE id = '43dc02cc-1c33-4b84-a428-d457298ef20a' AND gender IS DISTINCT FROM 'female';  -- Sherlyn mae fatima bancud
 UPDATE public.registrations SET gender = 'female' WHERE id = 'e5921809-fc97-403a-9a69-d4f32d978491' AND gender IS DISTINCT FROM 'female';  -- Trisha Marie Bustonera
+UPDATE public.registrations SET gender = 'female' WHERE id = 'b3a72183-767b-44d7-827c-33b474970fda' AND gender IS DISTINCT FROM 'female';  -- Via Colleen Jo
+UPDATE public.registrations SET gender = 'female' WHERE id = '58eed35b-ed57-4b34-90f3-7dc16c3a991a' AND gender IS DISTINCT FROM 'female';  -- Zaina A. Yparraguirre
+UPDATE public.registrations SET gender = 'female' WHERE id = '965da324-1be7-472f-8e79-3c79c4c5b2b9' AND gender IS DISTINCT FROM 'female';  -- Ziah Yparraguirre
+UPDATE public.registrations SET gender = 'female' WHERE id = '1910f860-68b1-4c4e-ab9b-d41552136978' AND gender IS DISTINCT FROM 'female';  -- Emgel Miranda
 UPDATE public.registrations SET gender = 'male' WHERE id = '35168366-24ff-484d-957f-2314d2e547bc' AND gender IS DISTINCT FROM 'male';  -- JOSHUA VINCENT G. DIAZ
 UPDATE public.registrations SET gender = 'male' WHERE id = '9ebf306b-808b-4e59-9a3f-7e367cbdf883' AND gender IS DISTINCT FROM 'male';  -- Mark Lewis Carillo
 UPDATE public.registrations SET gender = 'male' WHERE id = '1857233f-3390-473f-a3c6-217fd08dedf7' AND gender IS DISTINCT FROM 'male';  -- Ronel Cabale
+UPDATE public.registrations SET gender = 'female' WHERE id = 'bee81604-b927-4047-8653-e3fd756e3c00' AND gender IS DISTINCT FROM 'female';  -- Shekinah Hannelore Santos
+UPDATE public.registrations SET gender = 'female' WHERE id = '6b00b7c4-1eae-47fe-ab13-2de6aa7c5eb4' AND gender IS DISTINCT FROM 'female';  -- Ara I. Acedo
 UPDATE public.registrations SET gender = 'female' WHERE id = '7c0976bb-16e7-4859-8394-c2fa5c9c06da' AND gender IS DISTINCT FROM 'female';  -- Bea Jacqueline B. Angeles
+UPDATE public.registrations SET gender = 'male' WHERE id = '581e2ca5-b63e-48da-b607-a2c51452d482' AND gender IS DISTINCT FROM 'male';  -- Brendon John Sanchez
 UPDATE public.registrations SET gender = 'female' WHERE id = 'b1195dff-2ad1-430a-8ae6-c0755abd6244' AND gender IS DISTINCT FROM 'female';  -- Candisse D. Dacon
 UPDATE public.registrations SET gender = 'female' WHERE id = 'f69b5135-deb6-413a-82d8-51279dbc897c' AND gender IS DISTINCT FROM 'female';  -- Danikka M. Tuazon
 UPDATE public.registrations SET gender = 'male' WHERE id = '2fef8b28-20fc-4034-853f-1beafbda59a5' AND gender IS DISTINCT FROM 'male';  -- Edmon D. Cantonjos
+UPDATE public.registrations SET gender = 'female' WHERE id = 'd763aa6d-aae8-45e4-ba9e-adb58c221d67' AND gender IS DISTINCT FROM 'female';  -- Ehrinne Janeah M. Encabo
+UPDATE public.registrations SET gender = 'male' WHERE id = '886206ff-8a54-4619-a905-20f8edcce9c6' AND gender IS DISTINCT FROM 'male';  -- Eliezer F. Gonzalvo
+UPDATE public.registrations SET gender = 'female' WHERE id = '49ade2fa-0d3d-46ef-afb4-4730bfa2d32a' AND gender IS DISTINCT FROM 'female';  -- ELLA MARIE ARTIOLA
 UPDATE public.registrations SET gender = 'male' WHERE id = 'a68f35f1-6696-40fa-838e-d014147bf4db' AND gender IS DISTINCT FROM 'male';  -- Emmanuel Paquillo
 UPDATE public.registrations SET gender = 'male' WHERE id = '0a711311-61d2-4533-85cb-6a48ca2ac308' AND gender IS DISTINCT FROM 'male';  -- Francis Lopez
 UPDATE public.registrations SET gender = 'male' WHERE id = 'e3f64602-15cc-439d-af7d-a2b6ed733812' AND gender IS DISTINCT FROM 'male';  -- Gabriel M. Angcog
+UPDATE public.registrations SET gender = 'male' WHERE id = '20ad0a67-5d7d-432d-a5cd-68aaa391db82' AND gender IS DISTINCT FROM 'male';  -- Godfree Manalo
 UPDATE public.registrations SET gender = 'female' WHERE id = '1af420ce-f8a2-42d7-a48d-dde279978bec' AND gender IS DISTINCT FROM 'female';  -- Jessica Abalos Bautista
 UPDATE public.registrations SET gender = 'female' WHERE id = 'a28e6bbf-81f8-4d49-bdbd-e32e88787764' AND gender IS DISTINCT FROM 'female';  -- JOAN BONDOC SIASAT
 UPDATE public.registrations SET gender = 'male' WHERE id = 'f1f4b607-ccef-4c33-953c-eb7460a27131' AND gender IS DISTINCT FROM 'male';  -- John France Mariano
 UPDATE public.registrations SET gender = 'male' WHERE id = '01c00cd1-0e23-461c-93b8-1897c8d49d22' AND gender IS DISTINCT FROM 'male';  -- John Lloyd Bautista
-UPDATE public.registrations SET gender = 'male' WHERE id = 'af0b1db5-9017-47cd-9a87-18546aa98ddc' AND gender IS DISTINCT FROM 'male';  -- Kim Pangilinan
+UPDATE public.registrations SET gender = 'female' WHERE id = 'af0b1db5-9017-47cd-9a87-18546aa98ddc' AND gender IS DISTINCT FROM 'female';  -- Kim Pangilinan
 UPDATE public.registrations SET gender = 'female' WHERE id = '2429b13f-18ac-4684-8657-5d7145c8fc2d' AND gender IS DISTINCT FROM 'female';  -- Krishannah Chaelyn I. Jaminal
+UPDATE public.registrations SET gender = 'female' WHERE id = '50125ab3-65a6-4e54-981e-232bd1ca9a92' AND gender IS DISTINCT FROM 'female';  -- Kristin Joyce Castillo
 UPDATE public.registrations SET gender = 'female' WHERE id = 'f8850dc7-326f-4e54-b74a-7220b27de3a8' AND gender IS DISTINCT FROM 'female';  -- Lianne Dale Ramos-Monzon
 UPDATE public.registrations SET gender = 'female' WHERE id = 'aed5af3f-d493-4d87-adb1-1e19e7be0bdc' AND gender IS DISTINCT FROM 'female';  -- Lyca Lazaga
 UPDATE public.registrations SET gender = 'female' WHERE id = '495cfe8d-f333-4ad6-b313-9aff88f7d246' AND gender IS DISTINCT FROM 'female';  -- Maricel G. De Luna
 UPDATE public.registrations SET gender = 'male' WHERE id = '4b000558-0e79-4d2b-836c-9863d45eb361' AND gender IS DISTINCT FROM 'male';  -- Mark Pangilinan
 UPDATE public.registrations SET gender = 'female' WHERE id = '3b9681f9-a6a2-46d5-abe9-0a2b48488021' AND gender IS DISTINCT FROM 'female';  -- Mary Laine Hingada
 UPDATE public.registrations SET gender = 'female' WHERE id = 'cec74763-8d11-4a83-8308-df8af3f5a9f0' AND gender IS DISTINCT FROM 'female';  -- Mary Vince Diocades
+UPDATE public.registrations SET gender = 'female' WHERE id = 'd1577f29-9f30-41b7-b65d-ca822ab10527' AND gender IS DISTINCT FROM 'female';  -- Michaela B. Gaviola
 UPDATE public.registrations SET gender = 'male' WHERE id = '217c6185-deca-4572-8ec2-725250f814e4' AND gender IS DISTINCT FROM 'male';  -- Nathaniel Gacgacao
 UPDATE public.registrations SET gender = 'female' WHERE id = 'd7f1e5ea-f8b2-4aac-a20d-ef0bb398614b' AND gender IS DISTINCT FROM 'female';  -- Patricia Pascua
 UPDATE public.registrations SET gender = 'male' WHERE id = '0c742024-17bc-44cb-a81d-295f19fb85c4' AND gender IS DISTINCT FROM 'male';  -- paul edison cabrera
@@ -116,6 +134,8 @@ UPDATE public.registrations SET gender = 'female' WHERE id = '4c574749-eb1a-491e
 UPDATE public.registrations SET gender = 'female' WHERE id = '6c7e6c2d-a472-4199-8fe2-ee0cd1236ac0' AND gender IS DISTINCT FROM 'female';  -- Rose Ann Aloguin Bolitres
 UPDATE public.registrations SET gender = 'female' WHERE id = 'f91d0e93-e76e-4fa5-829a-6ebf1eafb491' AND gender IS DISTINCT FROM 'female';  -- Rose Castillo
 UPDATE public.registrations SET gender = 'female' WHERE id = 'd9605ace-0ceb-4541-a961-350055d1e9d0' AND gender IS DISTINCT FROM 'female';  -- Ruth Joy L. Asendido
+UPDATE public.registrations SET gender = 'female' WHERE id = '4a09f105-bc97-4ebe-a74c-99dde8cd6ce6' AND gender IS DISTINCT FROM 'female';  -- Samantha P. Dela Cerna
+UPDATE public.registrations SET gender = 'female' WHERE id = 'e0ab05cd-c783-4b38-8660-fe06afc5b71b' AND gender IS DISTINCT FROM 'female';  -- Trixie  Mae S. Antanoy
 UPDATE public.registrations SET gender = 'female' WHERE id = '92b08bbb-cfc5-4f5e-9ad2-7ad365ce9a99' AND gender IS DISTINCT FROM 'female';  -- Vanesa Pagsiat
 UPDATE public.registrations SET gender = 'female' WHERE id = 'f8383790-1ea4-40a3-88de-addfe8efd93d' AND gender IS DISTINCT FROM 'female';  -- Veronica Aquino
 UPDATE public.registrations SET gender = 'female' WHERE id = 'f95d38c6-cb58-4aab-a6f5-fd809e887307' AND gender IS DISTINCT FROM 'female';  -- Zaira Joy V. Raet
