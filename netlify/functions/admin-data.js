@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { sendEmail, normalizeProvider, resendConfigured } from '../lib/mailer.js';
 import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimateSegments, getSMSAccount } from '../lib/sms.js';
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
-import { followUpSMS, confirmedSMS, cancelledSMS, attendanceSMS } from '../lib/sms-templates.js';
+import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendanceSMS } from '../lib/sms-templates.js';
 import { attendanceLinks } from '../lib/attendance.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -96,6 +96,14 @@ export const handler = async (event) => {
               name: 'Juan Dela Cruz', totalLabel: 'PHP 4,500', count: 2,
               uploadLink: `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/upload-receipt?id=3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d&group_id=8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d`,
               template: templateFor(notifySettings, 'followup'),
+            })),
+            // Part-paid reminders carry the amounts as well, so they cost more
+            // per mobile than the plain reminder and need their own estimate.
+            followup_partial_sms_segments: estimateSegments(followUpPartialSMS({
+              name: 'Juan Dela Cruz', totalLabel: 'PHP 4,500', paidLabel: 'PHP 2,000',
+              balanceLabel: 'PHP 2,500', count: 2,
+              uploadLink: `${(process.env.SITE_URL || '').replace(/\/+$/, '')}/upload-receipt?id=3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d&group_id=8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d`,
+              template: templateFor(notifySettings, 'followup_partial'),
             })),
             attendance_sms_segments: estimateSegments(attendanceSMS({
               name: 'Juan Dela Cruz', count: 1,
@@ -267,8 +275,8 @@ export const handler = async (event) => {
 
         const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
         if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
-        if (reg.status !== 'awaiting_payment') {
-          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Registration is not awaiting payment' }) };
+        if (!FOLLOWUP_STATUSES.includes(reg.status)) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registration has nothing outstanding to chase' }) };
         }
 
         // Admin picks the sender from the dropdown on the Send Reminder button.
@@ -324,7 +332,7 @@ export const handler = async (event) => {
           const key = reg.group_id || reg.id;
           if (seen.has(key)) continue;
           seen.add(key);
-          if (reg.status !== 'awaiting_payment') { skipped++; continue; }
+          if (!FOLLOWUP_STATUSES.includes(reg.status)) { skipped++; continue; }
           targets.push(reg);
         }
 
@@ -582,10 +590,14 @@ async function mapWithConcurrency(items, limit, fn) {
   return out;
 }
 
+// A payment reminder makes sense for anyone who still owes money — unpaid or
+// part-paid. Confirmed and cancelled registrations are never chased.
+const FOLLOWUP_STATUSES = ['awaiting_payment', 'partially_paid'];
+
 /**
  * Send one payment reminder (email + optional SMS) and stamp last_followup_at.
  * Shared by the single-row action and the bulk action so both behave identically.
- * Assumes the caller has already checked status === 'awaiting_payment'.
+ * Assumes the caller has already checked the status is in FOLLOWUP_STATUSES.
  */
 async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail, siteUrl: baseUrl }) {
   const effectiveGroupId = reg.group_id || null;
@@ -608,12 +620,25 @@ async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail, s
   const heroUrl    = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
   const qrUrl      = `${imgUrl}/assets/images/qr/gcash-qr-email.jpg?v=${Date.now()}`;
 
+  // Partially-paid registrants get a different message on both channels:
+  // telling someone who has already paid something that we haven't received
+  // their payment is wrong, and the figure that matters to them is the
+  // outstanding balance, not the gross fee. partial_paid_total is written to
+  // every owing member of a group, so the contact row carries the group total.
+  const partialPaid   = reg.partial_paid_total || 0;
+  const isPartial     = reg.status === 'partially_paid' && partialPaid > 0;
+  const balanceAmt    = Math.max(0, totalAmt - partialPaid);
+  const paidLabel     = `PHP ${partialPaid.toLocaleString()}`;
+  const balanceLabel  = `PHP ${balanceAmt.toLocaleString()}`;
+  const smsEvent      = isPartial ? 'followup_partial' : 'followup';
+
   const mailResult = await sendEmail({
     provider,
     to:      reg.email,
-    subject: 'RELAY 2026 — Payment Reminder',
+    subject: isPartial ? 'RELAY 2026 — Outstanding Balance Reminder' : 'RELAY 2026 — Payment Reminder',
     html:    paymentReminderEmail({
-      primaryName: reg.name, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl,
+      primaryName: reg.name, totalLabel, paidLabel, balanceLabel, isPartial,
+      qrUrl, heroUrl, siteUrl, imgUrl,
       registrationId: reg.id, group_id: effectiveGroupId, isGroup, allMembers,
       gcashAccountName:   process.env.GCASH_ACCOUNT_NAME,
       gcashAccountHolder: process.env.GCASH_ACCOUNT_HOLDER,
@@ -625,23 +650,26 @@ async function runFollowUp(reg, { provider, sendSms, settings, requesterEmail, s
   // mobile — group members each gave their own number, and a reminder that only
   // reaches the contact person leaves the rest unaware they still owe payment.
   //
-  // Only members actually awaiting payment are texted. Participants can now be
-  // marked paid individually, and allMembers still carries partially_paid and
-  // payment_pending_review rows that shouldn't be chased for payment.
+  // Only members who still owe are texted. Participants can now be marked paid
+  // individually, and allMembers still carries payment_pending_review rows that
+  // shouldn't be chased for payment.
   let smsResult = null;
-  if (sendSms && smsAllowed(settings, 'followup')) {
-    const smsRecipients = allMembers.filter(m => m.status === 'awaiting_payment');
+  if (sendSms && smsAllowed(settings, smsEvent)) {
+    // Chase everyone in the group who still owes something, whatever mix of
+    // unpaid and part-paid rows that is — narrowing to a single status left
+    // members of a mixed group with no reminder at all. The amounts are
+    // group-level, so one body is correct for all of them.
+    const smsRecipients = allMembers.filter(m => FOLLOWUP_STATUSES.includes(m.status));
     const uploadLink = `${siteUrl}/upload-receipt?id=${reg.id}${isGroup && effectiveGroupId ? `&group_id=${effectiveGroupId}` : ''}`;
+    const build = isPartial ? followUpPartialSMS : followUpSMS;
     smsResult = await sendToDistinctMobiles(supabase, smsRecipients, {
-      event:       'followup',
+      event:       smsEvent,
       groupId:     effectiveGroupId,
       triggeredBy: requesterEmail,
-      buildMessage: (member) => followUpSMS({
-        name: member.name, totalLabel, uploadLink,
-        // The people this reminder is actually chasing — allMembers still
-        // carries partially_paid and payment_pending_review rows.
+      buildMessage: (member) => build({
+        name: member.name, totalLabel, paidLabel, balanceLabel, uploadLink,
         count: smsRecipients.length,
-        template: templateFor(settings, 'followup'),
+        template: templateFor(settings, smsEvent),
       }),
     });
   }
@@ -789,8 +817,36 @@ function cancellationEmail(primaryName, names, isGroup, heroUrl) {
   </div></body></html>`;
 }
 
-function paymentReminderEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl, imgUrl, registrationId, group_id, isGroup, allMembers, gcashAccountName, gcashAccountHolder, gcashMobile }) {
+function paymentReminderEmail({ primaryName, totalLabel, paidLabel, balanceLabel, isPartial, qrUrl, heroUrl, siteUrl, imgUrl, registrationId, group_id, isGroup, allMembers, gcashAccountName, gcashAccountHolder, gcashMobile }) {
   const uploadLink = `${siteUrl}/upload-receipt?id=${registrationId}${isGroup && group_id ? `&group_id=${group_id}` : ''}`;
+
+  // Someone who has already paid part of the fee must be asked for the balance,
+  // never the gross amount again — the same distinction the SMS makes.
+  const cell = 'padding:10px 12px;font-size:13px;font-weight:700;color:#2A3D4A;';
+  const amt  = 'padding:10px 12px;font-size:14px;font-weight:700;text-align:right;';
+  const partialFootRows = isPartial ? `
+          <tr style="background:#f7fafb;">
+            <td colspan="2" style="${cell}font-weight:600;color:#6B8A9A;">Payments received</td>
+            <td style="${amt}color:#6B8A9A;">− ${paidLabel}</td>
+          </tr>
+          <tr style="background:#f7fafb;border-top:2px solid #D4E2EA;">
+            <td colspan="2" style="${cell}">Balance due</td>
+            <td style="${amt}color:#C0392B;">${balanceLabel}</td>
+          </tr>` : '';
+  // Solo registrants get no participant breakdown, so the figures need a home.
+  const partialPanel = (isPartial && !isGroup) ? `
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #D4E2EA;border-radius:10px;overflow:hidden;margin:0 0 20px;">
+        <tr><td style="${cell}font-weight:600;color:#6B8A9A;">Total registration fee</td>
+            <td style="${amt}color:#2A3D4A;">${totalLabel}</td></tr>
+        <tr><td style="${cell}font-weight:600;color:#6B8A9A;">Payments received</td>
+            <td style="${amt}color:#6B8A9A;">− ${paidLabel}</td></tr>
+        <tr style="background:#f7fafb;border-top:2px solid #D4E2EA;">
+            <td style="${cell}">Balance due</td>
+            <td style="${amt}color:#C0392B;">${balanceLabel}</td></tr>
+      </table>` : '';
+  const intro = isPartial
+    ? `Thank you — we've received <strong>${paidLabel}</strong> toward your registration so far. To confirm your slot${isGroup ? 's' : ''}, please send the remaining balance of <strong>${balanceLabel}</strong> via GCash and submit your receipt.`
+    : `Just a friendly reminder — your slot${isGroup ? 's are' : ' is'} still pending payment. To confirm your registration, please send <strong>${totalLabel}</strong> via GCash and submit your receipt.`;
   const breakdownRows = allMembers.map(m => `
     <tr>
       <td style="padding:8px 12px;font-size:13px;color:#2A3D4A;">${m.name}</td>
@@ -812,10 +868,11 @@ function paymentReminderEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl
   </style></head><body><div class="wrap">
     <div class="bar"></div>
     <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
-    <div class="header"><h1>Payment Reminder</h1><p>RELAY Conference Asia Pacific 2026</p></div>
+    <div class="header"><h1>${isPartial ? 'Balance Reminder' : 'Payment Reminder'}</h1><p>RELAY Conference Asia Pacific 2026</p></div>
     <div class="body">
       <p style="font-size:15px;color:#2A3D4A;margin-bottom:16px;">Hi <strong>${primaryName}</strong>,</p>
-      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">Just a friendly reminder — your slot${isGroup ? 's are' : ' is'} still pending payment. To confirm your registration, please send <strong>${totalLabel}</strong> via GCash and submit your receipt.</p>
+      <p style="font-size:14px;color:#2A3D4A;margin-bottom:20px;">${intro}</p>
+      ${partialPanel}
       ${isGroup ? `
         <div style="margin-bottom:4px;font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;">Registered Participants (${allMembers.length})</div>
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #D4E2EA;border-radius:10px;overflow:hidden;margin:12px 0 20px;">
@@ -828,7 +885,7 @@ function paymentReminderEmail({ primaryName, totalLabel, qrUrl, heroUrl, siteUrl
           <tfoot><tr style="background:#f7fafb;border-top:2px solid #D4E2EA;">
             <td colspan="2" style="padding:10px 12px;font-size:13px;font-weight:700;color:#2A3D4A;">Total</td>
             <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#2E7048;text-align:right;">${totalLabel}</td>
-          </tr></tfoot>
+          </tr>${partialFootRows}</tfoot>
         </table>` : ''}
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
         <tr><td align="center">
