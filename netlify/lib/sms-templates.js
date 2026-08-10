@@ -32,6 +32,8 @@ const P = {
   count:     { token: '{count}',     label: 'Number of participants', example: '3' },
   contact:   { token: '{contact}',   label: 'Number to text back',  example: '09475424079' },
   link:      { token: '{link}',      label: 'Receipt upload link',  example: 'https://…/upload-receipt?id=…' },
+  paid:      { token: '{paid}',      label: 'Amount paid so far',   example: 'PHP 2,000' },
+  balance:   { token: '{balance}',   label: 'Remaining balance',    example: 'PHP 2,500' },
 };
 
 // ── Per-event configuration ───────────────────────────────────────────────────
@@ -49,6 +51,27 @@ The Asia-Pacific RELAY Conference 2026 is almost here!
 Our records show that we have not yet received your registration payment. Please complete your payment by August 15, 2026. Unpaid registrations will be cancelled on August 16.
 
 If you have already paid, please text {contact} so we can verify your payment.
+
+Thank you! We look forward to seeing you at the conference.`,
+  },
+
+  followup_partial: {
+    column:  'sms_followup_partial_template',
+    label:   'Follow-up to a partially paid registrant',
+    tab:     'Follow-up (partial)',
+    hint:    'Used instead of the standard reminder when something has been paid.',
+    tokens:  ['name', 'full_name', 'amount', 'paid', 'balance', 'count', 'contact', 'link'],
+    // {amount} is the gross fee here, not what's still owed — an admin who
+    // writes "Please settle {amount}" from the generic label would be asking a
+    // partial payer for the full amount again. {balance} is the one they want.
+    tokenLabels: { amount: 'Total fee — use {balance} for what is owed' },
+    default: `Hi {name},
+
+Thank you for your payment towards the Asia-Pacific RELAY Conference 2026. Our records show {paid} received, leaving a balance of {balance}.
+
+Please settle the remaining amount by August 15, 2026 to secure your slot. Unpaid balances will be cancelled on August 16.
+
+If you have already paid in full, please text {contact} so we can verify your payment.
 
 Thank you! We look forward to seeing you at the conference.`,
   },
@@ -104,7 +127,12 @@ export function smsEventCatalogue() {
     label:        SMS_EVENT_CONFIG[event].label,
     hint:         SMS_EVENT_CONFIG[event].hint,
     default:      SMS_EVENT_CONFIG[event].default,
-    placeholders: SMS_EVENT_CONFIG[event].tokens.map(t => P[t]),
+    // A token can mean something slightly different per event, so an event may
+    // override the shared label without forking the catalogue.
+    placeholders: SMS_EVENT_CONFIG[event].tokens.map(t => {
+      const override = SMS_EVENT_CONFIG[event].tokenLabels?.[t];
+      return override ? { ...P[t], label: override } : P[t];
+    }),
   }));
 }
 
@@ -131,6 +159,8 @@ export function renderEventSMS(event, vars = {}, template) {
     name:      firstName(vars.name),
     full_name: String(vars.name || '').trim(),
     amount:    vars.totalLabel || '',
+    paid:      vars.paidLabel || '',
+    balance:   vars.balanceLabel || '',
     count:     String(vars.count ?? 1),
     contact:   replyNumber(),
     link:      vars.uploadLink || '',
@@ -140,6 +170,9 @@ export function renderEventSMS(event, vars = {}, template) {
 // Named wrappers keep the call sites readable.
 export const followUpSMS     = ({ name, totalLabel, count, uploadLink, template }) =>
   renderEventSMS('followup', { name, totalLabel, count, uploadLink }, template);
+
+export const followUpPartialSMS = ({ name, totalLabel, paidLabel, balanceLabel, count, uploadLink, template }) =>
+  renderEventSMS('followup_partial', { name, totalLabel, paidLabel, balanceLabel, count, uploadLink }, template);
 
 export const attendanceSMS   = ({ name, count, template }) =>
   renderEventSMS('attendance', { name, count }, template);

@@ -244,9 +244,9 @@
     .filter-actions{width:100%;margin-left:0;}
     .btn-export,.btn-reset{flex:1;padding:10px;text-align:center;}
     .bottom-row{grid-template-columns:1fr;gap:12px;margin-top:14px;}
-    /* Hide Age + Receipt. PH carries a leading select column, so its indices
-       sit one to the right of the international table's. */
-    #content-ph th:nth-child(4),#content-ph td:nth-child(4),
+    /* Hide Receipt. PH keeps Age visible now that it's filterable — it earns
+       the space. PH carries a leading select column, so its indices sit one to
+       the right of the international table's. */
     #content-ph th:nth-child(11),#content-ph td:nth-child(11),
     #content-intl th:nth-child(3),#content-intl td:nth-child(3),
     #content-intl th:nth-child(10),#content-intl td:nth-child(10){display:none;}
@@ -271,7 +271,7 @@
 
   /* Bulk follow-up: full-width CTA above the table meta on small screens,
      and roomier tap targets for the row checkboxes. */
-  #ph-bulk-followup{align-items:center;}
+  #ph-followup-split{align-items:center;}
   #ph-attendance-split{align-items:center;}
   .preset-opt{display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;}
   .preset-opt:hover{background:#F4F8FA;}
@@ -280,7 +280,8 @@
   @media(max-width:600px){
     /* Each CTA takes its own full-width row. Sharing a line with the Hide
        Cancelled toggle squeezes both labels down to an ellipsis. */
-    #ph-bulk-followup,#ph-attendance-split{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+    #ph-followup-split,#ph-attendance-split{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+    #ph-followup-split #ph-bulk-followup,
     #ph-attendance-split #ph-bulk-attendance{flex:1;justify-content:center;}
     .fu-check,#ph-select-all{width:20px;height:20px;}
   }
@@ -681,6 +682,16 @@
             <option value="non-student">💼 Non-Student</option>
           </select>
         </div>
+        <div class="filter-group" style="position:relative;">
+          <label>Age</label>
+          <div id="ph-age-trigger" onclick="toggleAgeDropdown()" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:140px;user-select:none;">
+            <span id="ph-age-label">All Ages</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="ph-age-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:180px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllAges()" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Ages</div>
+            <div id="ph-age-list"></div>
+          </div>
+        </div>
         <div class="filter-group"><label>Pre-Con</label>
           <select id="ph-precon" onchange="applyFilters('ph')">
             <option value="">All</option>
@@ -711,11 +722,34 @@
         <div class="table-header">
           <h2>Philippines Registrations</h2>
           <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-            <!-- Appears whenever the current view holds anyone still awaiting payment -->
-            <button id="ph-bulk-followup" onclick="openBulkFollowUpModal()" style="display:none;align-items:center;gap:7px;padding:0 16px;height:34px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
-              <span>💬</span><span id="ph-bulk-label">Bulk Follow Up</span>
-            </button>
-            <!-- height matched to the split button beside it -->
+            <!-- Appears whenever the current view holds anyone who still owes payment -->
+            <!-- Split button: main action sends, caret offers selection presets -->
+            <div id="ph-followup-split" style="display:none;align-items:stretch;position:relative;">
+              <button id="ph-bulk-followup" onclick="openBulkFollowUpModal()" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:var(--sky);color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
+                <span>💬</span><span id="ph-bulk-label">Bulk Follow Up</span>
+              </button>
+              <button id="ph-followup-caret" onclick="toggleFollowUpPresetMenu(event)" title="Selection presets" style="display:inline-flex;align-items:center;justify-content:center;padding:0 11px;height:34px;background:var(--sky);color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.35);border-radius:0 8px 8px 0;font-size:11px;font-weight:700;line-height:1;cursor:pointer;">▾</button>
+              <div id="ph-followup-presets" style="display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:240px;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:20;">
+                <div style="padding:8px 14px 2px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Select rows in this view</div>
+                <div style="padding:0 14px 6px;font-size:10px;color:var(--muted);line-height:1.4;">Replaces the current selection — both bulk actions use it.</div>
+                <button onclick="applyFollowUpPreset('all')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">All owing payment</span>
+                  <span class="preset-sub">Awaiting payment and partially paid</span>
+                </button>
+                <button onclick="applyFollowUpPreset('awaiting')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">💳 Awaiting Payment</span>
+                  <span class="preset-sub">Nothing paid yet</span>
+                </button>
+                <button onclick="applyFollowUpPreset('partial')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">💰 Partially Paid</span>
+                  <span class="preset-sub">Gets the balance-reminder message</span>
+                </button>
+                <button onclick="applyFollowUpPreset('clear')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#C0392B;">✕ Clear selection</span>
+                  <span class="preset-sub">Untick everything</span>
+                </button>
+              </div>
+            </div>
             <!-- Split button: main action sends, caret offers selection presets -->
             <div id="ph-attendance-split" style="display:none;align-items:stretch;position:relative;">
               <button id="ph-bulk-attendance" onclick="openBulkAttendanceModal()" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2A6E9E;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
@@ -736,6 +770,10 @@
                 <button onclick="applyAttendancePreset('nogender')" class="preset-opt">
                   <span style="font-size:13px;font-weight:700;color:#2A3D4A;">❓ No gender data</span>
                   <span class="preset-sub">Needs verifying before sending</span>
+                </button>
+                <button onclick="applyAttendancePreset('clear')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#C0392B;">✕ Clear selection</span>
+                  <span class="preset-sub">Untick everything</span>
                 </button>
               </div>
             </div>
@@ -1270,20 +1308,98 @@
     let listHTML = '';
     if (ccsgm.length) {
       listHTML += `<div class="church-group-hdr">⛪ CCSGM <button onclick="selectGroup(event,ccsgmChurches)" style="background:var(--sky);color:#fff;border:none;border-radius:4px;font-size:9px;padding:2px 6px;cursor:pointer;font-weight:700;margin-left:6px;">Select All</button></div>`;
-      ccsgm.forEach(c => { listHTML += `<div class="church-opt" id="${churchId(c)}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
+      ccsgm.forEach(c => { listHTML += `<div class="church-opt${selectedChurches.has(c) ? ' selected' : ''}" id="${churchId(c)}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">${selectedChurches.has(c) ? '☑' : '☐'} ${c}</div>`; });
     }
     if (others.length) {
       listHTML += `<div class="church-group-hdr" style="margin-top:6px;">🏛 Others</div>`;
-      others.forEach(c => { listHTML += `<div class="church-opt" id="${churchId(c)}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">☐ ${c}</div>`; });
+      others.forEach(c => { listHTML += `<div class="church-opt${selectedChurches.has(c) ? ' selected' : ''}" id="${churchId(c)}" onclick="toggleChurch('${c.replace(/'/g,"\'")}')">${selectedChurches.has(c) ? '☑' : '☐'} ${c}</div>`; });
     }
     list.innerHTML = listHTML;
     window.ccsgmChurches = ccsgm;
+
+    renderAgeOptions();
+    updateAgeLabel();
 
     // Intl country filter
     const countries = [...new Set(intlData.map(r => r.country).filter(Boolean))].sort();
     const intlSel = document.getElementById('intl-country');
     intlSel.innerHTML = '<option value="">All Countries</option>';
     countries.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; intlSel.appendChild(o); });
+  }
+
+  // ── Age band filter ────────────────────────────────────────────────────────
+  // Bands are contiguous and non-overlapping: every age falls in exactly one.
+  // The brief read "<20 / 21-25 / … / 35-40 / 41-45 / 46+", which leaves 20 in
+  // no band and puts 35 in two, so the edges are closed here instead.
+  const AGE_BANDS = [
+    { key: '0-20',  label: '20 and under', test: (a) => a <= 20 },
+    { key: '21-25', label: '21 – 25',      test: (a) => a >= 21 && a <= 25 },
+    { key: '26-30', label: '26 – 30',      test: (a) => a >= 26 && a <= 30 },
+    { key: '31-35', label: '31 – 35',      test: (a) => a >= 31 && a <= 35 },
+    { key: '36-40', label: '36 – 40',      test: (a) => a >= 36 && a <= 40 },
+    { key: '41-45', label: '41 – 45',      test: (a) => a >= 41 && a <= 45 },
+    { key: '46+',   label: '46 and over',  test: (a) => a >= 46 },
+  ];
+  const selectedAges = new Set();
+
+  // Both the initial render and every repaint read the tick from selectedAges.
+  // populateFilters() re-renders this list on every loadData() while the
+  // selection survives, so a hard-coded ☐ would leave the boxes contradicting
+  // the rows that are actually filtered.
+  const ageOptionText = (b) => `${selectedAges.has(b.key) ? '☑' : '☐'} ${b.label}`;
+
+  function renderAgeOptions() {
+    const list = document.getElementById('ph-age-list');
+    if (!list) return;
+    list.innerHTML = AGE_BANDS.map(b =>
+      `<div class="age-opt" id="age-opt-${b.key}" onclick="toggleAge('${b.key}')"
+            style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:#2A3D4A;"
+            onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">${ageOptionText(b)}</div>`
+    ).join('');
+    updateAgeLabel();
+  }
+
+  function paintAgeOptions() {
+    for (const b of AGE_BANDS) {
+      const el = document.getElementById('age-opt-' + b.key);
+      if (el) el.textContent = ageOptionText(b);
+    }
+  }
+
+  function toggleAgeDropdown() {
+    const dd = document.getElementById('ph-age-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleAge(key) {
+    if (selectedAges.has(key)) selectedAges.delete(key);
+    else                       selectedAges.add(key);
+    paintAgeOptions();
+    updateAgeLabel();
+    applyFilters('ph');
+  }
+
+  function selectAllAges() {
+    selectedAges.clear();
+    paintAgeOptions();
+    updateAgeLabel();
+    applyFilters('ph');
+    document.getElementById('ph-age-dropdown').style.display = 'none';
+  }
+
+  function updateAgeLabel() {
+    const lbl = document.getElementById('ph-age-label');
+    if (!lbl) return;
+    if (selectedAges.size === 0)      lbl.textContent = 'All Ages';
+    else if (selectedAges.size === 1) lbl.textContent = AGE_BANDS.find(b => b.key === [...selectedAges][0]).label;
+    else                              lbl.textContent = selectedAges.size + ' age ranges';
+  }
+
+  function matchesAge(r) {
+    if (selectedAges.size === 0) return true;
+    const age = parseInt(r.age, 10);
+    if (!Number.isFinite(age)) return false;   // unknown age can't match a band
+    return AGE_BANDS.some(b => selectedAges.has(b.key) && b.test(age));
   }
 
   function toggleChurchDropdown() {
@@ -1337,6 +1453,9 @@
 
   // Close dropdown when clicking outside
   document.addEventListener('click', e => {
+    const ageTrig = document.getElementById('ph-age-trigger');
+    const ageDd   = document.getElementById('ph-age-dropdown');
+    if (ageDd && ageTrig && !ageTrig.contains(e.target) && !ageDd.contains(e.target)) ageDd.style.display = 'none';
     const trigger = document.getElementById('ph-church-trigger');
     const dd = document.getElementById('ph-church-dropdown');
     if (dd && trigger && !trigger.contains(e.target) && !dd.contains(e.target)) {
@@ -1365,6 +1484,7 @@
         if (st && r.status !== st) return false;
         if (stu && r.student_status !== stu) return false;
         if (pre && !matchesPreCon(r, pre)) return false;
+        if (!matchesAge(r)) return false;
         if (selectedChurches.size > 0 && !selectedChurches.has(r.church)) return false;
         return true;
       });
@@ -1421,7 +1541,7 @@
             : r.payment_verified
               ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
               : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">₱</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${r.status === 'awaiting_payment' ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
+                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">₱</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${FOLLOWUP_STATUSES.includes(r.status) ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
                 : '—'
           }
           </div>
@@ -1775,16 +1895,30 @@
   }
   function isPHMobile(m) { return !!normPHMobile(m); }
 
-  // Who a follow-up actually texts: every member still awaiting payment,
+  // Who a follow-up actually texts: every member who still owes payment,
   // one message per distinct mobile. Mirrors runFollowUp() in admin-data.js.
+  // A part-paid chase is a different message with its own switch and its own
+  // length, so everything downstream has to branch on the registrant's status.
+  // Mirrors isPartial in runFollowUp(): a part-paid row with nothing actually
+  // recorded as paid gets the plain reminder, since there's no amount to quote.
+  const isPartialChase   = (reg) => reg?.status === 'partially_paid' && (reg.partial_paid_total || 0) > 0;
+  const followUpSmsEvent = (reg) => isPartialChase(reg) ? 'followup_partial' : 'followup';
+  const followUpSmsOnFor = (reg) => !!notifyConfig[`sms_on_${followUpSmsEvent(reg)}`];
+  const followUpSegments = (reg) => (isPartialChase(reg)
+    ? notifyConfig.followup_partial_sms_segments
+    : notifyConfig.followup_sms_segments) || 1;
+
   function smsRecipientsFor(reg) {
     if (!reg) return new Set();
     const members = reg.group_id
       ? localData.filter(r => r.group_id === reg.group_id)
       : [reg];
+    // The server texts every group member who still owes, whatever mix of
+    // unpaid and part-paid rows that is. The body is chosen once, from the
+    // contact row, because the amounts are group-level.
     const mobiles = new Set();
     for (const m of members) {
-      if (m.status !== 'awaiting_payment') continue;
+      if (!FOLLOWUP_STATUSES.includes(m.status)) continue;
       const n = normPHMobile(m.mobile);
       if (n) mobiles.add(n);
     }
@@ -1987,7 +2121,7 @@
     const reg        = findRegistration(id);
     const notReady   = smsNotReadyReason();
     const recipients = smsRecipientsFor(reg);
-    const wouldSend  = !!(notifyConfig.sms_enabled && notifyConfig.sms_on_followup && recipients.size);
+    const wouldSend  = !!(notifyConfig.sms_enabled && followUpSmsOnFor(reg) && recipients.size);
     followUpSmsAvailable = !notReady && wouldSend;
 
     if (notReady) {
@@ -1997,11 +2131,11 @@
       applySmsRow('followUpSms', 'disabled', notReady, false);
     } else if (wouldSend) {
       followUpSmsOn = true;
-      const segs  = notifyConfig.followup_sms_segments || 1;
+      const segs  = followUpSegments(reg);
       const total = recipients.size * segs;
       const to    = recipients.size === 1
         ? `To ${reg.mobile}`
-        : `To ${recipients.size} mobiles still awaiting payment`;
+        : `To ${recipients.size} mobiles that still owe`;
       applySmsRow('followUpSms', 'enabled', `${to} · ~${total} credit${total === 1 ? '' : 's'}`, true);
       renderSmsBalance('followUpSms', total);
     } else {
@@ -2065,8 +2199,9 @@
   }
 
   // ── Bulk follow-up ─────────────────────────────────────────────────────────
-  // Only awaiting_payment rows are ever selectable, and the server re-checks
-  // the status before sending, so a stale selection can't reach anyone else.
+  // Any row can be ticked, but only the owing ones (FOLLOWUP_STATUSES) are sent
+  // to; the server re-checks status before sending, so a stale or over-broad
+  // selection can't reach anyone who isn't owing.
   const BULK_CHUNK = 12;   // must stay <= BULK_LIMIT in admin-data.js (15)
   let bulkProvider = 'gmail', bulkSmsOn = true, bulkSmsAvailable = false, bulkSending = false;
 
@@ -2077,10 +2212,11 @@
     return filteredPH.filter(r => bulkSelected.has(r.id));
   }
 
-  // Who a follow-up would actually reach. Mirrors the server, which only
-  // reminds people still awaiting payment and skips everyone else.
+  // Mirrors FOLLOWUP_STATUSES on the server — anyone who still owes money.
+  const FOLLOWUP_STATUSES = ['awaiting_payment', 'partially_paid'];
+
   function bulkTargets() {
-    return selectedRows().filter(r => r.status === 'awaiting_payment');
+    return selectedRows().filter(r => FOLLOWUP_STATUSES.includes(r.status));
   }
 
   function toggleAttendancePresetMenu(e) {
@@ -2089,33 +2225,51 @@
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   }
 
+  function toggleFollowUpPresetMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('ph-followup-presets');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  /** Shared by both preset menus — tick rows, report both eligible counts. */
+  function applyPreset(menuId, match, label) {
+    document.getElementById(menuId).style.display = 'none';
+    bulkSelected.clear();
+    if (match) filteredPH.filter(match).forEach(r => bulkSelected.add(r.id));
+    document.querySelectorAll('#ph-body .fu-check').forEach(cb => { cb.checked = bulkSelected.has(cb.value); });
+    syncBulkUI();
+
+    if (!match)              { showToast('Selection cleared.'); return; }
+    if (!bulkSelected.size)  { showToast(`No ${label} in this view.`); return; }
+    showToast(`Selected ${bulkSelected.size} ${label} · Pre-Con ${attendanceTargets().length} · Follow Up ${bulkTargets().length}`);
+  }
+
+  function applyFollowUpPreset(mode) {
+    const owing = (r) => FOLLOWUP_STATUSES.includes(r.status);
+    const match = {
+      all:      owing,
+      awaiting: (r) => r.status === 'awaiting_payment',
+      partial:  (r) => r.status === 'partially_paid',
+      clear:    null,
+    }[mode];
+    const label = { all: 'rows owing payment', awaiting: 'awaiting payment', partial: 'partially paid' }[mode] || '';
+    applyPreset('ph-followup-presets', match, label);
+  }
+
   /**
    * Selection presets. These tick rows — they don't send anything, so the
    * admin still reviews the modal before committing.
    * Scoped to the current filtered view, so filters and presets compose.
    */
   function applyAttendancePreset(mode) {
-    document.getElementById('ph-attendance-presets').style.display = 'none';
     const match = {
       all:      () => true,
       male:     (r) => r.gender === 'male',
       nogender: (r) => !r.gender,
-    }[mode] || (() => true);
-
-    bulkSelected.clear();
-    filteredPH.filter(match).forEach(r => bulkSelected.add(r.id));
-    document.querySelectorAll('#ph-body .fu-check').forEach(cb => { cb.checked = bulkSelected.has(cb.value); });
-    syncBulkUI();
-
-    const label = { all: 'all rows', male: 'verified male attendees', nogender: 'rows with no gender data' }[mode];
-    if (!bulkSelected.size) { showToast(`No ${label} in this view.`); return; }
-
-    // Report both eligible counts, not just the tick count. The presets change
-    // what BOTH bulk actions will send, and the button labels show eligibility
-    // rather than ticks — so a bare "selected N" reads as a contradiction.
-    const pre = attendanceTargets().length;
-    const fu  = bulkTargets().length;
-    showToast(`Selected ${bulkSelected.size} ${label} · Pre-Con ${pre} · Follow Up ${fu}`);
+      clear:    null,
+    }[mode];
+    const label = { all: 'all rows', male: 'verified male attendees', nogender: 'rows with no gender data' }[mode] || '';
+    applyPreset('ph-attendance-presets', match, label);
   }
 
   function toggleRowSelection(id, checked) {
@@ -2143,7 +2297,7 @@
     // selection — a count that doesn't match what gets sent is worse than none.
     const selected = bulkSelected.size;
     for (const [id, labelId, label, count, wrapperId] of [
-      ['ph-bulk-followup',   'ph-bulk-label',       'Bulk Follow Up',            bulkTargets().length],
+      ['ph-bulk-followup',   'ph-bulk-label',       'Bulk Follow Up',            bulkTargets().length,       'ph-followup-split'],
       ['ph-bulk-attendance', 'ph-attendance-label', 'Pre-Conference Attendance', attendanceTargets().length, 'ph-attendance-split'],
     ]) {
       const el = document.getElementById(id);
@@ -2164,7 +2318,8 @@
       el.style.opacity    = '1';
       el.style.background = count === 0 ? muted : base;
       el.style.cursor     = count === 0 ? 'not-allowed' : 'pointer';
-      const caret = wrapperId ? document.getElementById('ph-attendance-caret') : null;
+      const caret = document.getElementById(
+        id === 'ph-bulk-followup' ? 'ph-followup-caret' : 'ph-attendance-caret');
       if (caret) caret.style.background = count === 0 ? muted : base;
       el.title            = selected === 0
         ? 'Select one or more registrants first'
@@ -2219,7 +2374,7 @@
 
   function openBulkFollowUpModal() {
     const targets = bulkTargets();
-    if (!targets.length) { showToast('No one in this view is awaiting payment.'); return; }
+    if (!targets.length) { showToast('No one in this selection still owes payment.'); return; }
 
     // Group members share one email address — collapse them into a single send.
     const emailCount = bulkSendIds(targets).length;
@@ -2237,17 +2392,28 @@
     }
     const coveredCount = covered.size;
 
-    // SMS reaches every distinct mobile still awaiting payment, so it can
-    // exceed the email count on groups whose members gave different numbers.
+    // SMS reaches every distinct mobile that still owes, so it can exceed the
+    // email count on groups whose members gave different numbers. A selection
+    // can mix unpaid and part-paid rows, which are two different messages at
+    // two different lengths — so cost is summed per mobile, not per head.
     const allMobiles = new Set();
-    for (const t of targets) for (const m of smsRecipientsFor(t)) allMobiles.add(m);
+    let smsCredits = 0;
+    for (const t of targets) {
+      if (!followUpSmsOnFor(t)) continue;   // that event's switch is off
+      const segs = followUpSegments(t);
+      for (const m of smsRecipientsFor(t)) {
+        if (allMobiles.has(m)) continue;
+        allMobiles.add(m);
+        smsCredits += segs;
+      }
+    }
     const phMobiles = allMobiles.size;
     const recent     = targets.filter(r => r.last_followup_at &&
                         (Date.now() - new Date(r.last_followup_at)) / 86400000 < 7).length;
 
     // Skipped is counted in reminders, matching the server, which dedupes by
     // group before counting. A row count would disagree on multi-member groups.
-    const skippedRows = selectedRows().filter(r => r.status !== 'awaiting_payment');
+    const skippedRows = selectedRows().filter(r => !FOLLOWUP_STATUSES.includes(r.status));
     const skipped = new Set(skippedRows.map(r => r.group_id || r.id)).size;
 
     document.getElementById('bulkFollowUpSummary').innerHTML =
@@ -2257,8 +2423,8 @@
           ? `<br><span style="font-size:12px;color:#6B8A9A;">Includes <strong>${coveredCount - targets.length}</strong> groupmate${coveredCount - targets.length === 1 ? '' : 's'} you didn't tick — a group is always reminded together.</span>`
           : '')
       + (skipped
-          ? `<br><span style="font-size:12px;color:#6B8A9A;">${skipped} skipped — no longer awaiting payment.</span>`
-          : `<br><span style="font-size:12px;color:#6B8A9A;">Everyone here has status <strong>Awaiting Payment</strong>.</span>`);
+          ? `<br><span style="font-size:12px;color:#6B8A9A;">${skipped} skipped — nothing left to pay.</span>`
+          : `<br><span style="font-size:12px;color:#6B8A9A;">Everyone here still owes — <strong>Awaiting Payment</strong> or <strong>Partially Paid</strong>.</span>`);
 
     const warn = document.getElementById('bulkFollowUpWarning');
     if (recent) {
@@ -2269,7 +2435,7 @@
     }
 
     const notReady  = smsNotReadyReason();
-    const wouldSend = !!(notifyConfig.sms_enabled && notifyConfig.sms_on_followup && phMobiles > 0);
+    const wouldSend = !!(notifyConfig.sms_enabled && phMobiles > 0);
     bulkSmsAvailable = !notReady && wouldSend;
 
     if (notReady) {
@@ -2277,10 +2443,9 @@
       applySmsRow('bulkSms', 'disabled', notReady, false);
     } else if (wouldSend) {
       bulkSmsOn = true;
-      const segs = notifyConfig.followup_sms_segments || 1;
       applySmsRow('bulkSms', 'enabled',
-        `${phMobiles} PH mobile${phMobiles === 1 ? '' : 's'} · ~${phMobiles * segs} credits`, true);
-      renderSmsBalance('bulkSms', phMobiles * segs);
+        `${phMobiles} PH mobile${phMobiles === 1 ? '' : 's'} · ~${smsCredits} credits`, true);
+      renderSmsBalance('bulkSms', smsCredits);
     } else {
       applySmsRow('bulkSms', 'hidden');
     }
@@ -2412,7 +2577,7 @@
       `✅ <strong>${totals.sent}</strong> reminder${totals.sent === 1 ? '' : 's'} sent via ${via}`,
       totals.sms_sent   ? `📱 <strong>${totals.sms_sent}</strong> SMS sent (${totals.sms_credits} credits)` : '',
       totals.sms_failed ? `⚠️ ${totals.sms_failed} SMS failed` : '',
-      totals.skipped    ? `↩️ ${totals.skipped} skipped — no longer awaiting payment` : '',
+      totals.skipped    ? `↩️ ${totals.skipped} skipped — nothing left to pay` : '',
       totals.failed     ? `❌ <strong>${totals.failed}</strong> failed: ${failures.slice(0, 5).map(f => esc(f.email)).join(', ')}` : '',
     ];
     if (stopped) {
@@ -2848,6 +3013,7 @@
   function resetFilters(tab) {
     if (tab === 'ph') { ['ph-search','ph-status','ph-student','ph-precon'].forEach(id => document.getElementById(id).value='');
       hideCancelled.ph = true;
+      selectedAges.clear(); paintAgeOptions(); updateAgeLabel();
       const phTrack = document.getElementById('ph-hide-cancelled-track');
       if (phTrack) phTrack.classList.add('on'); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
     else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value='');
@@ -3380,25 +3546,17 @@
   }
 
   // ── Site Settings ──────────────────────────────────────────────────────────
-  // Toggle id (settings-<key>-track) → site_settings column.
+  // Toggle id (settings-<key>-track) → site_settings column. The per-event SMS
+  // switches are added by loadSettings() from the server catalogue, so adding an
+  // event never means remembering to extend a list here.
   const SETTING_TOGGLES = {
-    ph:               'reg_ph_closed',
-    intl:             'reg_intl_closed',
-    sms:              'sms_enabled',
-    sms_followup:     'sms_on_followup',
-    sms_cancelled:    'sms_on_cancelled',
-    sms_confirmed:    'sms_on_confirmed',
-    sms_registration: 'sms_on_registration',
-    sms_attendance:   'sms_on_attendance',
+    ph:   'reg_ph_closed',
+    intl: 'reg_intl_closed',
+    sms:  'sms_enabled',
   };
 
   let currentSettings = {
-    reg_ph_closed: false, reg_intl_closed: false,
-    sms_enabled: false, sms_on_followup: true, sms_on_cancelled: true,
-    sms_on_confirmed: false, sms_on_registration: false, sms_on_attendance: true,
-    sms_followup_template: '', sms_cancelled_template: '',
-    sms_confirmed_template: '', sms_registration_template: '',
-    sms_attendance_template: '',
+    reg_ph_closed: false, reg_intl_closed: false, sms_enabled: false,
   };
   let settingsProviders = { sms_configured: false, resend_configured: false };
   let settingsSmsAccount = null;
@@ -3414,8 +3572,11 @@
 
   // Mirrors fillPlaceholders() in netlify/lib/sms-templates.js — preview only.
   function renderSmsPreview(template) {
+    // Must cover every token in the catalogue — an unsubstituted one previews
+    // as literal "{paid}" and skews the credit count the header shows.
     const sample = {
       name: 'Juan', full_name: 'Juan Dela Cruz', amount: 'PHP 4,500', count: '2',
+      paid: 'PHP 2,000', balance: 'PHP 2,500',
       contact: notifyConfig.sms_reply_number || '09XXXXXXXXX',
       link: notifyConfig.sms_sample_link || (window.location.origin + '/upload-receipt?id=…'),
     };
@@ -3448,8 +3609,49 @@
   function creditsFor(text) { return analyzeSms(text).segments; }
 
   // Edits live in currentSettings, so collapsing a panel never loses unsaved work.
+  // ── Unsaved template drafts ────────────────────────────────────────────────
+  // Switching to the Settings tab re-runs loadSettings(), which rebuilds every
+  // textarea from the saved value — and a page reload starts from nothing. Both
+  // used to silently discard whatever was being typed, reseeding the box from
+  // the built-in default whenever the column was still NULL. Drafts now live in
+  // localStorage until they're saved or explicitly discarded.
+  const SMS_DRAFT_KEY = (event) => `relay2026.smsDraft.${event}`;
+  let savedTemplates = {};   // last values read from the server
+
+  function readSmsDraft(event) {
+    try { return localStorage.getItem(SMS_DRAFT_KEY(event)); } catch { return null; }
+  }
+  function writeSmsDraft(event, value) {
+    try {
+      if (value === null) localStorage.removeItem(SMS_DRAFT_KEY(event));
+      else                localStorage.setItem(SMS_DRAFT_KEY(event), value);
+    } catch {}   // private mode / quota — drafts are a convenience, never a hard dependency
+  }
+  const smsDraftPending = (event) =>
+    readSmsDraft(event) !== null && readSmsDraft(event) !== (savedTemplates[`sms_${event}_template`] || '');
+
+  function paintSmsDraftNote(event) {
+    const note = document.getElementById(`settings-sms-draft-${event}`);
+    if (note) note.style.display = smsDraftPending(event) ? 'inline' : 'none';
+    updateSmsHeader(event);
+  }
+
+  function discardSmsDraft(event) {
+    writeSmsDraft(event, null);
+    const saved = savedTemplates[`sms_${event}_template`] || '';
+    currentSettings[`sms_${event}_template`] = saved;
+    const config = smsEventCatalogue.find(c => c.event === event);
+    document.getElementById(`settings-sms-tpl-${event}`).value = saved || config.default;
+    paintSmsDraftNote(event);
+    refreshSmsMetrics(event);
+    showToast('Draft discarded — showing the saved message.');
+  }
+
   function onSmsTemplateInput(event) {
-    currentSettings[`sms_${event}_template`] = document.getElementById(`settings-sms-tpl-${event}`)?.value ?? '';
+    const value = document.getElementById(`settings-sms-tpl-${event}`)?.value ?? '';
+    currentSettings[`sms_${event}_template`] = value;
+    writeSmsDraft(event, value);
+    paintSmsDraftNote(event);
     refreshSmsMetrics(event);
   }
 
@@ -3498,6 +3700,8 @@
     // Saved as NULL rather than a copy of the default, so this event keeps
     // tracking the built-in text if it changes in a later deploy.
     currentSettings[`sms_${event}_template`] = '';
+    writeSmsDraft(event, '');   // an explicit reset is itself a pending change
+    paintSmsDraftNote(event);
     refreshSmsMetrics(event);
     showToast('Default message restored — remember to save.');
   }
@@ -3526,7 +3730,10 @@
     const on      = !!currentSettings[`sms_on_${event}`];
     const credits = creditsFor(renderSmsPreview(currentSettings[`sms_${event}_template`] || config.default));
     badge.innerHTML =
-      `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:50px;background:${on ? '#EAF5EE' : '#F0F4F7'};color:${on ? '#2E7048' : '#8A9BA6'};">${on ? 'ON' : 'OFF'}</span>`
+      // Panels are collapsed by default, so an unsaved draft has to be visible
+      // from the closed header or it's invisible until you go looking.
+      (smsDraftPending(event) ? `<span title="Unsaved draft" style="font-size:11px;font-weight:700;color:#B9770E;">● draft</span>` : '')
+      + `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:50px;background:${on ? '#EAF5EE' : '#F0F4F7'};color:${on ? '#2E7048' : '#8A9BA6'};">${on ? 'ON' : 'OFF'}</span>`
       + `<span style="font-size:11px;color:${credits >= 3 ? '#C0392B' : 'var(--muted)'};">${credits} cr</span>`;
   }
 
@@ -3570,6 +3777,7 @@
                 style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;line-height:1.6;outline:none;resize:vertical;box-sizing:border-box;color:#2A3D4A;background:#fff;"></textarea>
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;">
                 <div style="font-size:12px;color:var(--muted);flex:1;min-width:200px;" id="settings-sms-counter-${c.event}">–</div>
+                <span id="settings-sms-draft-${c.event}" style="display:none;font-size:11px;font-weight:700;color:#B9770E;white-space:nowrap;">● Unsaved draft — <span onclick="discardSmsDraft('${c.event}')" style="text-decoration:underline;cursor:pointer;">discard</span></span>
                 <button onclick="resetSmsTemplate('${c.event}')" style="padding:6px 12px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">↺ Restore default</button>
               </div>
             </div>
@@ -3595,16 +3803,25 @@
         </div>
       </div>`).join('');
 
-    // Show the saved body, or the built-in default when nothing is stored.
-    // The default is only displayed — it is not written into currentSettings,
-    // so an admin who never edits it leaves the column NULL and keeps following
+    // An unsaved draft wins over the stored value — this runs on every visit to
+    // the tab, so seeding blindly is what discarded work in progress. Otherwise
+    // show the saved body, or the built-in default when nothing is stored. The
+    // default is only displayed, never written into currentSettings, so an
+    // admin who never edits it leaves the column NULL and keeps following
     // whatever the default becomes in a later deploy.
     for (const c of smsEventCatalogue) {
       const ta = document.getElementById(`settings-sms-tpl-${c.event}`);
-      if (ta) {
-        ta.value = currentSettings[`sms_${c.event}_template`] || c.default;
-        refreshSmsMetrics(c.event);
+      if (!ta) continue;
+      if (smsDraftPending(c.event)) {
+        const draft = readSmsDraft(c.event);
+        currentSettings[c.column] = draft;      // so Save persists the draft
+        ta.value = draft || c.default;          // a blank draft means "use the default"
+      } else {
+        writeSmsDraft(c.event, null);           // draft matches what's stored
+        ta.value = currentSettings[c.column] || c.default;
       }
+      paintSmsDraftNote(c.event);
+      refreshSmsMetrics(c.event);
     }
     applySmsPanels();   // restore whichever panel was open
   }
@@ -3715,13 +3932,21 @@
         headers: { 'Authorization': 'Bearer ' + adminToken },
       });
       const data = await res.json();
+      // Derive the per-event switch and template keys from the server catalogue
+      // so a new event never needs these lists updating by hand.
+      for (const c of (data.sms_events || [])) {
+        SETTING_TOGGLES[`sms_${c.event}`] = `sms_on_${c.event}`;
+      }
       for (const column of Object.values(SETTING_TOGGLES)) {
+        // Skip columns the server didn't report, so a half-migrated database
+        // never gets a fabricated false written back over it.
         if (column in data) currentSettings[column] = !!data[column];
       }
-      // Derive the template keys from the server catalogue so a new event never
-      // needs this list updating by hand.
       for (const c of (data.sms_events || [])) {
         currentSettings[c.column] = data[c.column] || '';
+        // Kept apart from currentSettings, which an unsaved draft overwrites —
+        // this is what a draft is compared against to know it's still pending.
+        savedTemplates[c.column]  = data[c.column] || '';
       }
       settingsProviders  = { ...settingsProviders, ...(data.providers || {}) };
       settingsSmsAccount = data.sms_account || null;
@@ -3733,7 +3958,8 @@
       smsTemplateMax    = data.sms_template_max || smsTemplateMax;
       notifyConfig.sms_reply_number = data.sms_reply_number || '';
       notifyConfig.sms_sample_link  = data.sms_sample_link || '';
-      // Panels seed themselves from the saved body, or the default when empty.
+      // Panels seed from an unsaved draft first, then the saved body, then the
+      // built-in default.
       renderSmsAccordion();
       notifyConfig = { ...notifyConfig, ...currentSettings, ...settingsProviders };
       renderSettingsUI();
@@ -3756,6 +3982,15 @@
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Save failed');
+      // The drafts are now the stored values, so drop them — but only after the
+      // write succeeded, or a failed save would lose the text it couldn't store.
+      if (!settingsMigrationPending) {
+        for (const c of smsEventCatalogue) {
+          savedTemplates[c.column] = currentSettings[c.column] || '';
+          writeSmsDraft(c.event, null);
+          paintSmsDraftNote(c.event);
+        }
+      }
       // Keep the follow-up modal in sync without a full dashboard reload
       notifyConfig = { ...notifyConfig, ...currentSettings, ...settingsProviders };
       showToast('Settings saved.');
@@ -3796,6 +4031,9 @@
   window.openImgModal         = openImgModal;
   window.closeImgModal        = closeImgModal;
   window.toggleChurchDropdown = toggleChurchDropdown;
+  window.toggleAgeDropdown    = toggleAgeDropdown;
+  window.toggleAge            = toggleAge;
+  window.selectAllAges        = selectAllAges;
   window.selectAllChurches    = selectAllChurches;
   window.applyFilters         = applyFilters;
   window.openAddAdminModal    = openAddAdminModal;
@@ -3819,6 +4057,7 @@
   window.onSmsTemplateInput         = onSmsTemplateInput;
   window.insertPlaceholder          = insertPlaceholder;
   window.resetSmsTemplate           = resetSmsTemplate;
+  window.discardSmsDraft            = discardSmsDraft;
   window.toggleSmsPanel             = toggleSmsPanel;
   window.openAttendanceModal        = openAttendanceModal;
   window.openBulkAttendanceModal    = openBulkAttendanceModal;
@@ -3827,6 +4066,8 @@
   window.toggleAttendanceSms        = toggleAttendanceSms;
   window.toggleAttendanceBreakdown  = toggleAttendanceBreakdown;
   window.toggleAttendancePresetMenu = toggleAttendancePresetMenu;
+  window.toggleFollowUpPresetMenu   = toggleFollowUpPresetMenu;
+  window.applyFollowUpPreset        = applyFollowUpPreset;
   window.applyAttendancePreset      = applyAttendancePreset;
   window.toggleAttendanceProviderMenu = toggleAttendanceProviderMenu;
   window.selectAttendanceProvider   = selectAttendanceProvider;
@@ -3835,7 +4076,7 @@
 
   // Dismiss either provider dropdown on any click outside it
   document.addEventListener('click', e => {
-    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn'], ['attendanceProviderMenu', 'attendanceProviderBtn'], ['ph-attendance-presets', 'ph-attendance-caret']]) {
+    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn'], ['attendanceProviderMenu', 'attendanceProviderBtn'], ['ph-attendance-presets', 'ph-attendance-caret'], ['ph-followup-presets', 'ph-followup-caret']]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
       if (menu.contains(e.target) || e.target.closest('#' + btnId)) continue;
