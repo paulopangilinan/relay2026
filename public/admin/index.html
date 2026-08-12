@@ -161,7 +161,18 @@
   /* BOTTOM */
   .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;}
   .church-card{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;}
-  .church-card-header{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--dark);flex-shrink:0;}
+  .church-card-header{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--dark);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  /* Status pills — same palette as the row badges, so a colour means the same
+     thing here as it does in the table. */
+  .stat-pills{display:flex;gap:4px;}
+  .stat-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:50px;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:11px;font-weight:700;font-family:inherit;line-height:1.4;cursor:pointer;white-space:nowrap;transition:background 0.15s,color 0.15s;}
+  .stat-pill:hover{background:#f4f8fa;}
+  .stat-pill.on{border-color:transparent;}
+  .stat-pill.on.p-all{background:#E4EAEE;color:#2A3D4A;}
+  .stat-pill.on.p-confirmed{background:var(--green-light);color:var(--green);}
+  .stat-pill.on.p-pending{background:var(--amber-light);color:var(--amber);}
+  .stat-pill.on.p-awaiting{background:var(--red-light);color:var(--red);}
+  .stat-pill.on.p-partial{background:var(--purple-light);color:var(--purple);}
   .church-card-body{max-height:360px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .church-row{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid #eef3f6;font-size:13px;gap:8px;}
   .church-row:last-child{border-bottom:none;}
@@ -284,6 +295,10 @@
     #ph-followup-split #ph-bulk-followup,
     #ph-attendance-split #ph-bulk-attendance{flex:1;justify-content:center;}
     .fu-check,#ph-select-all{width:20px;height:20px;}
+    /* Icon-only pills — four labelled pills plus a card title won't fit a phone
+       header without wrapping onto two lines. The title keeps the words. */
+    .stat-pill .pill-text{display:none;}
+    .stat-pill{padding:5px 9px;gap:0;font-size:13px;}
   }
 </style>
 </head>
@@ -792,8 +807,8 @@
         </div>
       </div>
       <div class="bottom-row">
-        <div class="church-card"><div class="church-card-header">📊 By Church</div><div class="church-card-body" id="ph-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
-        <div class="church-card"><div class="church-card-header">👥 Participant Breakdown</div><div class="church-card-body" id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header"><span>📊 By Church</span><div class="stat-pills" id="ph-church-pills"></div></div><div class="church-card-body" id="ph-church-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
+        <div class="church-card"><div class="church-card-header"><span>👥 Participant Breakdown</span><div class="stat-pills" id="ph-student-pills"></div></div><div class="church-card-body" id="ph-student-breakdown"><div class="loading" style="padding:20px;">Loading…</div></div></div>
       </div>
     </div>
 
@@ -1259,7 +1274,7 @@
       populateFilters();
       applyFilters('ph');
       applyFilters('intl');
-      renderBreakdowns(ph, intl);
+      renderBreakdowns(intl);
       document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
       initSortableHeaders();
       return true;
@@ -1607,13 +1622,63 @@
     }[s] || `<span class="badge">${s}</span>`;
   }
 
-  function renderBreakdowns(ph, intl) {
-    // PH church — exclude cancelled, split known vs others
+  // ── Breakdown status pills ─────────────────────────────────────────────────
+  // Icons match the row badges so a pill reads the same as a status in the
+  // table, and the order matches the stat tiles and the status dropdown. Each
+  // card keeps its own selection — comparing "confirmed by church" against
+  // "who still owes" is the reason to have these at all.
+  //
+  // Every non-cancelled status has a pill, so the four always sum to All. Drop
+  // one and its rows would vanish from the pills while still counting in the
+  // total, which reads as missing money with no way to find it.
+  const STATUS_PILLS = [
+    { key: '',                       label: 'All',       icon: '📋', cls: 'p-all' },
+    { key: 'confirmed',              label: 'Confirmed', icon: '✅', cls: 'p-confirmed' },
+    { key: 'payment_pending_review', label: 'Pending',   icon: '🕐', cls: 'p-pending' },
+    { key: 'awaiting_payment',       label: 'Awaiting',  icon: '💳', cls: 'p-awaiting' },
+    { key: 'partially_paid',         label: 'Partial',   icon: '💰', cls: 'p-partial' },
+  ];
+  // '' means every active status — cancelled is never counted in these panels.
+  const breakdownStatus = { church: '', student: '' };
+  // The PH cards count from localData, so only the international stats still
+  // have to be carried across a pill click.
+  let lastIntlStats = null;
+
+  function renderStatusPills(id, which) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = STATUS_PILLS.map(p =>
+      `<button class="stat-pill ${p.cls}${breakdownStatus[which] === p.key ? ' on' : ''}"
+               onclick="setBreakdownStatus('${which}','${p.key}')" title="${p.label}">
+         <span>${p.icon}</span><span class="pill-text">${p.label}</span>
+       </button>`).join('');
+  }
+
+  function setBreakdownStatus(which, key) {
+    breakdownStatus[which] = key;
+    if (lastIntlStats) renderBreakdowns(lastIntlStats);
+  }
+
+  // Rows behind one card: a chosen status, or everything still active.
+  function breakdownRows(which) {
+    const status = breakdownStatus[which];
+    return localData.filter(r => status ? r.status === status : r.status !== 'cancelled');
+  }
+
+  const pillLabel = (which) =>
+    STATUS_PILLS.find(p => p.key === breakdownStatus[which])?.label || 'All';
+
+  function renderBreakdowns(intl) {
+    lastIntlStats = intl;
+    renderStatusPills('ph-church-pills',  'church');
+    renderStatusPills('ph-student-pills', 'student');
+
+    // PH church — split known vs others
     const knownNames = new Set(churchesList.map(c => c.name));
     const phKnown  = {}; // church name → {count, fee, group_name}
     const phOthers = {}; // typed name → {count, fee}
 
-    localData.filter(r => r.status !== 'cancelled').forEach(r => {
+    breakdownRows('church').forEach(r => {
       const churchVal = (r.church || '').trim();
       if (!churchVal) return;
       const isOthers = !knownNames.has(churchVal);
@@ -1630,16 +1695,24 @@
 
     renderBarListGrouped('ph-church-breakdown', phKnown, phOthers, '₱');
 
-    // PH participant breakdown
-    const phTotal = (ph.students + ph.non_students) || 1;
-    const sPct  = Math.round(ph.students / phTotal * 100);
-    const nsPct = Math.round(ph.non_students / phTotal * 100);
+    // PH participant breakdown — counted from the same rows as the pills rather
+    // than the server totals, which are always the unfiltered active set.
+    const studentRows = breakdownRows('student');
+    const students    = studentRows.filter(r => r.student_status === 'student').length;
+    const nonStudents = studentRows.filter(r => r.student_status === 'non-student').length;
+    const phTotal = (students + nonStudents) || 1;
+    const sPct  = Math.round(students / phTotal * 100);
+    const nsPct = Math.round(nonStudents / phTotal * 100);
+    // "Potential" only makes sense for the unfiltered view. Every figure here is
+    // the full list fee per head, so a partial slice is what that group is
+    // worth in total, not what has been collected from it.
+    const totalLabel = breakdownStatus.student ? `${pillLabel('student')} — total fees` : 'Total Potential';
     document.getElementById('ph-student-breakdown').innerHTML = `
-      <div class="church-row"><span class="church-name">🎓 Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div><span class="church-count">${ph.students} <span style="color:var(--muted);font-size:11px;">| ₱${(ph.students*3000).toLocaleString()}</span></span></div>
-      <div class="church-row"><span class="church-name">💼 Non-Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${nsPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div><span class="church-count">${ph.non_students} <span style="color:var(--muted);font-size:11px;">| ₱${(ph.non_students*4500).toLocaleString()}</span></span></div>
+      <div class="church-row"><span class="church-name">🎓 Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${sPct}%;background:linear-gradient(90deg,#3A8BBF,#5AADD4)"></div></div><span class="church-count">${students} <span style="color:var(--muted);font-size:11px;">| ₱${(students*3000).toLocaleString()}</span></span></div>
+      <div class="church-row"><span class="church-name">💼 Non-Students</span><div class="church-bar-wrap"><div class="church-bar" style="width:${nsPct}%;background:linear-gradient(90deg,#C49A1A,#E8B830)"></div></div><span class="church-count">${nonStudents} <span style="color:var(--muted);font-size:11px;">| ₱${(nonStudents*4500).toLocaleString()}</span></span></div>
       <div style="padding:14px 20px;background:#f7fafb;border-top:1px solid var(--border);">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:700;margin-bottom:4px;">Total Potential</div>
-        <div style="font-family:'Bebas Neue';font-size:26px;color:var(--dark);">₱${((ph.students*3000)+(ph.non_students*4500)).toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:700;margin-bottom:4px;">${totalLabel}</div>
+        <div style="font-family:'Bebas Neue';font-size:26px;color:var(--dark);">₱${((students*3000)+(nonStudents*4500)).toLocaleString()}</div>
       </div>`;
 
     // Intl church — free text, list all unique values
@@ -4031,6 +4104,7 @@
   window.openImgModal         = openImgModal;
   window.closeImgModal        = closeImgModal;
   window.toggleChurchDropdown = toggleChurchDropdown;
+  window.setBreakdownStatus   = setBreakdownStatus;
   window.toggleAgeDropdown    = toggleAgeDropdown;
   window.toggleAge            = toggleAge;
   window.selectAllAges        = selectAllAges;
