@@ -130,6 +130,22 @@ export const handler = async (event) => {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
       }
 
+      // ── Mark registrant as added to pre-con (DB only) ─────────────────────
+      if (action === 'add_to_precon') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+        const now = new Date().toISOString();
+        await supabase.from('registrations').update({
+          attendance_response: 'attending',
+          attendance_responded_at: now,
+          attendance_invited_at: now,
+        }).eq('id', id);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+      }
+
       // ── Confirm payment ────────────────────────────────────────────────────
       if (action === 'confirm') {
         if (!requester.permissions?.verify_payment || requester.force_password_change) {
