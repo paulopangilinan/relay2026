@@ -997,12 +997,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // Global site flag: whether Pay-Later is allowed site-wide for PH.
+  // Default to false so the UI waits for the server value and doesn't
+  // briefly expose Pay-Later before the site-settings fetch completes.
+  let allowPayLaterSite = false;
   // ── Registration closed check ──────────────────────────────────────────────
   (async function() {
     try {
       const res = await fetch('/.netlify/functions/site-settings');
       if (!res.ok) return;
       const settings = await res.json();
+      // Initialise site-wide flag early so pay-later visibility is decided
+      // before the DOM loads, preventing flash of the option.
+      allowPayLaterSite = settings.ph_pay_later_enabled !== false;
       if (settings.reg_ph_closed) {
         window.location.replace('/registration-closed?type=ph');
       }
@@ -1038,6 +1045,10 @@
 
     // Initialize group participant list (empty)
     renderParticipantList();
+    // After initial render we already have the site flag from the public
+    // settings fetch; re-evaluate payment options to apply church rules.
+    // (No extra fetch here to avoid duplication and timing races.)
+    applyPaymentOptions(document.getElementById('church').value);
 
     // Load churches dynamically
     loadChurches();
@@ -1115,7 +1126,10 @@
   // Deliberately silent: spelling the rule out would just nudge people into
   // picking a listed church they don't belong to, dirtying the data.
   function applyPaymentOptions(churchValue) {
-    const allowLater = !!churchValue && churchValue !== 'others';
+    // Pay-Later is controlled solely by the site-wide flag. When the admin
+    // enables it, show the option regardless of church. When disabled, hide
+    // it regardless of church selection.
+    const allowLater = !!allowPayLaterSite;
     const option     = document.getElementById('payLaterOption');
     const payLater   = document.getElementById('payLater');
     const payNow     = document.getElementById('payNow');
@@ -1554,12 +1568,15 @@
 
   async function submitLater() {
     if (!validateBase()) return;
-    // Belt and braces — the option is hidden for "Others", but never trust the DOM.
-    const churchValue = document.getElementById('church').value;
-    if (!churchValue || churchValue === 'others') {
-      applyPaymentOptions(churchValue);
-      showToast('⚠️ Please complete your GCash payment to reserve your slot.', true);
-      return;
+    // If site allows Pay-Later, allow submitting with 'later' regardless of
+    // church selection. Otherwise fall back to the old church-based rule.
+    if (!allowPayLaterSite) {
+      const churchValue = document.getElementById('church').value;
+      if (!churchValue || churchValue === 'others') {
+        applyPaymentOptions(churchValue);
+        showToast('⚠️ Please complete your GCash payment to reserve your slot.', true);
+        return;
+      }
     }
     await doSubmit(false);
   }

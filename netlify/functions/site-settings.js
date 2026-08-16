@@ -11,7 +11,7 @@ import { resendConfigured } from '../lib/mailer.js';
 import { smsEventCatalogue, replyNumber } from '../lib/sms-templates.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
+const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || 'relay2026secret';
 
 const NOTIFICATION_KEYS = Object.keys(NOTIFICATION_DEFAULTS);
@@ -37,7 +37,7 @@ export const handler = async (event) => {
     // Notification columns arrive across two migrations. Step down one tier at
     // a time so a half-migrated database still reports everything it does have,
     // instead of collapsing all the way back to the registration flags.
-    const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed'];
+    const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled'];
     const TIERS = [
       [...BASE_COLS, ...NOTIFICATION_KEYS, ...TEXT_KEYS],   // fully migrated
       [...BASE_COLS, ...NOTIFICATION_KEYS],                 // 20260726 only
@@ -54,12 +54,18 @@ export const handler = async (event) => {
       if (!res.error) { data = res.data; migrationPending = tier > 0; break; }
     }
 
-    // Public callers (the registration pages) only ever need the two flags.
+    // Public callers (the registration pages) only ever need a small subset
+    // of flags. Include `ph_pay_later_enabled` so the public PH form can hide
+    // the pay-later option when the admin disables it.
     if (!requester) {
-      if (!data) return { statusCode: 200, headers, body: JSON.stringify({ reg_ph_closed: false, reg_intl_closed: false }) };
+      if (!data) return { statusCode: 200, headers, body: JSON.stringify({ reg_ph_closed: false, reg_intl_closed: false, ph_pay_later_enabled: false }) };
       return {
         statusCode: 200, headers,
-        body: JSON.stringify({ reg_ph_closed: !!data.reg_ph_closed, reg_intl_closed: !!data.reg_intl_closed }),
+        body: JSON.stringify({
+          reg_ph_closed: !!data.reg_ph_closed,
+          reg_intl_closed: !!data.reg_intl_closed,
+          ph_pay_later_enabled: !!data.ph_pay_later_enabled,
+        }),
       };
     }
 
@@ -111,7 +117,7 @@ export const handler = async (event) => {
 
       // Only ever write known columns — anything else in the payload is ignored.
       const patch = { id: true, updated_at: new Date().toISOString() };
-      for (const key of ['reg_ph_closed', 'reg_intl_closed', ...NOTIFICATION_KEYS]) {
+      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...NOTIFICATION_KEYS]) {
         if (key in body) patch[key] = !!body[key];
       }
       for (const key of TEXT_KEYS) {

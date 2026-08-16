@@ -864,6 +864,17 @@
           </select>
         </div>
         <div class="filter-group"><label>Country</label><select id="intl-country" onchange="applyFilters('intl')"><option value="">All Countries</option></select></div>
+        <div class="filter-group"><label>Pre-Con</label>
+          <select id="intl-precon" onchange="applyFilters('intl')">
+            <option value="">All</option>
+            <option value="eligible">🎟️ Eligible to invite</option>
+            <option value="not_sent">📭 Not yet invited</option>
+            <option value="awaiting">📨 Awaiting reply</option>
+            <option value="attending">✅ Joining</option>
+            <option value="not_attending">🚫 Not joining</option>
+            <option value="no_gender">❓ Gender not recorded</option>
+          </select>
+        </div>
         <div class="filter-actions">
           <button class="btn-reset" onclick="resetFilters('intl')">Reset</button>
           <button class="btn-export" onclick="exportCSV('intl')">⬇ Export CSV</button>
@@ -882,8 +893,8 @@
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th></tr></thead>
-            <tbody id="intl-body"><tr><td colspan="12" class="loading">Loading…</td></tr></tbody>
+            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th><th>Pre-Conference</th></tr></thead>
+            <tbody id="intl-body"><tr><td colspan="13" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -986,8 +997,24 @@
             <div onclick="toggleSetting('intl')" id="settings-intl-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
               <div id="settings-intl-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
             </div>
-          </div>
+            </div>
+
+            
         </div>
+        </div>
+
+        <!-- Pay-Later Toggle (PH-only) -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-top:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">🕐 Allow Pay Later (PH)</div>
+              <div style="font-size:12px;color:var(--muted);">(applies only to Philippine registrations)</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px;" id="settings-paylater-status">Loading…</div>
+            </div>
+            <div onclick="toggleSetting('ph_pay_later_enabled')" id="settings-ph_pay_later_enabled-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-ph_pay_later_enabled-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
         </div>
 
         <!-- SMS Notifications -->
@@ -1510,11 +1537,13 @@
       const s = document.getElementById('intl-search').value.toLowerCase();
       const st = document.getElementById('intl-status').value;
       const co = document.getElementById('intl-country').value;
+      const pre = document.getElementById('intl-precon') ? document.getElementById('intl-precon').value : '';
       filteredIntl = intlData.filter(r => {
         if (hideCancelled.intl && r.status === 'cancelled') return false;
         if (s && !`${r.name} ${r.email} ${r.country} ${r.church} ${r.mobile}`.toLowerCase().includes(s)) return false;
         if (st && r.status !== st) return false;
         if (co && r.country !== co) return false;
+        if (pre && !matchesPreConIntl(r, pre)) return false;
         return true;
       });
       renderTable('intl', filteredIntl);
@@ -1524,7 +1553,7 @@
 
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
-    const cols = isPH ? 16 : 12;
+    const cols = isPH ? 16 : 13;
     const { col, dir } = sortState[tab];
     rows = sortData(rows, col, dir);
     const canVerify = adminSession?.permissions?.verify_payment || false;
@@ -1561,7 +1590,7 @@
           }
           </div>
         </td>
-        ${isPH ? `<td style="min-width:120px;">${attendanceCell(r, canVerify)}</td>` : ''}
+        <td style="min-width:120px;">${attendanceCell(r, canVerify)}</td>
       </tr>
     `).join('');
   }
@@ -1571,13 +1600,6 @@
   // payment operations.
   function attendanceCell(r, canVerify) {
     const dash = '<span style="color:#C9D6DE;font-size:12px;">—</span>';
-    if (r.registrant_type === 'international') return dash;
-
-    // The pre-conference sessions are for male participants, so say so rather
-    // than leaving an empty cell that reads like missing data.
-    if (r.gender === 'female') {
-      return '<span style="color:#A9B8C2;font-size:11px;font-style:italic;white-space:nowrap;">Not applicable</span>';
-    }
 
     if (r.attendance_response === 'attending') {
       return `<span class="attendance-state yes" title="Confirmed attending on ${formatDate(r.attendance_responded_at)}">✅ Pre-Conference Confirmed</span>`;
@@ -1586,26 +1608,20 @@
       return `<span class="attendance-state no" title="Declined on ${formatDate(r.attendance_responded_at)}">🚫 Pre-Conference Declined</span>`;
     }
 
-    // Not answered yet. Payment status is irrelevant here — the sessions are
-    // open to every participant. An unrecorded gender is a gap in our data, not
-    // a reason to leave someone out, so the admin decides and the modal carries
-    // the caveat.
-    const sendable = r.gender !== 'female' && r.status !== 'cancelled';
-
-    // Read-only admins still see where things stand, they just can't act.
-    if (!sendable || !canVerify) {
+    // Read-only admins still see where things stand.
+    if (!canVerify) {
       return r.attendance_invited_at
-        ? `<span class="attendance-state sent" title="Sent ${formatDate(r.attendance_invited_at)} — no reply yet">📨 Awaiting reply</span>`
+        ? `<span class="attendance-state sent" title="Added on ${formatDate(r.attendance_invited_at)} — no reply yet">📌 Added</span>`
         : dash;
     }
 
-    // Short label — the Attendance column beside it carries the status, and the
-    // modal spells out what actually gets sent.
-    const label = r.attendance_invited_at ? 'Resend Pre-Con' : 'Send Pre-Con';
-    const title = r.attendance_invited_at
-      ? `Pre-conference attendance request already sent ${formatDate(r.attendance_invited_at)} — no reply yet`
-      : 'Send the pre-conference session invitation';
-    return `<button class="btn-attendance-row" title="${title}" onclick="openAttendanceModal('${r.id}','${esc(r.name)}')"><span class="btn-label-icon">🎟️</span><span class="btn-label-text">${label}</span></button>`;
+    // If already marked, show added state.
+    if (r.attendance_invited_at) {
+      return `<span class="attendance-state sent" title="Added to pre-con on ${formatDate(r.attendance_invited_at)}">📌 Added</span>`;
+    }
+
+    // Otherwise, allow admin to add this registrant to the pre-con list.
+    return `<button class="btn-attendance-row" title="Add to pre-conference list" onclick="addToPrecon('${r.id}','${esc(r.name)}')"><span class="btn-label-icon">➕</span><span class="btn-label-text">Add to Pre-Con</span></button>`;
   }
 
   function statusBadge(r) {
@@ -2691,6 +2707,20 @@
     }
   }
 
+  // Intl variant: admins may add international registrants to a pre-con list
+  // regardless of gender/payment. Matches the same UI modes but with looser rules.
+  function matchesPreConIntl(r, mode) {
+    switch (mode) {
+      case 'eligible':      return !r.attendance_response && !r.attendance_invited_at;
+      case 'not_sent':      return !r.attendance_response && !r.attendance_invited_at;
+      case 'awaiting':      return !!r.attendance_invited_at && !r.attendance_response;
+      case 'attending':     return r.attendance_response === 'attending';
+      case 'not_attending': return r.attendance_response === 'not_attending';
+      case 'no_gender':     return !r.gender;
+      default:              return true;
+    }
+  }
+
   // Payment status no longer gates the invitation — unpaid, partially paid and
   // pending-review participants are all invited. Only recorded females are
   // excluded, since the sessions are for male participants.
@@ -3031,6 +3061,24 @@
     document.getElementById('attendanceResults').innerHTML = lines.filter(Boolean).join('<br>');
   }
 
+  // Add a registrant to the pre-con list (updates DB only).
+  async function addToPrecon(id, name) {
+    if (!id) return;
+    const yes = confirm(`Add ${name} to the pre-conference list? This updates the database.`);
+    if (!yes) return;
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_to_precon', id }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast('✅ Added to Pre-Con');
+      loadData();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
   // Appends the SMS outcome to a toast. Returns '' when no SMS was attempted.
   function smsToastSuffix(sms) {
     if (!sms) return '';
@@ -3089,7 +3137,7 @@
       selectedAges.clear(); paintAgeOptions(); updateAgeLabel();
       const phTrack = document.getElementById('ph-hide-cancelled-track');
       if (phTrack) phTrack.classList.add('on'); selectedChurches.clear(); updateChurchLabel(); document.querySelectorAll('.church-opt').forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑','☐'); }); }
-    else { ['intl-search','intl-status','intl-country'].forEach(id => document.getElementById(id).value='');
+    else { ['intl-search','intl-status','intl-country','intl-precon'].forEach(id => document.getElementById(id).value='');
       hideCancelled.intl = true;
       const intlTrack = document.getElementById('intl-hide-cancelled-track');
       if (intlTrack) intlTrack.classList.add('on');
@@ -3626,10 +3674,12 @@
     ph:   'reg_ph_closed',
     intl: 'reg_intl_closed',
     sms:  'sms_enabled',
+    ph_pay_later_enabled: 'ph_pay_later_enabled',
   };
 
   let currentSettings = {
     reg_ph_closed: false, reg_intl_closed: false, sms_enabled: false,
+    ph_pay_later_enabled: false,
   };
   let settingsProviders = { sms_configured: false, resend_configured: false };
   let settingsSmsAccount = null;
@@ -3920,6 +3970,12 @@
     document.getElementById('settings-intl-status').textContent =
       currentSettings.reg_intl_closed ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
 
+    // Pay-later toggle for PH registrations
+    paintToggle('ph_pay_later_enabled', currentSettings.ph_pay_later_enabled, '#2E7048');
+    document.getElementById('settings-paylater-status').textContent = currentSettings.ph_pay_later_enabled
+      ? 'Pay later is enabled for Philippine registrants.'
+      : 'Pay later disabled — registrants cannot choose to pay later.';
+
     // SMS switches read the normal way: ON means enabled.
     paintToggle('sms', currentSettings.sms_enabled, '#2E7048');
     for (const c of smsEventCatalogue) {
@@ -3984,7 +4040,7 @@
       : 'Only <strong>Gmail</strong> is available. Set <code>RESEND_API_KEY</code> and <code>RESEND_FROM</code> in your Netlify environment variables to offer Resend as a second sender for follow-ups.';
   }
 
-  function toggleSetting(key) {
+  async function toggleSetting(key) {
     const column = SETTING_TOGGLES[key];
     if (!column) return;
     if (key.startsWith('sms') && settingsMigrationPending) {
@@ -3995,8 +4051,36 @@
       showToast('Add SEMAPHORE_API_KEY in Netlify to enable SMS.');
       return;
     }
+    // Optimistically toggle locally and re-render.
     currentSettings[column] = !currentSettings[column];
     renderSettingsUI();
+
+    // Persist the Pay-Later flag immediately so admins see it take effect.
+    if (key === 'ph_pay_later_enabled') {
+      try {
+        await saveSingleSetting(column);
+        showToast('Pay-Later setting saved.');
+      } catch (err) {
+        // Roll back local change on failure and surface the error.
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save Pay-Later: ' + err.message, true);
+      }
+    }
+  }
+
+  async function saveSingleSetting(column) {
+    if (!adminToken) throw new Error('Not authenticated');
+    const body = {};
+    body[column] = currentSettings[column];
+    const res = await fetch('/.netlify/functions/site-settings', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.error || 'Save failed');
+    return json;
   }
 
   async function loadSettings() {
@@ -4045,13 +4129,16 @@
     err.style.display = 'none';
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
+      const payload = settingsMigrationPending
+        ? { reg_ph_closed: currentSettings.reg_ph_closed, reg_intl_closed: currentSettings.reg_intl_closed, ph_pay_later_enabled: currentSettings.ph_pay_later_enabled }
+        : currentSettings;
       const res = await fetch('/.netlify/functions/site-settings', {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        // Don't send the SMS columns until the migration that creates them has run.
-        body: JSON.stringify(settingsMigrationPending
-          ? { reg_ph_closed: currentSettings.reg_ph_closed, reg_intl_closed: currentSettings.reg_intl_closed }
-          : currentSettings),
+        // When the DB migration is pending we still must allow toggling the
+        // Pay-Later flag, so include `ph_pay_later_enabled` in the minimal
+        // payload. SMS columns remain excluded until the migration runs.
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Save failed');
