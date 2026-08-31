@@ -63,7 +63,7 @@
   .tab-btn.active{color:var(--sky);border-bottom-color:var(--sky);}
   .tab-badge{background:var(--border);color:var(--muted);border-radius:50px;padding:2px 8px;font-size:11px;font-family:'DM Mono';}
   .tab-btn.active .tab-badge{background:var(--sky-light);color:var(--sky);}
-  .group-tab-bar{border-bottom:none;gap:10px;margin-bottom:22px;}
+  .group-tab-bar{border-bottom:none;gap:10px;margin-bottom:16px;}
   .group-tab-bar .tab-btn{
     font-size:14px;font-weight:600;padding:11px 20px;border-radius:10px;border-bottom:0;margin-bottom:0;
     background:#EEF3F6;color:var(--text);
@@ -1045,8 +1045,8 @@
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th style="width:34px;text-align:center;"></th><th style="width:34px;text-align:center;">#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th><th>Pre-Conference</th></tr></thead>
-            <tbody id="intl-body"><tr><td colspan="14" class="loading">Loading…</td></tr></tbody>
+            <thead><tr><th style="width:34px;text-align:center;">#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Verified By</th><th>Cancelled By</th><th>Action</th><th>Pre-Conference</th></tr></thead>
+            <tbody id="intl-body"><tr><td colspan="15" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1231,7 +1231,7 @@
       </div>
       <div class="table-wrap">
         <div class="table-header">
-          <h2>Orders</h2>
+          <h2>Merch Pre-Orders</h2>
           <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('merch')">
               <span class="hc-text">Hide Cancelled</span>
@@ -2006,7 +2006,7 @@
 
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
-    const cols = isPH ? 16 : 14;
+    const cols = isPH ? 16 : 15;
     const { col, dir } = sortState[tab];
     rows = sortData(rows, col, dir);
     const canVerify = adminSession?.permissions?.verify_payment || false;
