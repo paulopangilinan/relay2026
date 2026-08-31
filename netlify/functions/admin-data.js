@@ -6,6 +6,7 @@ import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimate
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
 import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendanceSMS } from '../lib/sms-templates.js';
 import { attendanceLinks } from '../lib/attendance.js';
+import { merchLink } from '../lib/merch.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
@@ -126,7 +127,7 @@ export const handler = async (event) => {
       // bulk_follow_up carries `ids` instead of a single `id` — it validates
       // its own payload below rather than being forced to send a dummy id.
       if (!action) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action' }) };
-      if (!id && !['bulk_follow_up', 'bulk_attendance_invite'].includes(action)) {
+      if (!id && !['bulk_follow_up', 'bulk_attendance_invite', 'blast_merch_invite'].includes(action)) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
       }
 
@@ -563,6 +564,101 @@ export const handler = async (event) => {
             sms_failed:  sent.reduce((s, r) => s + (r.sms?.failed || 0), 0),
             sms_credits: sent.reduce((s, r) => s + (r.sms?.segments || 0), 0),
             fell_back:   sent.some(r => r.fell_back),
+            provider,
+            results,
+          }),
+        };
+      }
+
+      if (action === 'merch_invite') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+        if (reg.status === 'cancelled') {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registration has been cancelled' }) };
+        }
+
+        const siteUrl = linkBase(event);
+        // Mirror the registration flow exactly: the hero image always comes
+        // from SITE_URL, never the request's Host header, so it can't end up
+        // pointing at a preview/local domain the recipient can't reach.
+        const imgUrl  = (process.env.IMAGE_SITE_URL || process.env.SITE_URL || '').replace(/\/+$/, '');
+        const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+        const mailResult = await sendEmail({
+          provider: normalizeProvider(body.email_provider),
+          to: reg.email,
+          subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
+          html: merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id) }),
+        });
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, provider: mailResult.provider, fell_back: !!mailResult.fellBack }),
+        };
+      }
+
+      if (action === 'blast_merch_invite') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        // Allow an admin to target a specific selection of registrations by
+        // passing `ids`. When absent, fall back to the previous behaviour of
+        // sending to every confirmed & paid participant.
+        const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : null;
+        if (ids && ids.length > BULK_LIMIT) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: `Too many at once — send at most ${BULK_LIMIT} per batch` }) };
+        }
+
+        let regsResult;
+        if (ids && ids.length) {
+          const { data, error: fetchErr } = await supabase.from('registrations').select('*').in('id', ids);
+          if (fetchErr) throw fetchErr;
+          // Exclude cancelled rows only — allow any other status so admins
+          // may reach people who plan to pay on-site.
+          regsResult = (data || []).filter(r => r && r.status !== 'cancelled');
+        } else {
+          const { data, error: fetchErr } = await supabase
+            .from('registrations')
+            .select('*')
+            .neq('status', 'cancelled');
+          if (fetchErr) throw fetchErr;
+          regsResult = data || [];
+        }
+
+        const provider = normalizeProvider(body.email_provider);
+        const siteUrl  = linkBase(event);
+        const results = await mapWithConcurrency(regsResult || [], BULK_CONCURRENCY, async (reg) => {
+          try {
+            // Same as the single-send path — SITE_URL only, so the blast
+            // never inherits whatever Host the admin happened to be on.
+            const imgUrl  = (process.env.IMAGE_SITE_URL || process.env.SITE_URL || '').replace(/\/+$/, '');
+            const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+            const mailResult = await sendEmail({
+              provider,
+              to: reg.email,
+              subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
+              html: merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id) }),
+            });
+            return { id: reg.id, name: reg.name, email: reg.email, ok: true, provider: mailResult.provider, fell_back: !!mailResult.fellBack };
+          } catch (err) {
+            console.error(`[blast_merch_invite] ${reg.email} failed:`, err.message);
+            return { id: reg.id, name: reg.name, email: reg.email, ok: false, error: err.message };
+          }
+        });
+
+        const sent   = results.filter(r => r.ok);
+        const failed = results.filter(r => !r.ok);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success: true,
+            sent: sent.length,
+            failed: failed.length,
+            fell_back: sent.some(r => r.fell_back),
             provider,
             results,
           }),
@@ -1009,6 +1105,38 @@ function attendanceEmail({ name, heroUrl, links }) {
       </p>
     </div>
     <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · CCT Tagaytay · Sept 23–26, 2026</div>
+  </div></body></html>`;
+}
+
+function merchInviteEmail({ name, heroUrl, orderLink }) {
+  const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
+    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
+    .hero-img{width:100%;display:block;}
+    .header{background:linear-gradient(135deg,#1C2B38,#2E7048);padding:28px 32px;text-align:center;}
+    .header h1{color:#fff;font-size:22px;margin:0;}
+    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
+    .body{padding:32px;}
+    .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:18px 0;}
+    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
+  </style></head><body><div class="wrap">
+    <div class="bar"></div>
+    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
+    <div class="header"><h1>Merch Preorders Are Open</h1><p>RELAY Conference Asia Pacific 2026</p></div>
+    <div class="body">
+      <p style="font-size:15px;color:#2A3D4A;margin-bottom:14px;">Hi <strong>${firstName}</strong>,</p>
+      <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;">
+        Your conference payment is confirmed, so you can now reserve RELAY 2026 merch before the event.
+      </p>
+      <div class="note">This preorder page is only available through your confirmed-participant link.</div>
+      <div style="text-align:center;margin:24px 0 14px;">
+        <a href="${orderLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#2E7048,#4BAE6A);">Open Merch Preorder</a>
+      </div>
+      <p style="font-size:11px;color:#6B8A9A;text-align:center;line-height:1.6;">Button not working? Copy this link:<br>${orderLink}</p>
+    </div>
+    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
   </div></body></html>`;
 }
 

@@ -69,7 +69,7 @@ CREATE TABLE public.admins (
   email                 TEXT UNIQUE NOT NULL,
   name                  TEXT NOT NULL,
   password_hash         TEXT NOT NULL,
-  permissions           JSONB NOT NULL DEFAULT '{"receive_updates":true,"verify_payment":false,"manage_admins":false,"manage_churches":false}',
+  permissions           JSONB NOT NULL DEFAULT '{"receive_updates":true,"verify_payment":false,"merch_order_notify":false,"manage_admins":false,"manage_churches":false}',
   is_super_admin        BOOLEAN DEFAULT false,
   force_password_change BOOLEAN DEFAULT true,
   created_at            TIMESTAMPTZ DEFAULT now()
@@ -158,16 +158,96 @@ CREATE POLICY "Allow select partial_payments" ON public.partial_payments FOR SEL
 -- Site Settings (single-row — id is always true, enforcing one row)
 -- ============================================================
 CREATE TABLE public.site_settings (
-  id               BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
-  reg_ph_closed    BOOLEAN NOT NULL DEFAULT false,
-  reg_intl_closed  BOOLEAN NOT NULL DEFAULT false,
-  updated_at       TIMESTAMPTZ DEFAULT now()
+  id                          BOOLEAN PRIMARY KEY DEFAULT true CHECK (id),
+  reg_ph_closed               BOOLEAN NOT NULL DEFAULT false,
+  reg_intl_closed             BOOLEAN NOT NULL DEFAULT false,
+  merch_preorder_closed       BOOLEAN NOT NULL DEFAULT false,
+  merch_downpayment_percent   INTEGER NOT NULL DEFAULT 0,
+  merch_order_email_notify    BOOLEAN NOT NULL DEFAULT true,
+  updated_at                  TIMESTAMPTZ DEFAULT now()
 );
 
 INSERT INTO public.site_settings (id) VALUES (true) ON CONFLICT DO NOTHING;
 
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow select site_settings" ON public.site_settings FOR SELECT USING (true);
+
+-- ============================================================
+-- Merch Products
+-- ============================================================
+CREATE TABLE public.merch_products (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name           TEXT NOT NULL,
+  price          INTEGER NOT NULL DEFAULT 0,
+  sizes          JSONB NOT NULL DEFAULT '[]'::jsonb,
+  purchase_limit INTEGER NOT NULL DEFAULT 1,
+  images         JSONB NOT NULL DEFAULT '[]'::jsonb,
+  availability   TEXT,
+  sold_out       BOOLEAN NOT NULL DEFAULT false,
+  is_active      BOOLEAN NOT NULL DEFAULT true,
+  sort_order     INTEGER NOT NULL DEFAULT 0,
+  stock          JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at     TIMESTAMPTZ DEFAULT now(),
+  updated_at     TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX merch_products_active_sort_idx
+  ON public.merch_products(is_active, sort_order, name);
+
+ALTER TABLE public.merch_products ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read active merch_products"
+  ON public.merch_products
+  FOR SELECT
+  USING (is_active = true);
+
+CREATE POLICY "Service role manages merch_products"
+  ON public.merch_products
+  FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+-- ============================================================
+-- Merch Preorders
+-- ============================================================
+CREATE TABLE public.merch_preorders (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  registration_id  UUID NOT NULL REFERENCES public.registrations(id) ON DELETE CASCADE,
+  participant_name TEXT NOT NULL,
+  email            TEXT NOT NULL,
+  church           TEXT,
+  items            JSONB NOT NULL,
+  total_amount     INTEGER NOT NULL DEFAULT 0,
+  notes            TEXT,
+  status           TEXT NOT NULL DEFAULT 'pending'
+                   CHECK (status IN ('pending','completed','cancelled')),
+  deposit_amount   INTEGER DEFAULT 0,
+  dp_percent       INTEGER,
+  receipt_url      TEXT,
+  receipt_path     TEXT,
+  payment_status   TEXT NOT NULL DEFAULT 'unpaid'
+                   CHECK (payment_status IN ('unpaid','partial','paid','cancelled')),
+  created_at       TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX merch_preorders_registration_id_idx
+  ON public.merch_preorders(registration_id);
+
+ALTER TABLE public.merch_preorders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role manages merch_preorders"
+  ON public.merch_preorders
+  FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+INSERT INTO public.merch_products
+  (name, price, sizes, purchase_limit, images, availability, sold_out, is_active, sort_order)
+VALUES
+  ('RELAY Conference Shirt', 650, '["XS","S","M","L","XL","2XL","3XL"]'::jsonb, 2, '[]'::jsonb, 'Available for preorder', false, true, 10),
+  ('RELAY Canvas Tote', 350, '[]'::jsonb, 2, '[]'::jsonb, 'Available for preorder', false, true, 20),
+  ('RELAY Notebook', 250, '[]'::jsonb, 3, '[]'::jsonb, 'Available for preorder', false, true, 30)
+ON CONFLICT DO NOTHING;
 
 -- ============================================================
 -- Storage bucket

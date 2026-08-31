@@ -37,11 +37,13 @@ export const handler = async (event) => {
     // Notification columns arrive across two migrations. Step down one tier at
     // a time so a half-migrated database still reports everything it does have,
     // instead of collapsing all the way back to the registration flags.
-    const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled'];
+    const MERCH_COLS = ['merch_preorder_closed', 'merch_downpayment_percent'];
+    const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS];
     const TIERS = [
       [...BASE_COLS, ...NOTIFICATION_KEYS, ...TEXT_KEYS],   // fully migrated
-      [...BASE_COLS, ...NOTIFICATION_KEYS],                 // 20260726 only
-      BASE_COLS,                                            // neither
+      [...BASE_COLS, ...NOTIFICATION_KEYS],                 // with notification keys
+      BASE_COLS,                                            // base only
+      ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled'], // fallback before merch migration
     ];
 
     let data = null, migrationPending = false;
@@ -51,20 +53,26 @@ export const handler = async (event) => {
         .select(TIERS[tier].join(', '))
         .eq('id', true)
         .maybeSingle();
-      if (!res.error) { data = res.data; migrationPending = tier > 0; break; }
+      if (!res.error && res.data) { data = res.data; migrationPending = tier > 0; break; }
     }
 
-    // Public callers (the registration pages) only ever need a small subset
-    // of flags. Include `ph_pay_later_enabled` so the public PH form can hide
-    // the pay-later option when the admin disables it.
+    // Public callers (registration and merch preorder pages) only need a small subset of flags.
     if (!requester) {
-      if (!data) return { statusCode: 200, headers, body: JSON.stringify({ reg_ph_closed: false, reg_intl_closed: false, ph_pay_later_enabled: false }) };
+      if (!data) return {
+        statusCode: 200, headers,
+        body: JSON.stringify({
+          reg_ph_closed: false, reg_intl_closed: false, ph_pay_later_enabled: false,
+          merch_preorder_closed: false, merch_downpayment_percent: 0,
+        })
+      };
       return {
         statusCode: 200, headers,
         body: JSON.stringify({
           reg_ph_closed: !!data.reg_ph_closed,
           reg_intl_closed: !!data.reg_intl_closed,
           ph_pay_later_enabled: !!data.ph_pay_later_enabled,
+          merch_preorder_closed: !!data.merch_preorder_closed,
+          merch_downpayment_percent: data.merch_downpayment_percent !== undefined && data.merch_downpayment_percent !== null ? Number(data.merch_downpayment_percent) : 0,
         }),
       };
     }
@@ -72,6 +80,8 @@ export const handler = async (event) => {
     const settings = {
       reg_ph_closed:   !!data?.reg_ph_closed,
       reg_intl_closed: !!data?.reg_intl_closed,
+      merch_preorder_closed: !!data?.merch_preorder_closed,
+      merch_downpayment_percent: data?.merch_downpayment_percent !== undefined && data?.merch_downpayment_percent !== null ? Number(data.merch_downpayment_percent) : 0,
       ...NOTIFICATION_DEFAULTS,
       ...NOTIFICATION_TEXT_DEFAULTS,
       ...(data || {}),
@@ -117,8 +127,12 @@ export const handler = async (event) => {
 
       // Only ever write known columns — anything else in the payload is ignored.
       const patch = { id: true, updated_at: new Date().toISOString() };
-      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...NOTIFICATION_KEYS]) {
+      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', 'merch_preorder_closed', ...NOTIFICATION_KEYS]) {
         if (key in body) patch[key] = !!body[key];
+      }
+      if ('merch_downpayment_percent' in body) {
+        const num = parseInt(body.merch_downpayment_percent, 10);
+        patch.merch_downpayment_percent = isNaN(num) ? 0 : Math.max(0, Math.min(100, num));
       }
       for (const key of TEXT_KEYS) {
         if (!(key in body)) continue;

@@ -63,6 +63,19 @@
   .tab-btn.active{color:var(--sky);border-bottom-color:var(--sky);}
   .tab-badge{background:var(--border);color:var(--muted);border-radius:50px;padding:2px 8px;font-size:11px;font-family:'DM Mono';}
   .tab-btn.active .tab-badge{background:var(--sky-light);color:var(--sky);}
+  .group-tab-bar{border-bottom:none;gap:10px;margin-bottom:22px;}
+  .group-tab-bar .tab-btn{
+    font-size:14px;font-weight:600;padding:11px 20px;border-radius:10px;border-bottom:0;margin-bottom:0;
+    background:#EEF3F6;color:var(--text);
+  }
+  .group-tab-bar .tab-btn .tab-badge{background:rgba(28,43,56,0.08);color:var(--muted);}
+  .group-tab-bar .tab-btn:hover{background:#E3EBF0;color:var(--dark);}
+  .group-tab-bar .tab-btn.active{background:linear-gradient(135deg,#1C2B38,#2E7048);color:#fff;box-shadow:0 2px 10px rgba(28,43,56,0.3);}
+  .group-tab-bar .tab-btn.active .tab-badge{background:rgba(255,255,255,0.25);color:#fff;}
+  #registrations-subtabs{padding-left:16px;background:#F7FAFC;border-bottom:1px solid var(--border);margin-bottom:24px;}
+  #registrations-subtabs .tab-btn{font-size:12px;font-weight:600;padding:9px 18px;border-bottom-width:2px;color:var(--muted);}
+  #registrations-subtabs .tab-btn.active{color:var(--sky);}
+  #registrations-subtabs .tab-btn .tab-badge{font-size:10px;padding:1px 6px;}
   .tab-content{display:none;}
   .tab-content.active{display:block;}
 
@@ -102,6 +115,24 @@
   .table-wrap{background:var(--card-bg);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);}
   .table-scroll{display:block;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:480px;}
   @media(max-width:600px){.table-scroll{max-height:520px;}}
+  .table-scroll-orders{max-height:75vh;}
+  @media(max-width:600px){.table-scroll-orders{max-height:70vh;}}
+  .order-group-row{cursor:pointer;}
+  .order-group-row:hover{background:#f7fafb;}
+  tr.order-group-detail{display:none;background:#eef3f6;}
+  tr.order-group-detail.open{display:table-row;}
+  tr.order-group-detail td{padding:14px 18px;}
+  .order-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff;}
+  .order-card:last-child{margin-bottom:0;}
+  .order-card-top{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;justify-content:space-between;}
+  .order-card-meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--dark);}
+  .order-card-meta .lbl{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:0.05em;display:block;margin-bottom:2px;}
+  .order-card-actions{display:flex;gap:14px;flex-wrap:wrap;}
+  .order-card-actions .action-col{display:flex;flex-direction:column;gap:4px;min-width:110px;}
+  .order-card-actions .action-col .lbl{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:0.05em;margin-bottom:2px;}
+  .order-card-items-toggle{background:none;border:none;color:var(--sky);font-size:12px;font-weight:700;cursor:pointer;padding:8px 0 0;}
+  .order-card-items{display:none;margin-top:8px;border-top:1px solid #eef3f6;padding-top:8px;}
+  .order-card-items.open{display:block;}
   .table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
   @media(max-width:600px){.table-header{flex-direction:column;align-items:flex-start;}.table-header>div{width:100%;justify-content:space-between;}}
   .table-header h2{font-size:14px;font-weight:700;color:var(--dark);}
@@ -223,17 +254,47 @@
   .btn-partial-row:hover{background:var(--purple);color:#fff;}
   .btn-partial-row .btn-label-text{display:inline;}
   .btn-partial-row .btn-label-icon{display:none;}
-  /* Mobile overrides — must come after the above defaults */
+  /* Merch order row actions — same icon/text pattern as the registration
+     row buttons above. Payment actions (Mark as Paid / Add Partial Payment)
+     and order actions (Complete Order / Cancel Order) are separate button
+     sets living under separate columns. */
+  .btn-markpaid-row{background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;margin-bottom:4px;}
+  .btn-markpaid-row:hover{background:var(--green-bright);}
+  .btn-addpartial-row{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;margin-bottom:4px;}
+  .btn-addpartial-row:hover{background:var(--purple);color:#fff;}
+  .btn-completeorder-row{background:var(--sky-light);color:var(--sky);border:1px solid var(--sky);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;margin-bottom:4px;}
+  .btn-completeorder-row:hover{background:var(--sky);color:#fff;}
+  .btn-cancelorder-row{background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;}
+  .btn-cancelorder-row:hover{background:#E05050;color:#fff;}
+  .btn-markpaid-row .btn-label-text,.btn-addpartial-row .btn-label-text,.btn-completeorder-row .btn-label-text,.btn-cancelorder-row .btn-label-text{display:inline;}
+  .btn-markpaid-row .btn-label-icon,.btn-addpartial-row .btn-label-icon,.btn-completeorder-row .btn-label-icon,.btn-cancelorder-row .btn-label-icon{display:none;}
+  .btn-markpaid-row:disabled,.btn-addpartial-row:disabled,.btn-completeorder-row:disabled,.btn-cancelorder-row:disabled{opacity:0.45;cursor:not-allowed;}
+  /* Expand/collapse chevron + detail sub-row for a merch order */
+  .order-expand-btn{background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:4px;display:flex;align-items:center;justify-content:center;transition:transform 0.15s;}
+  .order-expand-btn.open{transform:rotate(90deg);color:var(--sky);}
+  tr.order-detail-row{display:none;background:#f7fafb;}
+  tr.order-detail-row.open{display:table-row;}
+  tr.order-detail-row td{padding:14px 18px;}
+  .order-item-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #eef3f6;}
+  .order-item-row:last-child{border-bottom:none;}
+  .order-item-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid #D4E2EA;flex-shrink:0;cursor:zoom-in;background:#fff;}
+  .order-item-thumb-placeholder{width:44px;height:44px;border-radius:8px;border:1px solid #D4E2EA;flex-shrink:0;background:#EEF3F6;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);}
+  .order-item-info{flex:1;min-width:0;}
+  .order-item-name{font-size:13px;font-weight:600;color:var(--dark);}
+  .order-item-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+  .order-item-subtotal{font-size:12px;font-family:'DM Mono';color:var(--text);flex-shrink:0;}
   @media(max-width:600px){
-    .btn-followup-row .btn-label-text{display:none;}
-    .btn-followup-row .btn-label-icon{display:inline;}
-    .btn-partial-row .btn-label-text{display:none;}
-    .btn-partial-row .btn-label-icon{display:inline;}
+    .btn-markpaid-row .btn-label-text,.btn-addpartial-row .btn-label-text,.btn-completeorder-row .btn-label-text,.btn-cancelorder-row .btn-label-text{display:none;}
+    .btn-markpaid-row .btn-label-icon,.btn-addpartial-row .btn-label-icon,.btn-completeorder-row .btn-label-icon,.btn-cancelorder-row .btn-label-icon{display:inline;}
+    .btn-markpaid-row,.btn-addpartial-row,.btn-completeorder-row,.btn-cancelorder-row{padding:6px 8px;font-size:14px;margin-bottom:0;}
   }
-  .btn-actions{display:flex;flex-direction:row;gap:4px;align-items:center;}
-  .btn-confirm-modal:hover{background:var(--green-bright);}
-
   .toast{display:none;position:fixed;bottom:24px;right:24px;background:var(--dark);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,0.2);z-index:999;}
+
+  /* DRAG & DROP SORT */
+  tr.merch-drag-over{border-top:2px solid var(--sky) !important;background:var(--sky-light) !important;}
+  tr.merch-dragging{opacity:0.4;}
+  .drag-handle{cursor:grab;user-select:none;color:var(--muted);text-align:center;font-size:18px;}
+  .drag-handle:active{cursor:grabbing;}
 
   /* MOBILE */
   @media(max-width:1100px){.tiles-row{grid-template-columns:repeat(2,1fr);}.tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}}
@@ -241,14 +302,18 @@
     .login-card{width:calc(100vw - 40px);padding:32px 24px;}
     .topbar{padding:0 16px;height:auto;flex-wrap:wrap;gap:8px;padding-top:10px;padding-bottom:10px;}
     .topbar-sub,.ts{display:none;}
-    .topbar-right{width:100%;justify-content:space-evenly;gap:6px;}
-    .btn-topbar-icon,.btn-topbar-action{flex:1;flex-direction:column;gap:2px;padding:8px 6px;font-size:10px;text-align:center;min-width:0;}
+    .topbar-right{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+    .btn-topbar-icon,.btn-topbar-action{width:100%;box-sizing:border-box;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 6px;font-size:10px;text-align:center;min-width:0;min-height:52px;}
     .tb-icon{width:24px;height:24px;font-size:18px;display:flex;align-items:center;justify-content:center;margin:0 auto;}
     .tb-icon svg{width:18px;height:18px;display:block;}
     .main{padding:16px;}
     .tiles-row{grid-template-columns:repeat(2,1fr);gap:10px;}
     .tiles-row.intl-tiles{grid-template-columns:repeat(2,1fr);}
     .tab-btn{padding:10px 16px;font-size:13px;}
+    .group-tab-bar{flex-wrap:wrap;gap:8px;}
+    .group-tab-bar .tab-btn{font-size:13px;padding:10px 14px;flex:1;justify-content:center;}
+    #registrations-subtabs{padding-left:6px;}
+    #registrations-subtabs .tab-btn{font-size:11px;padding:8px 14px;}
     .filters-bar{flex-direction:column;padding:14px;gap:10px;}
     .filter-group{width:100%;}
     .filter-group select,.filter-group input{width:100%;min-width:unset;}
@@ -290,8 +355,10 @@
   .fu-check,#ph-select-all{width:16px;height:16px;accent-color:#3A8BBF;}
   @media(max-width:600px){
     /* Each CTA takes its own full-width row. Sharing a line with the Hide
-       Cancelled toggle squeezes both labels down to an ellipsis. */
-    #ph-followup-split,#ph-attendance-split{width:100%;justify-content:center;order:-1;margin-bottom:4px;}
+       Cancelled toggle squeezes both labels down to an ellipsis. Blast Merch
+       Email has no caret/split wrapper like the other two — target the
+       button itself so all three end up the same width and height. */
+    #ph-followup-split,#ph-attendance-split,#ph-blast-merch{width:100%;justify-content:center;order:-1;margin-bottom:4px;box-sizing:border-box;}
     #ph-followup-split #ph-bulk-followup,
     #ph-attendance-split #ph-bulk-attendance{flex:1;justify-content:center;}
     .fu-check,#ph-select-all{width:20px;height:20px;}
@@ -313,7 +380,7 @@
     <p>Admin Dashboard</p>
     <input type="email" id="emailInput" placeholder="Email address">
     <input type="password" id="passwordInput" placeholder="Password">
-    <button class="login-btn" onclick="login()">Sign In</button>
+    <button class="login-btn" onclick="(window.login ? login() : (document.getElementById('loginErr').textContent='Login handler missing — check console', document.getElementById('loginErr').style.display='block'))">Sign In</button>
     <div class="login-err" id="loginErr"></div>
   </div>
 </div>
@@ -430,6 +497,77 @@
     <div style="display:flex;gap:10px;">
       <button onclick="doPartialPayment()" id="partialConfirmBtn" style="flex:1;padding:12px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">💰 Record Payment</button>
       <button onclick="closePartialModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERCH: MARK AS PAID MODAL -->
+<div class="modal-overlay" id="merchMarkPaidModal">
+  <div class="modal">
+    <h3>Mark as Paid?</h3>
+    <p>This will record the full order total as paid for <strong id="merchMarkPaidName"></strong>'s order.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMerchMarkPaidModal()">Cancel</button>
+      <button class="btn-confirm-modal" onclick="doMarkOrderPaid()">💰 Mark as Paid</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERCH: ADD PARTIAL PAYMENT MODAL -->
+<div id="merchPartialModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <h3 style="margin:0;font-size:16px;font-weight:700;color:#1C2B38;">Add Partial Payment</h3>
+        <div style="font-size:12px;color:#6B8A9A;margin-top:3px;" id="merchPartialModalName"></div>
+      </div>
+      <button onclick="closeMerchPartialModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
+    </div>
+    <div style="background:#f7fafb;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.07em;">Total</div>
+        <div style="font-size:14px;font-weight:700;color:#2A3D4A;" id="merchPartialTotal">–</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.07em;">Paid So Far</div>
+        <div style="font-size:14px;font-weight:700;color:var(--purple);" id="merchPartialPaidSoFar">–</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.07em;">Remaining</div>
+        <div style="font-size:14px;font-weight:700;color:var(--red);" id="merchPartialRemaining">–</div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px;">Amount (PHP)</label>
+      <input type="number" id="merchPartialAmount" min="1" placeholder="e.g. 500" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="doAddPartialPayment()" id="merchPartialConfirmBtn" style="flex:1;padding:12px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">💵 Record Payment</button>
+      <button onclick="closeMerchPartialModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERCH: COMPLETE ORDER MODAL -->
+<div class="modal-overlay" id="merchCompleteModal">
+  <div class="modal">
+    <h3>Complete this order?</h3>
+    <p>This will mark <strong id="merchCompleteName"></strong>'s order as completed and send them a confirmation email.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMerchCompleteModal()">Cancel</button>
+      <button class="btn-confirm-modal" onclick="doCompleteMerchOrder()">📦 Complete Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERCH: CANCEL ORDER MODAL -->
+<div class="modal-overlay" id="merchCancelOrderModal">
+  <div class="modal">
+    <h3>Cancel this order?</h3>
+    <p>This will cancel <strong id="merchCancelOrderName"></strong>'s order — both its payment status and order status will be set to cancelled. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMerchCancelOrderModal()">No, keep it</button>
+      <button class="btn-confirm-modal" style="background:#E05050;" onclick="doCancelMerchOrder()">✕ Cancel Order</button>
     </div>
   </div>
 </div>
@@ -601,6 +739,7 @@
     <div class="topbar-right">
       <span class="ts" id="lastRefresh"></span>
       <button class="btn-topbar-icon" id="tab-churches" onclick="switchTab('churches')"><span class="tb-icon">⛪</span><span class="tb-text">Churches</span></button>
+      <button class="btn-topbar-icon" id="tab-merch" onclick="switchTab('merch')"><span class="tb-icon">🛍️</span><span class="tb-text">Merch Settings</span></button>
       <button class="btn-topbar-icon" id="tab-admins" onclick="switchTab('admins')"><span class="tb-icon">🛡️</span><span class="tb-text">Admins</span></button>
       <button class="btn-topbar-icon" id="tab-settings" onclick="switchTab('settings')"><span class="tb-icon">🔌</span><span class="tb-text">Site Settings</span></button>
       <button class="btn-sm btn-outline btn-topbar-action" onclick="loadData()"><span class="tb-icon">🔄</span><span class="tb-text">Refresh Data</span></button>
@@ -612,16 +751,25 @@
   <div class="main">
 
     <!-- TABS -->
-    <div class="tab-bar">
+    <div class="tab-bar group-tab-bar">
+      <button class="tab-btn active" onclick="switchGroup('registrations')" id="group-registrations">
+        📋 Registrations <span class="tab-badge" id="badge-registrations">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchGroup('orders')" id="group-orders">
+        🧾 Merch Orders <span class="tab-badge" id="badge-orders">0</span>
+      </button>
+    </div>
+    <div style="height:4px;border-radius:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);margin:-14px 0 18px;"></div>
+    <div class="tab-bar sub-tab-bar" id="registrations-subtabs">
       <button class="tab-btn active" onclick="switchTab('ph')" id="tab-ph">
         🇵🇭 Philippines <span class="tab-badge" id="badge-ph">0</span>
       </button>
       <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
         🌏 International <span class="tab-badge" id="badge-intl">0</span>
       </button>
-
     </div>
 
+    
     <!-- PH TAB -->
     <div class="tab-content active" id="content-ph">
       <div class="tiles-row">
@@ -765,6 +913,10 @@
                 </button>
               </div>
             </div>
+            <button id="ph-blast-merch" onclick="blastMerchInvite()" style="display:none;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2E7048;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
+              <span>🛍️</span><span id="ph-merch-label">Blast Merch Email</span>
+            </button>
+            <div id="ph-merch-closed-note" style="display:none;font-size:11px;color:#C0392B;font-weight:600;max-width:220px;line-height:1.4;">Merch preorder page is closed — turn it on in Merch → Preorder Page to send this.</div>
             <!-- Split button: main action sends, caret offers selection presets -->
             <div id="ph-attendance-split" style="display:none;align-items:stretch;position:relative;">
               <button id="ph-bulk-attendance" onclick="openBulkAttendanceModal()" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2A6E9E;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
@@ -893,8 +1045,8 @@
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th><th>Pre-Conference</th></tr></thead>
-            <tbody id="intl-body"><tr><td colspan="13" class="loading">Loading…</td></tr></tbody>
+            <thead><tr><th style="width:34px;text-align:center;"></th><th style="width:34px;text-align:center;">#</th><th class="sortable" data-col="name" data-tab="intl">Name</th><th class="sortable" data-col="age" data-tab="intl">Age</th><th>Mobile</th><th>Email</th><th class="sortable" data-col="country" data-tab="intl">Country</th><th class="sortable" data-col="church" data-tab="intl">Church</th><th class="sortable" data-col="status" data-tab="intl">Status</th><th>Allergens</th><th>Receipt</th><th class="sortable" data-col="created_at" data-tab="intl">Registered</th><th>Action</th><th>Pre-Conference</th></tr></thead>
+            <tbody id="intl-body"><tr><td colspan="14" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -941,6 +1093,162 @@
       </div>
     </div>
 
+    <!-- MERCH TAB -->
+    <div class="tab-content" id="content-merch">
+      <!-- Merch Preorder Settings -->
+      <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-bottom:20px;">
+        <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:14px;">🛍️ Merch Preorder</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px;">Preorder Page</div>
+            <div style="font-size:12px;color:var(--muted);" id="settings-merch-status">Loading…</div>
+          </div>
+          <div onclick="toggleSetting('merch_preorder_closed')" id="settings-merch_preorder_closed-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+            <div id="settings-merch_preorder_closed-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px;">Required Down Payment</div>
+            <div style="font-size:12px;color:var(--muted);">Disabled for now — there's no payment method configured yet, so no down payment is required at checkout.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <input type="number" id="settings-merch-dp" min="0" max="100" step="5" value="0" disabled title="Disabled — no payment method configured yet" style="width:76px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;text-align:right;background:#F0F4F7;color:var(--muted);cursor:not-allowed;" onchange="onMerchDpChange()">
+            <span style="font-size:13px;color:var(--muted);font-weight:600;">%</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--dark);">Merch Products</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Active products appear on the preorder page. Drag rows by the ⠿ handle to reorder.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <a href="/merch-preorder.html?preview=1" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;background:#f0f4f7;color:var(--dark);border:1px solid #D4E2EA;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">Preview Store ↗</a>
+          <button onclick="openMerchModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">+ Add Product</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table style="min-width:980px;">
+            <thead><tr><th style="width:70px;text-align:center;">Sort Order</th><th>Product</th><th>Price</th><th>Sizes &amp; Stock</th><th>Limit</th><th>Images</th><th>Availability</th><th>Sold Out</th><th>Active</th><th>Action</th></tr></thead>
+            <tbody id="merch-body"><tr><td colspan="10" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MERCH ORDERS TAB -->
+    <div class="tab-content" id="content-orders">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:16px;font-weight:700;color:var(--dark);">Merch Orders</div>
+        <button onclick="loadMerchOrders()" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;flex-shrink:0;">Refresh</button>
+      </div>
+      <div class="tiles-row">
+        <!-- Total -->
+        <div class="tile">
+          <div class="tile-label">Total</div>
+          <div class="tile-count c-total" id="morders-total">–</div>
+          <div class="tile-sub" id="morders-total-sub">–</div>
+        </div>
+        <!-- Payment Confirmed -->
+        <div class="tile">
+          <div class="tile-label">Payment Confirmed</div>
+          <div class="tile-main">
+            <span class="tile-count c-green" id="morders-confirmed">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-green" id="morders-rev-confirmed">₱0</span>
+          </div>
+          <div class="tile-sub" id="morders-confirmed-sub">–</div>
+        </div>
+        <!-- Pending Payment -->
+        <div class="tile">
+          <div class="tile-label">Pending Payment</div>
+          <div class="tile-main">
+            <span class="tile-count c-amber" id="morders-pending">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-amber" id="morders-rev-pending">₱0</span>
+          </div>
+          <div class="tile-sub" id="morders-pending-sub">–</div>
+        </div>
+        <!-- Partially Paid -->
+        <div class="tile">
+          <div class="tile-label">Partially Paid</div>
+          <div class="tile-main">
+            <span class="tile-count c-purple" id="morders-partial">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-purple" id="morders-rev-partial">₱0</span>
+          </div>
+          <div class="tile-sub" id="morders-partial-sub">–</div>
+        </div>
+        <!-- Cancelled -->
+        <div class="tile">
+          <div class="tile-label">Cancelled</div>
+          <div class="tile-count" style="color:#888;" id="morders-cancelled">–</div>
+          <div class="tile-sub">Backed out orders</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Group By</span>
+        <div style="display:flex;background:#EEF3F6;border-radius:8px;padding:3px;gap:2px;">
+          <button id="orders-group-participant-btn" onclick="setMerchGroupMode('participant')" style="padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:var(--sky);box-shadow:0 1px 3px rgba(0,0,0,0.08);">Participant</button>
+          <button id="orders-group-item-btn" onclick="setMerchGroupMode('item')" style="padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);">Item</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group"><label>Name</label><input type="text" id="orders-filter-name" placeholder="Search name…" oninput="applyMerchOrderFilters()"></div>
+        <div class="filter-group"><label>Email</label><input type="text" id="orders-filter-email" placeholder="Search email…" oninput="applyMerchOrderFilters()"></div>
+        <div class="filter-group" style="position:relative;">
+          <label>Item</label>
+          <div id="orders-item-trigger" onclick="toggleOMSDropdown('item')" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:180px;user-select:none;">
+            <span id="orders-item-label">All Items</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="orders-item-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:220px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllOMS('item')" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Items</div>
+            <div id="orders-item-list"></div>
+          </div>
+        </div>
+        <div class="filter-group" style="position:relative;">
+          <label>Church</label>
+          <div id="orders-church-trigger" onclick="toggleOMSDropdown('church')" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:180px;user-select:none;">
+            <span id="orders-church-label">All Churches</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="orders-church-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:220px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllOMS('church')" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Churches</div>
+            <div id="orders-church-list"></div>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-reset" onclick="resetMerchOrderFilters()">Reset</button>
+          <button class="btn-export" onclick="exportMerchOrdersCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h2>Orders</h2>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('merch')">
+              <span class="hc-text">Hide Cancelled</span>
+              <div class="toggle-track on" id="merch-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+            </label>
+            <span class="table-count" id="orders-count">–</span>
+          </div>
+        </div>
+        <div class="table-scroll table-scroll-orders">
+          <table style="min-width:960px;">
+            <thead id="orders-thead"><tr><th style="width:32px;"></th><th>Name</th><th>Email</th><th>Church</th><th>Orders</th><th>Total</th><th>Deposit</th><th>Payment Status</th><th>Order Actions</th></tr></thead>
+            <tbody id="orders-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ADMINS TAB -->
     <div class="tab-content" id="content-admins">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -955,10 +1263,10 @@
           <table style="min-width:900px;">
             <thead><tr>
               <th>Name</th><th>Email</th>
-              <th>Receive Updates</th><th>Verify Payment</th><th>Manage Admins</th><th>Manage Churches</th>
+              <th>Receive Updates</th><th>Verify Payment</th><th>Merch Order Notify</th><th>Manage Admins</th><th>Manage Churches</th>
               <th>Super Admin</th><th>Status</th><th>Action</th>
             </tr></thead>
-            <tbody id="admins-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+            <tbody id="admins-body"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1062,6 +1370,136 @@
   </div>
 </div>
 
+<!-- ADD/EDIT MERCH PRODUCT MODAL -->
+<div id="merchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:640px;width:92%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;" id="merchModalTitle">Add Product</h3>
+      <button onclick="closeMerchModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="grid-column:1 / -1;">
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Product Name *</label>
+        <input type="text" id="mm-name" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;background:#f7fafb;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Price (PHP) *</label>
+        <input type="number" id="mm-price" min="0" step="1" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;background:#f7fafb;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Purchase Limit Per Participant</label>
+        <input type="number" id="mm-limit" min="1" step="1" placeholder="Blank = unlimited" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;background:#f7fafb;outline:none;">
+      </div>
+      <div style="grid-column:1 / -1;">
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Availability Note</label>
+        <input type="text" id="mm-availability" placeholder="e.g. Available for preorder" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;background:#f7fafb;outline:none;">
+      </div>
+      <div style="grid-column:1 / -1;">
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Description</label>
+        <textarea id="mm-description" rows="3" placeholder="Shown on the preorder page under the product name — material, fit, sizing notes, etc." style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;background:#f7fafb;outline:none;resize:vertical;"></textarea>
+      </div>
+      <div style="grid-column:1 / -1;">
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;">Sizes (comma-delimited, e.g. XS, S, M, L, XL, 2XL, 3XL)</label>
+        <input type="text" id="mm-sizes" placeholder="Leave empty for one-size product" oninput="onSizesInputChanged()" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;background:#f7fafb;outline:none;">
+      </div>
+      
+      <!-- STOCK COUNTS (REACTIVELY UPDATED BASED ON SIZES) -->
+      <div style="grid-column:1 / -1;" id="mm-stock-area">
+        <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px;">Stock Counts <span style="font-weight:400;text-transform:none;color:#6B8A9A;">(leave blank for unlimited)</span></label>
+        <div id="mm-stock-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;background:#f7fafb;padding:12px;border-radius:10px;border:1.5px solid #D4E2EA;">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <div style="grid-column:1 / -1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;">Product Photos <span style="font-weight:400;text-transform:none;color:#6B8A9A;">(max 10 photos)</span></label>
+          <span id="mm-photo-count" style="font-size:11px;color:var(--muted);font-weight:600;">0/10 photos</span>
+        </div>
+        
+        <div class="upload-area" id="mm-upload-zone" style="border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:#f7fafb;position:relative;transition:all 0.2s;">
+          <input type="file" id="mm-upload" accept="image/*" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+          <div style="font-size:24px;margin-bottom:4px;">📸</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">
+            <strong style="color:var(--sky);">Click to upload photos</strong> or drag and drop<br>
+            <span style="font-size:11px;color:var(--muted);">PNG, JPG, or WEBP · 1st photo is used as main image</span>
+          </div>
+        </div>
+
+        <div id="mm-image-list" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;"></div>
+      </div>
+
+      <!-- Toggles for Sold Out and Active -->
+      <div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f7fafb;border:1.5px solid #D4E2EA;border-radius:10px;padding:12px 14px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--dark);">Sold Out</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="mm-soldout-status">Available</div>
+          </div>
+          <div onclick="toggleMerchSoldOut()" id="mm-soldout-track" class="toggle-track" style="cursor:pointer;">
+            <div class="toggle-thumb" id="mm-soldout-thumb"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f7fafb;border:1.5px solid #D4E2EA;border-radius:10px;padding:12px 14px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--dark);">Active on Preorder</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="mm-active-status">Visible</div>
+          </div>
+          <div onclick="toggleMerchActive()" id="mm-active-track" class="toggle-track on" style="cursor:pointer;">
+            <div class="toggle-thumb" id="mm-active-thumb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="mm-err" style="display:none;background:#FDECEA;color:#C0392B;padding:8px 12px;border-radius:6px;font-size:12px;margin-top:12px;"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="saveMerchProduct()" style="flex:1;padding:12px;background:#1C2B38;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;" id="mm-save-btn">Save Product</button>
+      <button onclick="closeMerchModal()" style="padding:12px 20px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK MERCH SEND MODAL -->
+<div id="bulkMerchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;">Blast Merch Preorder Email</h3>
+      <button onclick="closeBulkMerchModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
+    </div>
+    <div id="bulkMerchSummary" style="background:#EBF5FB;border-radius:10px;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;"></div>
+    <div id="bulkMerchWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
+
+    <div id="bulkMerchProgressWrap" style="display:none;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B8A9A;margin-bottom:6px;">
+        <span id="bulkMerchProgressLabel">Sending…</span><span id="bulkMerchProgressPct">0%</span>
+      </div>
+      <div style="background:#EDF2F5;border-radius:50px;height:8px;overflow:hidden;">
+        <div id="bulkMerchProgressBar" style="width:0%;height:8px;background:linear-gradient(90deg,#3A8BBF,#4BAE6A);border-radius:50px;transition:width 0.25s;"></div>
+      </div>
+      <div id="bulkMerchResults" style="margin-top:12px;font-size:12px;color:#2A3D4A;line-height:1.7;"></div>
+    </div>
+
+    <div id="bulkMerchActionRow" style="display:flex;gap:10px;">
+      <div style="flex:1;position:relative;display:flex;">
+        <button onclick="doBulkMerch()" id="bulkMerchConfirmBtn" style="flex:1;padding:12px;background:#2E7048;color:#fff;border:none;border-radius:8px 0 0 8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send via Gmail</button>
+        <button onclick="toggleBulkMerchProviderMenu(event)" id="bulkMerchProviderBtn" title="Choose email provider" style="padding:12px 11px;background:#2E7048;color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;">▾</button>
+        <div id="bulkMerchProviderMenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectBulkMerchProvider('gmail')" id="bulkMerchOpt-gmail" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✉️ Gmail <span id="bulkMerchCheck-gmail" style="color:#2E7048;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;">Sends from the RELAY inbox.</span>
+          </button>
+          <button onclick="selectBulkMerchProvider('resend')" id="bulkMerchOpt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="bulkMerchCheck-resend" style="color:#2E7048;display:none;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;" id="bulkMerchResendHint">Better deliverability for bulk reminders.</span>
+          </button>
+        </div>
+      </div>
+      <button onclick="closeBulkMerchModal()" id="bulkMerchCancelBtn" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD/EDIT GROUP MODAL -->
 <div id="groupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
@@ -1126,6 +1564,9 @@
         </label>
         <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-verify"> Verify Payment &amp; Cancel Registration
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-merch-notify"> Receive Merch Order Notifications
         </label>
         <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-manage"> Manage Admin Users
@@ -1255,10 +1696,14 @@
   function applyPermissionUI() {
     const adminTab    = document.getElementById('tab-admins');
     const churchesTab = document.getElementById('tab-churches');
+    const merchTab    = document.getElementById('tab-merch');
     const settingsTab = document.getElementById('tab-settings');
+    const ordersTab   = document.getElementById('group-orders');
     if (adminTab)    adminTab.style.display    = adminSession?.permissions?.manage_admins   ? 'flex' : 'none';
     if (churchesTab) churchesTab.style.display = adminSession?.permissions?.manage_churches ? 'flex' : 'none';
+    if (merchTab)    merchTab.style.display    = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
     if (settingsTab) settingsTab.style.display = adminSession?.is_super_admin               ? 'flex' : 'none';
+    if (ordersTab)   ordersTab.style.display   = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
   }
 
   function logout() {
@@ -1294,6 +1739,13 @@
       // Tab badges (exclude cancelled)
       document.getElementById('badge-ph').textContent   = localData.filter(r => r.status !== 'cancelled').length;
       document.getElementById('badge-intl').textContent = intlData.filter(r => r.status !== 'cancelled').length;
+      const regBadge = document.getElementById('badge-registrations');
+      if (regBadge) regBadge.textContent = localData.filter(r => r.status !== 'cancelled').length + intlData.filter(r => r.status !== 'cancelled').length;
+      if (adminSession?.permissions?.verify_payment) { loadMerchOrders(); loadMerchProducts(); }
+      // Fetch settings eagerly (not just when the Settings/Merch tab is opened)
+      // so the merch preorder-closed state is known in time to correctly
+      // enable/disable the Blast Merch Email button on the PH tab.
+      loadSettings().then(() => syncBulkUI());
 
       const ph  = json.stats_local  || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, partially_paid:0, partial_revenue:0, students:0, non_students:0, confirmed_revenue:0, pending_revenue:0, awaiting_revenue:0, by_church:{} };
       const intl = json.stats_intl || { total:0, confirmed:0, pending_review:0, awaiting_payment:0, confirmed_revenue:0, pending_revenue:0, by_country:{}, by_church:{} };
@@ -1505,13 +1957,14 @@
     }
   });
 
-  const hideCancelled = { ph: true, intl: true };
+  const hideCancelled = { ph: true, intl: true, merch: true };
 
   function toggleHideCancelled(tab) {
     hideCancelled[tab] = !hideCancelled[tab];
     const track = document.getElementById(`${tab}-hide-cancelled-track`);
     if (track) track.classList.toggle('on', hideCancelled[tab]);
-    applyFilters(tab);
+    if (tab === 'merch') applyMerchOrderFilters();
+    else applyFilters(tab);
   }
 
   function applyFilters(tab) {
@@ -1553,7 +2006,7 @@
 
   function renderTable(tab, rows) {
     const isPH = tab === 'ph';
-    const cols = isPH ? 16 : 13;
+    const cols = isPH ? 16 : 14;
     const { col, dir } = sortState[tab];
     rows = sortData(rows, col, dir);
     const canVerify = adminSession?.permissions?.verify_payment || false;
@@ -1583,7 +2036,7 @@
           ${r.status === 'cancelled'
             ? '<span style="color:#aaa;font-size:12px;font-style:italic;">Cancelled</span>'
             : r.payment_verified
-              ? '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">✅ Confirmed</span>'
+              ? confirmedActions(r, canVerify)
               : canVerify
                 ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">₱</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${FOLLOWUP_STATUSES.includes(r.status) ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
                 : '—'
@@ -1598,6 +2051,12 @@
   // Owns the Pre-Con column: the send control while an answer is outstanding,
   // the result once it arrives. Kept out of the Action column, which is for
   // payment operations.
+  function confirmedActions(r, canVerify) {
+    const label = '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">Confirmed</span>';
+    if (!canVerify) return label;
+    return label + `<button class="btn-followup-row" onclick="sendMerchInvite('${r.id}','${esc(r.name)}')"><span class="btn-label-icon">🛍️</span><span class="btn-label-text">Merch Link</span></button>`;
+  }
+
   function attendanceCell(r, canVerify) {
     const dash = '<span style="color:#C9D6DE;font-size:12px;">—</span>';
 
@@ -1834,10 +2293,31 @@
   // Close on Escape key
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgModal(); });
 
+  let activeGroup = 'registrations';
+  let lastRegistrationsTab = 'ph';
+
+  function switchGroup(group) {
+    activeGroup = group;
+    document.getElementById('group-registrations').classList.toggle('active', group === 'registrations');
+    document.getElementById('group-orders').classList.toggle('active', group === 'orders');
+    document.getElementById('registrations-subtabs').style.display = group === 'registrations' ? 'flex' : 'none';
+    if (group === 'registrations') switchTab(lastRegistrationsTab || 'ph');
+    else switchTab('orders');
+  }
+
   function switchTab(tab) {
     activeTab = tab;
+    if (tab === 'ph' || tab === 'intl') { activeGroup = 'registrations'; lastRegistrationsTab = tab; }
+    else if (tab === 'orders') { activeGroup = 'orders'; }
+    // Keep the two top-level group buttons in sync with whichever tab is active.
+    const groupReg = document.getElementById('group-registrations');
+    const groupOrders = document.getElementById('group-orders');
+    const subtabs = document.getElementById('registrations-subtabs');
+    if (groupReg)    groupReg.classList.toggle('active', activeGroup === 'registrations');
+    if (groupOrders) groupOrders.classList.toggle('active', activeGroup === 'orders');
+    if (subtabs)     subtabs.style.display = activeGroup === 'registrations' ? 'flex' : 'none';
     // Clear all tab buttons and topbar icon buttons
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sub-tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.btn-topbar-icon').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     const btn = document.getElementById(`tab-${tab}`);
@@ -1845,6 +2325,8 @@
     document.getElementById(`content-${tab}`).classList.add('active');
     if (tab === 'admins')   loadAdmins();
     if (tab === 'churches') loadChurches();
+    if (tab === 'merch')    { loadMerchProducts(); loadSettings(); }
+    if (tab === 'orders')   { loadMerchOrders(); if (!merchProducts.length) loadMerchProducts(); }
     if (tab === 'settings') loadSettings();
   }
 
@@ -2414,6 +2896,21 @@
         ? 'Select one or more registrants first'
         : (count === 0 ? `None of the ${selected} selected are eligible for this` : '');
       document.getElementById(labelId).textContent = count ? `${label} (${count})` : label;
+    }
+
+    const merchBlast = document.getElementById('ph-blast-merch');
+    const merchClosedNote = document.getElementById('ph-merch-closed-note');
+    if (merchBlast) {
+      merchBlast.style.display = canVerify ? 'inline-flex' : 'none';
+      const merchEligible = selectedRows().filter(r => r && r.status !== 'cancelled').length;
+      const preorderClosed = !!currentSettings.merch_preorder_closed;
+      merchBlast.disabled = merchEligible === 0 || preorderClosed;
+      merchBlast.style.background = (merchEligible === 0 || preorderClosed) ? '#9FB6C6' : '#2E7048';
+      merchBlast.style.cursor = (merchEligible === 0 || preorderClosed) ? 'not-allowed' : 'pointer';
+      merchBlast.title = preorderClosed ? 'Merch preorder page is closed — turn it on in Merch → Preorder Page first.' : '';
+      const mLabel = document.getElementById('ph-merch-label');
+      if (mLabel) mLabel.textContent = merchEligible ? `Blast Merch Email (${merchEligible})` : 'Blast Merch Email';
+      if (merchClosedNote) merchClosedNote.style.display = (canVerify && preorderClosed) ? 'block' : 'none';
     }
 
     const all = document.getElementById('ph-select-all');
@@ -3079,6 +3576,160 @@
     } catch (e) { showToast('Error: ' + e.message); }
   }
 
+  async function sendMerchInvite(id, name) {
+    if (!id) return;
+    openSingleMerchModal(id, name);
+  }
+
+  async function blastMerchInvite() {
+    openBulkMerchModalForSelection();
+  }
+
+  // --- Merch bulk/single modal handlers ---------------------------------
+  let merchSending = false;
+  let merchTargetIds = [];
+  let bulkMerchProvider = 'gmail';
+
+  function renderBulkMerchProvider() {
+    const btn = document.getElementById('bulkMerchConfirmBtn');
+    const countStr = merchTargetIds.length > 1 ? ` (${merchTargetIds.length})` : '';
+    btn.textContent = bulkMerchProvider === 'resend' ? `🚀 Send via Resend${countStr}` : `💬 Send via Gmail${countStr}`;
+    const checkG = document.getElementById('bulkMerchCheck-gmail');
+    const checkR = document.getElementById('bulkMerchCheck-resend');
+    if (checkG) checkG.style.display = bulkMerchProvider === 'gmail' ? 'inline' : 'none';
+    if (checkR) checkR.style.display = bulkMerchProvider === 'resend' ? 'inline' : 'none';
+
+    const opt  = document.getElementById('bulkMerchOpt-resend');
+    const hint = document.getElementById('bulkMerchResendHint');
+    if (opt) {
+      opt.disabled      = !notifyConfig.resend_configured;
+      opt.style.opacity = notifyConfig.resend_configured ? '1' : '0.55';
+      opt.style.cursor  = notifyConfig.resend_configured ? 'pointer' : 'not-allowed';
+    }
+    if (hint) {
+      hint.textContent  = notifyConfig.resend_configured
+        ? 'Alternative sender — better deliverability for bulk reminders.'
+        : 'Not configured — set RESEND_API_KEY and RESEND_FROM to enable.';
+    }
+  }
+
+  function toggleBulkMerchProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('bulkMerchProviderMenu');
+    if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function selectBulkMerchProvider(provider) {
+    if (provider === 'resend' && !notifyConfig.resend_configured) return;
+    bulkMerchProvider = provider;
+    const menu = document.getElementById('bulkMerchProviderMenu');
+    if (menu) menu.style.display = 'none';
+    renderBulkMerchProvider();
+  }
+
+  function openSingleMerchModal(id, name) {
+    const reg = findRegistration(id);
+    merchTargetIds = [id];
+    const eligible = reg && reg.status !== 'cancelled';
+    if (!eligible) {
+      showToast('This registrant cannot receive a merch preorder link (cancelled).');
+      return;
+    }
+    document.getElementById('bulkMerchSummary').innerHTML = `Send a merch preorder link to <strong>${esc(name)}</strong>`;
+    document.getElementById('bulkMerchWarning').style.display = 'none';
+    document.getElementById('bulkMerchResults').innerHTML = '';
+    document.getElementById('bulkMerchProgressWrap').style.display = 'none';
+    document.getElementById('bulkMerchConfirmBtn').disabled = false;
+    document.getElementById('bulkMerchCancelBtn').textContent = 'Cancel';
+    const menu = document.getElementById('bulkMerchProviderMenu');
+    if (menu) menu.style.display = 'none';
+    renderBulkMerchProvider();
+    document.getElementById('bulkMerchModal').style.display = 'flex';
+  }
+
+  function openBulkMerchModalForSelection() {
+    const selected = selectedRows();
+    if (!selected.length) { showToast('No rows selected.'); return; }
+    const eligible = selected.filter(r => r && r.status !== 'cancelled');
+    if (!eligible.length) { showToast('No eligible participants in this selection (all cancelled).'); return; }
+
+    merchTargetIds = eligible.map(r => r.id);
+    const skipped = selected.length - eligible.length;
+    document.getElementById('bulkMerchSummary').innerHTML = `<strong>${eligible.length}</strong> merch preorder email${eligible.length===1? '':'s'} will be sent from your selection of <strong>${selected.length}</strong>.` + (skipped ? `<br><span style="font-size:12px;color:#6B8A9A;">${skipped} skipped — cancelled.</span>` : '');
+    document.getElementById('bulkMerchWarning').style.display = 'none';
+    document.getElementById('bulkMerchResults').innerHTML = '';
+    document.getElementById('bulkMerchProgressWrap').style.display = 'none';
+    document.getElementById('bulkMerchConfirmBtn').disabled = false;
+    document.getElementById('bulkMerchCancelBtn').textContent = 'Cancel';
+    const menu = document.getElementById('bulkMerchProviderMenu');
+    if (menu) menu.style.display = 'none';
+    renderBulkMerchProvider();
+    document.getElementById('bulkMerchModal').style.display = 'flex';
+  }
+
+  function closeBulkMerchModal() {
+    if (merchSending) return;
+    document.getElementById('bulkMerchModal').style.display = 'none';
+    document.getElementById('bulkMerchSummary').innerHTML = '';
+    document.getElementById('bulkMerchResults').innerHTML = '';
+    const menu = document.getElementById('bulkMerchProviderMenu');
+    if (menu) menu.style.display = 'none';
+    merchTargetIds = [];
+  }
+
+  async function doBulkMerch() {
+    if (!merchTargetIds.length) return;
+    const btn = document.getElementById('bulkMerchConfirmBtn');
+    const cancelBtn = document.getElementById('bulkMerchCancelBtn');
+    merchSending = true;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    cancelBtn.style.opacity = '0.5';
+    document.getElementById('bulkMerchProgressWrap').style.display = 'block';
+
+    const totals = { sent: 0, failed: 0 };
+    const failures = [];
+    let done = 0;
+    try {
+      for (let i = 0; i < merchTargetIds.length; i += BULK_CHUNK) {
+        const chunk = merchTargetIds.slice(i, i + BULK_CHUNK);
+        const res = await fetch('/.netlify/functions/admin-data', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'gmail' }),
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Bulk merch send failed');
+
+        totals.sent += json.sent || 0;
+        totals.failed += json.failed || 0;
+        failures.push(...(json.results || []).filter(r => !r.ok));
+
+        done = i + chunk.length;
+        const pct = Math.round(Math.min(100, (done / merchTargetIds.length) * 100));
+        document.getElementById('bulkMerchProgressBar').style.width = pct + '%';
+        document.getElementById('bulkMerchProgressPct').textContent = pct + '%';
+        document.getElementById('bulkMerchProgressLabel').textContent = `Sent ${totals.sent} of ${merchTargetIds.length} emails…`;
+      }
+
+      document.getElementById('bulkMerchProgressLabel').textContent = 'Done';
+      const via = (bulkMerchProvider === 'resend') ? 'Resend' : 'Gmail';
+      document.getElementById('bulkMerchResults').innerHTML = `✅ <strong>${totals.sent}</strong> sent via ${via}` + (totals.failed ? `<br>❌ <strong>${totals.failed}</strong> failed` : '');
+      merchTargetIds = [];
+      showToast(`Merch blast sent to ${totals.sent} participant${totals.sent===1?'':'s'} via ${via}`);
+      loadData();
+    } catch (e) {
+      document.getElementById('bulkMerchProgressLabel').textContent = 'Stopped early';
+      document.getElementById('bulkMerchResults').innerHTML = `❌ Error: ${esc(e.message)}${failures.length ? `<br>Failed: ${failures.slice(0,5).map(f=>esc(f.email)).join(', ')}` : ''}`;
+      showToast('Error: ' + e.message);
+      loadData();
+    } finally {
+      merchSending = false;
+      cancelBtn.style.opacity = '1';
+      cancelBtn.textContent = 'Close';
+      btn.disabled = false; btn.textContent = '📧 Send Emails';
+    }
+  }
+
   // Appends the SMS outcome to a toast. Returns '' when no SMS was attempted.
   function smsToastSuffix(sms) {
     if (!sms) return '';
@@ -3112,8 +3763,10 @@
   }
 
   function exportCSV(tab) {
-    const rows = tab === 'ph' ? filteredPH : filteredIntl;
-    if (!rows.length) { showToast('No data to export'); return; }
+    const base = tab === 'ph' ? filteredPH : filteredIntl;
+    if (!base.length) { showToast('No data to export'); return; }
+    const { col, dir } = sortState[tab];
+    const rows = sortData(base, col, dir);
     const cols = tab === 'ph'
       ? ['name','age','mobile','email','student_status','church','status','payment_verified','created_at']
       : ['name','age','mobile','email','country','church','allergens','status','payment_verified','created_at'];
@@ -3124,11 +3777,22 @@
       const val = (c === 'church' && tab === 'ph') ? churchDisplay(r.church, true) : (r[c] ?? '');
       return `"${val.toString().replace(/"/g, '""')}"`;
     }).join(','))].join('\n');
-    const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = `relay2026-${tab}-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
+    downloadCSV(csv, `relay2026-${tab}-${new Date().toISOString().slice(0,10)}.csv`);
     showToast('CSV exported!');
+  }
+
+  // Prepends a UTF-8 BOM and uses a Blob download so accented characters and
+  // punctuation (em/en dashes, etc.) don't get mangled when opened in Excel.
+  function downloadCSV(csv, filename) {
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function resetFilters(tab) {
@@ -3149,6 +3813,7 @@
   // Apostrophes matter: row buttons embed names inside single-quoted JS string
   // literals in onclick handlers, so an unescaped O'Brien breaks the handler.
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function formatOrderCode(n) { return (n === null || n === undefined) ? '—' : 'RLY-' + String(n).padStart(5, '0'); }
   function churchDisplay(church, isPH) {
     const val = (church || '').trim();
     if (!val || !isPH) return val;
@@ -3448,7 +4113,7 @@
   function renderAdminsTable() {
     const tbody = document.getElementById('admins-body');
     if (!tbody) return;
-    if (!adminsList.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">No admins found.</td></tr>'; return; }
+    if (!adminsList.length) { tbody.innerHTML = '<tr><td colspan="9" class="loading">No admins found.</td></tr>'; return; }
     const isSuperAdmin = adminSession?.is_super_admin;
     tbody.innerHTML = adminsList.map(a => {
       const perm  = a.permissions || {};
@@ -3459,6 +4124,7 @@
         <td style="font-size:12px;color:var(--muted);">${esc(a.email)}</td>
         <td style="text-align:center;">${check(perm.receive_updates)}</td>
         <td style="text-align:center;">${check(perm.verify_payment)}</td>
+        <td style="text-align:center;">${check(perm.merch_order_notify)}</td>
         <td style="text-align:center;">${check(perm.manage_admins)}</td>
         <td style="text-align:center;">${check(perm.manage_churches)}</td>
         <td style="text-align:center;">${a.is_super_admin ? '⭐' : '—'}</td>
@@ -3485,6 +4151,7 @@
     document.getElementById('am-email').disabled = false;
     document.getElementById('am-perm-updates').checked = true;
     document.getElementById('am-perm-verify').checked  = false;
+    document.getElementById('am-perm-merch-notify').checked = false;
     document.getElementById('am-perm-manage').checked   = false;
     document.getElementById('am-perm-churches').checked = false;
     document.getElementById('am-super').checked = false;
@@ -3506,6 +4173,7 @@
     document.getElementById('am-email').disabled = true;
     document.getElementById('am-perm-updates').checked = !!perm.receive_updates;
     document.getElementById('am-perm-verify').checked  = !!perm.verify_payment;
+    document.getElementById('am-perm-merch-notify').checked = !!perm.merch_order_notify;
     document.getElementById('am-perm-manage').checked    = !!perm.manage_admins;
     document.getElementById('am-perm-churches').checked  = !!perm.manage_churches;
     document.getElementById('am-super').checked = !!admin.is_super_admin;
@@ -3531,6 +4199,7 @@
     const permissions = {
       receive_updates:  document.getElementById('am-perm-updates').checked,
       verify_payment:   document.getElementById('am-perm-verify').checked,
+      merch_order_notify: document.getElementById('am-perm-merch-notify').checked,
       manage_admins:    document.getElementById('am-perm-manage').checked,
       manage_churches:  document.getElementById('am-perm-churches').checked,
     };
@@ -3591,6 +4260,1092 @@
   //     which covers F5/Ctrl-R)?  If yes AND navigation type is 'reload',
   //     restore.  Otherwise, wipe everything — the user left and came back.
   //   • We never leave tokens sitting in sessionStorage long-term.
+
+  // Merch product management
+  let merchProducts = [];
+  let editingMerchId = null;
+  let editingMerchStock = {};
+  let editingMerchImages = [];
+  let editingMerchSoldOut = false;
+  let editingMerchActive = true;
+  let draggedMerchIndex = null;
+
+  async function loadMerchProducts() {
+    try {
+      const res = await fetch('/.netlify/functions/merch-products', {
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      merchProducts = json.products || [];
+      renderMerchProducts();
+    } catch (e) { showToast('Error loading merch: ' + e.message); }
+  }
+
+  // Merch orders (admin)
+  // Note on stock: stock is currently decremented at the moment an order is
+  // SUBMITTED (see netlify/functions/merch-preorder.js), not when an admin
+  // later clicks "Confirm Order". That reserves stock for anyone who checks
+  // out, whether or not their payment/order is ever confirmed.
+  let merchOrders = [];
+  let filteredMerchOrders = [];
+  let merchOrderGroups = [];
+  let openMerchGroups = new Set();
+  let merchGroupMode = 'participant'; // 'participant' | 'item'
+  let merchSortColumn = null; // null = default ordering for the current mode
+  let merchSortDir = 'asc';
+
+  function setMerchGroupMode(mode) {
+    merchGroupMode = mode;
+    openMerchGroups = new Set(); // expanded rows don't carry across modes — keys differ
+    merchSortColumn = null; merchSortDir = 'asc'; // column sets differ per mode
+    const pBtn = document.getElementById('orders-group-participant-btn');
+    const iBtn = document.getElementById('orders-group-item-btn');
+    const on  = { background: '#fff', color: 'var(--sky)', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' };
+    const off = { background: 'transparent', color: 'var(--muted)', boxShadow: 'none' };
+    Object.assign(pBtn.style, mode === 'participant' ? on : off);
+    Object.assign(iBtn.style, mode === 'item' ? on : off);
+    renderMerchOrders();
+  }
+
+  function sortMerchGroupsToggle(col) {
+    if (merchSortColumn === col) { merchSortDir = merchSortDir === 'asc' ? 'desc' : 'asc'; }
+    else { merchSortColumn = col; merchSortDir = 'asc'; }
+    renderMerchOrders();
+  }
+
+  // Stable per-group DOM/state id — based on the group's own key (not its
+  // position in the sorted/filtered list), so expand state survives sorting
+  // or filtering instead of a totally different group appearing "open".
+  function safeGid(prefix, key) { return prefix + '-' + String(key).toLowerCase().replace(/[^a-z0-9]+/g, '_'); }
+
+  function sortableTh(label, col) {
+    const active = merchSortColumn === col;
+    const arrow = active ? (merchSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+    return `<th style="cursor:pointer;user-select:none;" onclick="sortMerchGroupsToggle('${col}')">${esc(label)}${arrow}</th>`;
+  }
+
+  // Item mode's default (no column clicked) order: the product's display
+  // order in the DB, then the size's index within that product's own sizes
+  // list — i.e. the same order admins already curate on the Merch tab.
+  function applyMerchSort(groups, mode) {
+    if (mode === 'item') {
+      const productOrderIndex = new Map();
+      merchProducts.forEach((p, idx) => productOrderIndex.set(p.id, idx));
+      const productSizeIndex = new Map();
+      merchProducts.forEach(p => {
+        const m = new Map();
+        (p.sizes || []).forEach((s, i) => m.set(s, i));
+        productSizeIndex.set(p.id, m);
+      });
+      const pid = g => g.entries[0]?.item?.product_id;
+      const sizeIdx = g => { const m = productSizeIndex.get(pid(g)); return (m && m.has(g.size)) ? m.get(g.size) : 9999; };
+      const cmp = (a, b) => {
+        let res;
+        if (!merchSortColumn) {
+          const aP = productOrderIndex.has(pid(a)) ? productOrderIndex.get(pid(a)) : 9999;
+          const bP = productOrderIndex.has(pid(b)) ? productOrderIndex.get(pid(b)) : 9999;
+          res = aP !== bP ? aP - bP : sizeIdx(a) - sizeIdx(b);
+          return res; // default order is never reversed by direction
+        }
+        switch (merchSortColumn) {
+          case 'item': res = (a.name || '').localeCompare(b.name || ''); break;
+          case 'size': res = sizeIdx(a) - sizeIdx(b); break;
+          case 'participants': res = a.participantCount - b.participantCount; break;
+          case 'qty': res = a.totalQty - b.totalQty; break;
+          case 'total': res = a.totalAmount - b.totalAmount; break;
+          default: res = 0;
+        }
+        return merchSortDir === 'asc' ? res : -res;
+      };
+      return [...groups].sort(cmp);
+    }
+    if (!merchSortColumn) return groups; // default: order they were grouped in
+    const cmp = (a, b) => {
+      let res;
+      switch (merchSortColumn) {
+        case 'name': res = (a.name || '').localeCompare(b.name || ''); break;
+        case 'email': res = (a.email || '').localeCompare(b.email || ''); break;
+        case 'church': res = (a.church || '').localeCompare(b.church || ''); break;
+        case 'orders': res = a.orders.length - b.orders.length; break;
+        case 'total': res = a.total - b.total; break;
+        case 'deposit': res = a.deposit - b.deposit; break;
+        default: res = 0;
+      }
+      return merchSortDir === 'asc' ? res : -res;
+    };
+    return [...groups].sort(cmp);
+  }
+
+  async function loadMerchOrders() {
+    try {
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      merchOrders = json.orders || [];
+      const badge = document.getElementById('badge-orders');
+      if (badge) badge.textContent = merchOrders.length;
+      await ensureMerchProductsLoadedForFilter();
+      populateOMSOptions();
+      applyMerchOrderFilters();
+    } catch (e) { showToast('Error loading orders: ' + e.message); }
+  }
+
+  // Generic multi-select dropdown (Item / Church) for the Merch Orders filters,
+  // modeled on the registration church multi-select.
+  const merchOrderMultiSelect = { item: new Set(), church: new Set() };
+
+  function omsSafeId(key, value) { return `oms-${key}-` + value.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+  function populateOMSOptions() {
+    const itemNames = Array.from(new Set(merchProducts.map(p => p.name).filter(Boolean))).sort();
+    const list = document.getElementById('orders-item-list');
+    if (list) {
+      list.innerHTML = itemNames.map(name => `<div class="church-opt${merchOrderMultiSelect.item.has(name) ? ' selected' : ''}" id="${omsSafeId('item', name)}" onclick="toggleOMSOption('item','${esc(name).replace(/'/g,"\\'")}')">${merchOrderMultiSelect.item.has(name) ? '☑' : '☐'} ${esc(name)}</div>`).join('') || '<div style="padding:8px 12px;font-size:12px;color:var(--muted);">No products yet.</div>';
+    }
+    const churches = Array.from(new Set(merchOrders.map(o => (o.church || '').trim()).filter(Boolean))).sort();
+    const clist = document.getElementById('orders-church-list');
+    if (clist) {
+      clist.innerHTML = churches.map(name => `<div class="church-opt${merchOrderMultiSelect.church.has(name) ? ' selected' : ''}" id="${omsSafeId('church', name)}" onclick="toggleOMSOption('church','${esc(name).replace(/'/g,"\\'")}')">${merchOrderMultiSelect.church.has(name) ? '☑' : '☐'} ${esc(name)}</div>`).join('') || '<div style="padding:8px 12px;font-size:12px;color:var(--muted);">No churches yet.</div>';
+    }
+    updateOMSLabel('item', 'All Items', 'items selected');
+    updateOMSLabel('church', 'All Churches', 'churches selected');
+  }
+
+  function toggleOMSDropdown(key) {
+    const dd = document.getElementById(`orders-${key}-dropdown`);
+    if (!dd) return;
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleOMSOption(key, value) {
+    const set = merchOrderMultiSelect[key];
+    const el = document.getElementById(omsSafeId(key, value));
+    if (set.has(value)) {
+      set.delete(value);
+      if (el) { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑', '☐'); }
+    } else {
+      set.add(value);
+      if (el) { el.classList.add('selected'); el.textContent = el.textContent.replace('☐', '☑'); }
+    }
+    updateOMSLabel(key, key === 'item' ? 'All Items' : 'All Churches', key === 'item' ? 'items selected' : 'churches selected');
+    applyMerchOrderFilters();
+  }
+
+  function selectAllOMS(key) {
+    merchOrderMultiSelect[key].clear();
+    document.querySelectorAll(`#orders-${key}-list .church-opt`).forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑', '☐'); });
+    updateOMSLabel(key, key === 'item' ? 'All Items' : 'All Churches', key === 'item' ? 'items selected' : 'churches selected');
+    applyMerchOrderFilters();
+    document.getElementById(`orders-${key}-dropdown`).style.display = 'none';
+  }
+
+  function updateOMSLabel(key, allLabel, suffix) {
+    const lbl = document.getElementById(`orders-${key}-label`);
+    if (!lbl) return;
+    const set = merchOrderMultiSelect[key];
+    if (set.size === 0) lbl.textContent = allLabel;
+    else if (set.size === 1) lbl.textContent = [...set][0];
+    else lbl.textContent = set.size + ' ' + suffix;
+  }
+
+  document.addEventListener('click', e => {
+    ['item', 'church'].forEach(key => {
+      const trigger = document.getElementById(`orders-${key}-trigger`);
+      const dd = document.getElementById(`orders-${key}-dropdown`);
+      if (dd && trigger && !trigger.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
+    });
+  });
+
+  async function ensureMerchProductsLoadedForFilter() {
+    if (merchProducts.length) return;
+    try {
+      const res = await fetch('/.netlify/functions/merch-products', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+      const json = await res.json();
+      if (res.ok && !json.error) merchProducts = json.products || [];
+    } catch (e) { /* filter list just stays empty */ }
+  }
+
+  // Stat tiles for the Merch Orders tab — always computed from the full
+  // (unfiltered) order list so they reflect true totals regardless of the
+  // Item/Church/Name filters or the Hide Cancelled toggle, and cancelled
+  // orders are excluded from every count and PHP total below (they're only
+  // ever counted in the Cancelled tile itself).
+  function renderMerchOrderStats() {
+    const totalEl = document.getElementById('morders-total');
+    if (!totalEl) return; // tiles not in the DOM yet on first paint
+    const active = merchOrders.filter(o => o.status !== 'cancelled');
+    const cancelled = merchOrders.filter(o => o.status === 'cancelled');
+
+    const paid = active.filter(o => o.payment_status === 'paid');
+    const paidPending = paid.filter(o => o.status === 'pending').length;
+    const paidCompleted = paid.filter(o => o.status === 'completed').length;
+    const paidAmount = paid.reduce((s, o) => s + Number(o.deposit_amount || 0), 0);
+
+    const partial = active.filter(o => o.payment_status === 'partial');
+    const partialPending = partial.filter(o => o.status === 'pending').length;
+    const partialCompleted = partial.filter(o => o.status === 'completed').length;
+    const partialAmount = partial.reduce((s, o) => s + Number(o.deposit_amount || 0), 0);
+
+    const unpaid = active.filter(o => o.payment_status !== 'paid' && o.payment_status !== 'partial');
+    const unpaidPending = unpaid.filter(o => o.status === 'pending').length;
+    const unpaidCompleted = unpaid.filter(o => o.status === 'completed').length;
+    const unpaidAmount = unpaid.reduce((s, o) => s + (Number(o.total_amount || 0) - Number(o.deposit_amount || 0)), 0);
+
+    const totalAmount = active.reduce((s, o) => s + Number(o.total_amount || 0), 0);
+
+    document.getElementById('morders-total').textContent = active.length;
+    document.getElementById('morders-total-sub').textContent = 'PHP ' + totalAmount.toLocaleString() + ' potential revenue';
+
+    document.getElementById('morders-confirmed').textContent = paid.length;
+    document.getElementById('morders-rev-confirmed').textContent = 'PHP ' + paidAmount.toLocaleString();
+    document.getElementById('morders-confirmed-sub').textContent = `${paidPending} pending order · ${paidCompleted} completed order`;
+
+    document.getElementById('morders-pending').textContent = unpaid.length;
+    document.getElementById('morders-rev-pending').textContent = 'PHP ' + unpaidAmount.toLocaleString();
+    document.getElementById('morders-pending-sub').textContent = `${unpaidPending} pending order · ${unpaidCompleted} completed order`;
+
+    document.getElementById('morders-partial').textContent = partial.length;
+    document.getElementById('morders-rev-partial').textContent = 'PHP ' + partialAmount.toLocaleString();
+    document.getElementById('morders-partial-sub').textContent = `${partialPending} pending order · ${partialCompleted} completed order`;
+
+    document.getElementById('morders-cancelled').textContent = cancelled.length;
+  }
+
+  function applyMerchOrderFilters() {
+    const name = (document.getElementById('orders-filter-name')?.value || '').trim().toLowerCase();
+    const email = (document.getElementById('orders-filter-email')?.value || '').trim().toLowerCase();
+    const items = merchOrderMultiSelect.item;
+    const churches = merchOrderMultiSelect.church;
+    filteredMerchOrders = merchOrders.filter(o => {
+      if (hideCancelled.merch && o.status === 'cancelled') return false;
+      if (name && !(o.participant_name || '').toLowerCase().includes(name)) return false;
+      if (email && !(o.email || '').toLowerCase().includes(email)) return false;
+      if (churches.size > 0 && !churches.has((o.church || '').trim())) return false;
+      if (items.size > 0) {
+        const oItems = Array.isArray(o.items) ? o.items : [];
+        if (!oItems.some(it => items.has(it.name))) return false;
+      }
+      return true;
+    });
+    const countEl = document.getElementById('orders-count');
+    if (countEl) countEl.textContent = filteredMerchOrders.length + ' of ' + merchOrders.length + ' records';
+    renderMerchOrderStats();
+    renderMerchOrders();
+  }
+
+  function resetMerchOrderFilters() {
+    ['orders-filter-name', 'orders-filter-email'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    merchOrderMultiSelect.item.clear();
+    merchOrderMultiSelect.church.clear();
+    hideCancelled.merch = true;
+    const track = document.getElementById('merch-hide-cancelled-track');
+    if (track) track.classList.add('on');
+    populateOMSOptions();
+    applyMerchOrderFilters();
+  }
+
+  // Group orders placed by the same person (matched by email + name) so a
+  // repeat orderer shows up as one row instead of one row per order.
+  function groupMerchOrders(list) {
+    const map = new Map();
+    list.forEach(o => {
+      const key = (o.email || '').trim().toLowerCase() + '|' + (o.participant_name || '').trim().toLowerCase();
+      if (!map.has(key)) map.set(key, { key, name: o.participant_name, email: o.email, church: o.church, orders: [] });
+      const g = map.get(key);
+      g.orders.push(o);
+      if (!g.church && o.church) g.church = o.church;
+    });
+    return Array.from(map.values()).map(g => ({
+      ...g,
+      total: g.orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + Number(o.total_amount || 0), 0),
+      deposit: g.orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + Number(o.deposit_amount || 0), 0),
+    }));
+  }
+
+  // Groups by item+size instead of by participant — each group's "sub-group"
+  // is the list of participants who ordered that item.
+  function groupMerchOrdersByItem(list) {
+    const map = new Map();
+    const itemFilter = merchOrderMultiSelect.item;
+    list.forEach(o => {
+      const items = Array.isArray(o.items) ? o.items : [];
+      items.forEach(it => {
+        // Respect the Item filter here too — an order matches if it contains
+        // ANY selected item, but its other (non-selected) items shouldn't
+        // spawn groups of their own.
+        if (itemFilter.size > 0 && !itemFilter.has(it.name)) return;
+        const key = (it.name || '').trim() + '|' + (it.size || '').trim();
+        if (!map.has(key)) map.set(key, { key, name: it.name, size: it.size, image: it.image, entries: [] });
+        const g = map.get(key);
+        g.entries.push({ order: o, item: it });
+        if (!g.image && it.image) g.image = it.image;
+      });
+    });
+    return Array.from(map.values()).map(g => {
+      const active = g.entries.filter(e => e.order.status !== 'cancelled');
+      return {
+        ...g,
+        totalQty: active.reduce((s, e) => s + Number(e.item.quantity || 0), 0),
+        totalAmount: active.reduce((s, e) => s + Number(e.item.price || 0) * Number(e.item.quantity || 0), 0),
+        participantCount: new Set(active.map(e => (e.order.email || '').trim().toLowerCase())).size,
+      };
+    }).sort((a, b) => b.totalQty - a.totalQty);
+  }
+
+  function merchStatusBadge(status) {
+    const s = status || 'pending';
+    const colors = { pending: 'badge-gray', completed: 'badge-green', cancelled: 'badge-red' };
+    const labels = { pending: 'Pending', completed: 'Completed', cancelled: 'Cancelled' };
+    return `<span class="badge ${colors[s] || 'badge-gray'}">${esc(labels[s] || s)}</span>`;
+  }
+
+  function merchPaymentBadge(status) {
+    const s = status || 'unpaid';
+    const colors = { unpaid: 'badge-gray', partial: 'badge-purple', paid: 'badge-green', cancelled: 'badge-red' };
+    const labels = { unpaid: 'Unpaid', partial: 'Partially Paid', paid: 'Paid', cancelled: 'Cancelled' };
+    return `<span class="badge ${colors[s] || 'badge-gray'}">${esc(labels[s] || s)}</span>`;
+  }
+
+  function merchOrderItemsHtml(items) {
+    return items.map(it => {
+      const hasImg = !!it.image;
+      const rowClick = hasImg ? ` onclick="openImgModal('${esc(it.image)}')" style="cursor:zoom-in;"` : '';
+      return `
+      <div class="order-item-row"${rowClick}>
+        ${hasImg
+          ? `<img class="order-item-thumb" src="${esc(it.image)}" alt="">`
+          : `<div class="order-item-thumb-placeholder" title="No image saved for this item">🛍️</div>`}
+        <div class="order-item-info">
+          <div class="order-item-name">${esc(it.name)}${it.size ? ' · ' + esc(it.size) : ''}</div>
+          <div class="order-item-meta">Qty ${it.quantity} × PHP ${Number(it.price || 0).toLocaleString()}</div>
+        </div>
+        <div class="order-item-subtotal">PHP ${(Number(it.price || 0) * Number(it.quantity || 0)).toLocaleString()}</div>
+      </div>`;
+    }).join('') || '<div style="font-size:12px;color:var(--muted);">No items on this order.</div>';
+  }
+
+  // One order card per underlying order inside an expanded group. Only
+  // rendered in the Participant grouping — the Item grouping is read-only
+  // (for browsing/exporting orders per item) and links back here via
+  // "Go to Order" instead of duplicating these actions per line item.
+  function merchOrderCardHtml(o) {
+    const dpLabel = (o.dp_percent !== null && o.dp_percent !== undefined) ? ` (${o.dp_percent}%)` : '';
+    // When an Item filter is active, only show the matching item(s) in this
+    // order's expanded list — the order still qualifies overall if it
+    // contains any selected item, but its other items shouldn't clutter it.
+    const itemFilter = merchOrderMultiSelect.item;
+    const allItems = Array.isArray(o.items) ? o.items : [];
+    const items = itemFilter.size > 0 ? allItems.filter(it => itemFilter.has(it.name)) : allItems;
+    const isCancelled = o.status === 'cancelled';
+    const isPaid = o.payment_status === 'paid';
+    const isCompleted = o.status === 'completed';
+    // Once a side is settled, its action buttons no longer do anything useful
+    // — hide that action column rather than show disabled buttons. Cancelled
+    // orders have nothing left to do on either side.
+    const showPaymentActions = !isPaid && !isCancelled;
+    const showOrderActions = !isCompleted && !isCancelled;
+    return `
+    <div class="order-card" id="order-card-${o.id}">
+      <div class="order-card-top">
+        <div class="order-card-meta">
+          <div><span class="lbl">Order ID</span><span class="mono">${formatOrderCode(o.order_number)}</span></div>
+          <div><span class="lbl">Total</span><span class="mono">PHP ${Number(o.total_amount || 0).toLocaleString()}</span></div>
+          <div><span class="lbl">Deposit</span><span class="mono">PHP ${Number(o.deposit_amount || 0).toLocaleString()}${dpLabel}</span></div>
+          <div><span class="lbl">Receipt</span>${o.receipt_url ? `<a href="#" onclick="openImgModal('${esc(o.receipt_url)}');return false;" class="receipt-link">📎 View</a>` : '<span style="color:#ccc;font-size:12px;">—</span>'}</div>
+        </div>
+        <div class="order-card-actions">
+          <div class="action-col">
+            <span class="lbl">Payment Status</span>
+            ${merchPaymentBadge(o.payment_status)}
+          </div>
+          ${showPaymentActions ? `
+          <div class="action-col">
+            <span class="lbl">Payment Actions</span>
+            <button class="btn-markpaid-row" onclick="openMerchMarkPaidModal('${o.id}')"><span class="btn-label-icon">💰</span><span class="btn-label-text">Mark as Paid</span></button>
+            <button class="btn-addpartial-row" onclick="openMerchPartialModal('${o.id}')"><span class="btn-label-icon">💵</span><span class="btn-label-text">Add Partial Payment</span></button>
+          </div>` : ''}
+          <div class="action-col">
+            <span class="lbl">Order Status</span>
+            ${merchStatusBadge(o.status)}
+          </div>
+          ${showOrderActions ? `
+          <div class="action-col">
+            <span class="lbl">Order Actions</span>
+            <button class="btn-completeorder-row" onclick="openMerchCompleteModal('${o.id}')"><span class="btn-label-icon">📦</span><span class="btn-label-text">Complete Order</span></button>
+            <button class="btn-cancelorder-row" onclick="openMerchCancelOrderModal('${o.id}')"><span class="btn-label-icon">✕</span><span class="btn-label-text">Cancel Order</span></button>
+          </div>` : ''}
+        </div>
+      </div>
+      <button class="order-card-items-toggle" id="order-chevron-${o.id}" onclick="toggleOrderRow(event,'${o.id}')">▶ Items (${items.length})</button>
+      <div class="order-card-items" id="order-detail-${o.id}">${merchOrderItemsHtml(items)}</div>
+    </div>`;
+  }
+
+  // Sub-list shown when an item group is expanded — one row per participant
+  // who ordered that item — read-only reporting row (this view is for
+  // listing/exporting, not for taking action). "Go to Order" jumps to the
+  // Participant grouping and opens that exact order for status changes.
+  function merchItemGroupDetailHtml(g, gid) {
+    return g.entries.map((e, i) => {
+      const subId = gid + '-p' + i;
+      return `
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid #eef3f6;" id="ip-row-${subId}">
+        <div class="mono" style="font-size:11px;color:var(--muted);flex-shrink:0;width:76px;">${formatOrderCode(e.order.order_number)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--dark);">${esc(e.order.participant_name)}</div>
+          <div style="font-size:11px;color:var(--muted);">${esc(e.order.email)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text);flex-shrink:0;">Qty ${e.item.quantity}</div>
+        <div class="mono" style="font-size:12px;flex-shrink:0;width:90px;text-align:right;">PHP ${(Number(e.item.price || 0) * Number(e.item.quantity || 0)).toLocaleString()}</div>
+        <div style="flex-shrink:0;">${merchPaymentBadge(e.order.payment_status)}</div>
+        <div style="flex-shrink:0;">${merchStatusBadge(e.order.status)}</div>
+        <button onclick="goToOrder('${e.order.id}')" style="flex-shrink:0;padding:6px 12px;background:var(--sky-light);color:var(--sky);border:1px solid var(--sky);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">Go to Order →</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Jumps from the Item grouping to the Participant grouping, expands that
+  // participant's group, and scrolls to + briefly highlights the specific
+  // order — since payment/order actions only live in the Participant view.
+  function goToOrder(orderId) {
+    const order = merchOrders.find(o => o.id === orderId);
+    if (!order) return;
+    const key = (order.email || '').trim().toLowerCase() + '|' + (order.participant_name || '').trim().toLowerCase();
+    setMerchGroupMode('participant');
+    const gid = safeGid('grp', key);
+    openMerchGroups.add(gid);
+    renderMerchOrders();
+    setTimeout(() => {
+      const card = document.getElementById('order-card-' + orderId);
+      if (!card) return;
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'box-shadow 0.3s';
+      card.style.boxShadow = '0 0 0 3px var(--sky)';
+      setTimeout(() => { card.style.boxShadow = ''; }, 1800);
+    }, 60);
+  }
+
+  function renderMerchOrders() {
+    const thead = document.getElementById('orders-thead');
+    const tbody = document.getElementById('orders-body');
+    if (!tbody) return;
+
+    if (merchGroupMode === 'item') {
+      thead.innerHTML = `<tr><th style="width:32px;"></th>${sortableTh('Item','item')}${sortableTh('Size','size')}${sortableTh('Participants','participants')}${sortableTh('Total Qty','qty')}${sortableTh('Item Total','total')}<th>Payment Status</th><th>Order Status</th></tr>`;
+      merchOrderGroups = applyMerchSort(groupMerchOrdersByItem(filteredMerchOrders), 'item');
+      if (!merchOrderGroups.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No orders found.</td></tr>'; return; }
+      tbody.innerHTML = merchOrderGroups.map((g) => {
+        const gid = safeGid('igrp', g.key);
+        const open = openMerchGroups.has(gid);
+        const uniqueOrders = Array.from(new Map(g.entries.map(e => [e.order.id, e.order])).values());
+        const paymentSummary = Object.entries(uniqueOrders.reduce((m, o) => { const k = o.payment_status || 'unpaid'; m[k] = (m[k]||0)+1; return m; }, {})).map(([k,v]) => `<div style="margin-bottom:4px;">${merchPaymentBadge(k)} ×${v}</div>`).join('');
+        const orderStatusSummary = Object.entries(uniqueOrders.reduce((m, o) => { const k = o.status || 'pending'; m[k] = (m[k]||0)+1; return m; }, {})).map(([k,v]) => `<div style="margin-bottom:4px;">${merchStatusBadge(k)} ×${v}</div>`).join('');
+        return `
+        <tr class="order-group-row" onclick="toggleMerchGroup('${gid}')">
+          <td><button class="order-expand-btn ${open?'open':''}" id="grp-chevron-${gid}">▶</button></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${g.image
+                ? `<img src="${esc(g.image)}" alt="" style="width:32px;height:32px;border-radius:6px;object-fit:cover;border:1px solid #D4E2EA;flex-shrink:0;">`
+                : `<div class="order-item-thumb-placeholder" style="width:32px;height:32px;" title="No image saved for this item">🛍️</div>`}
+              <span>${esc(g.name)}</span>
+            </div>
+          </td>
+          <td>${esc(g.size || '—')}</td>
+          <td class="mono">${g.participantCount}</td>
+          <td class="mono">${g.totalQty}</td>
+          <td class="mono">PHP ${g.totalAmount.toLocaleString()}</td>
+          <td style="font-size:12px;">${paymentSummary}</td>
+          <td>${orderStatusSummary}</td>
+        </tr>
+        <tr class="order-group-detail ${open?'open':''}" id="grp-detail-${gid}">
+          <td colspan="8">${merchItemGroupDetailHtml(g, gid)}</td>
+        </tr>`;
+      }).join('');
+      return;
+    }
+
+    thead.innerHTML = `<tr><th style="width:32px;"></th>${sortableTh('Name','name')}${sortableTh('Email','email')}${sortableTh('Church','church')}${sortableTh('Orders','orders')}${sortableTh('Total','total')}${sortableTh('Deposit','deposit')}<th>Payment Status</th><th>Order Actions</th></tr>`;
+    merchOrderGroups = applyMerchSort(groupMerchOrders(filteredMerchOrders), 'participant');
+    if (!merchOrderGroups.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">No orders found.</td></tr>'; return; }
+    tbody.innerHTML = merchOrderGroups.map((g) => {
+      const gid = safeGid('grp', g.key);
+      const open = openMerchGroups.has(gid);
+      const paymentSummary = Object.entries(g.orders.reduce((m, o) => { const k = o.payment_status || 'unpaid'; m[k] = (m[k]||0)+1; return m; }, {})).map(([k,v]) => `<div style="margin-bottom:4px;">${merchPaymentBadge(k)} ×${v}</div>`).join('');
+      const orderStatusSummary = Object.entries(g.orders.reduce((m, o) => { const k = o.status || 'pending'; m[k] = (m[k]||0)+1; return m; }, {})).map(([k,v]) => `<div style="margin-bottom:4px;">${merchStatusBadge(k)} ×${v}</div>`).join('');
+      return `
+      <tr class="order-group-row" onclick="toggleMerchGroup('${gid}')">
+        <td><button class="order-expand-btn ${open?'open':''}" id="grp-chevron-${gid}">▶</button></td>
+        <td>${esc(g.name)}</td>
+        <td class="mono">${esc(g.email)}</td>
+        <td>${esc(g.church || '—')}</td>
+        <td class="mono">${g.orders.length}</td>
+        <td class="mono">PHP ${g.total.toLocaleString()}</td>
+        <td class="mono">PHP ${g.deposit.toLocaleString()}</td>
+        <td style="font-size:12px;">${paymentSummary}</td>
+        <td>${orderStatusSummary}</td>
+      </tr>
+      <tr class="order-group-detail ${open?'open':''}" id="grp-detail-${gid}">
+        <td colspan="9">${g.orders.map(o => merchOrderCardHtml(o)).join('')}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function toggleMerchGroup(gid) {
+    if (openMerchGroups.has(gid)) openMerchGroups.delete(gid); else openMerchGroups.add(gid);
+    const row = document.getElementById('grp-detail-' + gid);
+    const chevron = document.getElementById('grp-chevron-' + gid);
+    if (row) row.classList.toggle('open', openMerchGroups.has(gid));
+    if (chevron) chevron.classList.toggle('open', openMerchGroups.has(gid));
+  }
+
+  function toggleOrderRow(evt, id) {
+    if (evt) evt.stopPropagation();
+    const row = document.getElementById('order-detail-' + id);
+    const chevron = document.getElementById('order-chevron-' + id);
+    if (!row) return;
+    const open = row.classList.toggle('open');
+    if (chevron) chevron.textContent = chevron.textContent.replace(/^[▶▼]/, open ? '▼' : '▶');
+  }
+
+  function exportMerchOrdersCSV() {
+    if (!filteredMerchOrders.length) { showToast('No data to export'); return; }
+    const hdrs = ['Order ID','Name','Email','Church','Item','Size','Qty','Item Total','Order Total','Deposit','Payment Status','Order Status','Created At'];
+    const itemFilter = merchOrderMultiSelect.item;
+    const rows = [];
+    filteredMerchOrders.forEach(o => {
+      let items = Array.isArray(o.items) && o.items.length ? o.items : [{ name: '', size: '', quantity: '', price: '' }];
+      // Only export the specific item(s) that matched the Item filter, not
+      // every item on the order — matches what's shown/implied in the UI.
+      if (itemFilter.size > 0) items = items.filter(it => itemFilter.has(it.name));
+      items.forEach(it => {
+        rows.push([
+          formatOrderCode(o.order_number),
+          o.participant_name || '', o.email || '', o.church || '',
+          it.name || '', it.size || '', it.quantity ?? '',
+          it.name ? (Number(it.price||0) * Number(it.quantity||0)) : '',
+          o.total_amount || 0, o.deposit_amount || 0,
+          o.payment_status || 'unpaid', o.status || 'pending', o.created_at || '',
+        ]);
+      });
+    });
+    const csv = [hdrs.join(','), ...rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
+    downloadCSV(csv, `relay2026-merch-orders-${new Date().toISOString().slice(0,10)}.csv`);
+    showToast('CSV exported!');
+  }
+
+  // Merch order actions — themed modals (matching the registrations partial
+  // payment / confirm modal pattern), never a native confirm()/prompt().
+  let pendingMerchOrderId = null;
+  function findMerchOrder(id) { return merchOrders.find(o => o.id === id); }
+
+  function openMerchMarkPaidModal(id) {
+    const o = findMerchOrder(id); if (!o) return;
+    pendingMerchOrderId = id;
+    document.getElementById('merchMarkPaidName').textContent = o.participant_name;
+    document.getElementById('merchMarkPaidModal').classList.add('visible');
+  }
+  function closeMerchMarkPaidModal() {
+    pendingMerchOrderId = null;
+    document.getElementById('merchMarkPaidModal').classList.remove('visible');
+  }
+  async function doMarkOrderPaid() {
+    if (!pendingMerchOrderId) return;
+    const id = pendingMerchOrderId;
+    closeMerchMarkPaidModal();
+    try {
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'mark_paid' }) });
+      const json = await res.json(); if(!res.ok || json.error) throw new Error(json.error||'Failed');
+      showToast('Order marked as paid'); loadMerchOrders();
+    } catch(e) { showToast(e.message); }
+  }
+
+  function openMerchPartialModal(id) {
+    const o = findMerchOrder(id); if (!o) return;
+    pendingMerchOrderId = id;
+    const total = Number(o.total_amount || 0);
+    const paid  = Number(o.deposit_amount || 0);
+    document.getElementById('merchPartialModalName').textContent = o.participant_name;
+    document.getElementById('merchPartialTotal').textContent     = 'PHP ' + total.toLocaleString();
+    document.getElementById('merchPartialPaidSoFar').textContent = 'PHP ' + paid.toLocaleString();
+    document.getElementById('merchPartialRemaining').textContent = 'PHP ' + Math.max(0, total - paid).toLocaleString();
+    document.getElementById('merchPartialAmount').value = '';
+    document.getElementById('merchPartialModal').style.display = 'flex';
+  }
+  function closeMerchPartialModal() {
+    pendingMerchOrderId = null;
+    document.getElementById('merchPartialModal').style.display = 'none';
+  }
+  async function doAddPartialPayment() {
+    const amount = parseInt(document.getElementById('merchPartialAmount').value, 10);
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount.'); return; }
+    if (!pendingMerchOrderId) return;
+    const id = pendingMerchOrderId;
+    const btn = document.getElementById('merchPartialConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    closeMerchPartialModal();
+    try {
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'add_partial', amount }) });
+      const json = await res.json(); if(!res.ok || json.error) throw new Error(json.error||'Failed');
+      showToast(json.payment_status === 'paid' ? 'Payment recorded — order fully paid' : 'Partial payment recorded');
+      loadMerchOrders();
+    } catch(e) { showToast(e.message); }
+    finally { btn.disabled = false; btn.textContent = '💵 Record Payment'; }
+  }
+
+  function openMerchCompleteModal(id) {
+    const o = findMerchOrder(id); if (!o) return;
+    pendingMerchOrderId = id;
+    document.getElementById('merchCompleteName').textContent = o.participant_name;
+    document.getElementById('merchCompleteModal').classList.add('visible');
+  }
+  function closeMerchCompleteModal() {
+    pendingMerchOrderId = null;
+    document.getElementById('merchCompleteModal').classList.remove('visible');
+  }
+  async function doCompleteMerchOrder() {
+    if (!pendingMerchOrderId) return;
+    const id = pendingMerchOrderId;
+    closeMerchCompleteModal();
+    try {
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'complete' }) });
+      const json = await res.json(); if(!res.ok || json.error) throw new Error(json.error||'Failed');
+      showToast('Order completed'); loadMerchOrders();
+    } catch(e) { showToast(e.message); }
+  }
+
+  function openMerchCancelOrderModal(id) {
+    const o = findMerchOrder(id); if (!o) return;
+    pendingMerchOrderId = id;
+    document.getElementById('merchCancelOrderName').textContent = o.participant_name;
+    document.getElementById('merchCancelOrderModal').classList.add('visible');
+  }
+  function closeMerchCancelOrderModal() {
+    pendingMerchOrderId = null;
+    document.getElementById('merchCancelOrderModal').classList.remove('visible');
+  }
+  async function doCancelMerchOrder() {
+    if (!pendingMerchOrderId) return;
+    const id = pendingMerchOrderId;
+    closeMerchCancelOrderModal();
+    try {
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'cancel' }) });
+      const json = await res.json(); if(!res.ok || json.error) throw new Error(json.error||'Failed');
+      showToast('Order cancelled'); loadMerchOrders();
+    } catch(e) { showToast(e.message); }
+  }
+
+  function renderSizesStockCell(p) {
+    const stock = p.stock || {};
+    if (p.sizes && p.sizes.length) {
+      return p.sizes.map(s => {
+        const val = stock[s];
+        if (val === undefined || val === null || val === '') return `<strong>${esc(s)}</strong>: ∞`;
+        const num = Number(val);
+        if (num <= 0) return `<span style="color:#C0392B;"><strong>${esc(s)}</strong>: 0</span>`;
+        return `<strong>${esc(s)}</strong>: ${num}`;
+      }).join(', ');
+    }
+    const tot = stock['__total'];
+    if (tot === undefined || tot === null || tot === '') return '<span style="color:#6B8A9A;">One size (Unlimited)</span>';
+    const num = Number(tot);
+    return num <= 0 ? '<span style="color:#C0392B;">One size (Sold out: 0)</span>' : `One size (${num} in stock)`;
+  }
+
+  function renderMerchProducts() {
+    const tbody = document.getElementById('merch-body');
+    if (!tbody) return;
+    if (!merchProducts.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="loading">No merch products yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = merchProducts.map((p, idx) => `
+      <tr draggable="true" ondragstart="onMerchDragStart(event, ${idx})" ondragover="onMerchDragOver(event, ${idx})" ondragleave="onMerchDragLeave(event)" ondrop="onMerchDrop(event, ${idx})" ondragend="onMerchDragEnd(event)" style="${p.isActive ? '' : 'opacity:0.55;'}" data-id="${p.id}">
+        <td class="drag-handle" title="Drag to reorder">⠿</td>
+        <td><strong>${esc(p.name)}</strong>${p.images?.[0] ? `<br><img src="${esc(p.images[0])}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #D4E2EA;margin-top:4px;">` : ''}</td>
+        <td class="mono">PHP ${Number(p.price || 0).toLocaleString()}</td>
+        <td style="font-size:12px;">${renderSizesStockCell(p)}</td>
+        <td class="mono">${(p.purchaseLimit === null || p.purchaseLimit === undefined) ? 'Unlimited' : p.purchaseLimit}</td>
+        <td class="mono">${p.images?.length || 0}/10</td>
+        <td style="font-size:12px;">${esc(p.availability || '')}</td>
+        <td>${p.soldOut ? '<span class="badge badge-red">Sold Out</span>' : '<span class="badge badge-green">Available</span>'}</td>
+        <td>${p.isActive ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Hidden</span>'}</td>
+        <td><div class="btn-actions" style="display:flex;gap:4px;align-items:center;"><button onclick="openMerchModal('${p.id}')" style="font-size:12px;padding:5px 12px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-weight:600;"><span class="btn-label-text">Edit</span><span class="btn-label-icon">✏️</span></button><button onclick="deleteMerchProduct('${p.id}','${esc(p.name)}')" style="font-size:12px;padding:5px 12px;background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-weight:600;"><span class="btn-label-text">Delete</span><span class="btn-label-icon">🗑️</span></button></div></td>
+      </tr>
+    `).join('');
+  }
+
+  // --- Merch Drag & Drop Reordering ---
+  function onMerchDragStart(e, idx) {
+    draggedMerchIndex = idx;
+    e.currentTarget.classList.add('merch-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+
+  function onMerchDragOver(e, idx) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const tr = e.currentTarget;
+    if (!tr.classList.contains('merch-drag-over') && draggedMerchIndex !== idx) {
+      tr.classList.add('merch-drag-over');
+    }
+  }
+
+  function onMerchDragLeave(e) {
+    e.currentTarget.classList.remove('merch-drag-over');
+  }
+
+  function onMerchDragEnd(e) {
+    document.querySelectorAll('#merch-body tr').forEach(r => {
+      r.classList.remove('merch-dragging', 'merch-drag-over');
+    });
+    draggedMerchIndex = null;
+  }
+
+  async function onMerchDrop(e, targetIdx) {
+    e.preventDefault();
+    document.querySelectorAll('#merch-body tr').forEach(r => {
+      r.classList.remove('merch-dragging', 'merch-drag-over');
+    });
+    if (draggedMerchIndex === null || draggedMerchIndex === targetIdx) return;
+    const [moved] = merchProducts.splice(draggedMerchIndex, 1);
+    merchProducts.splice(targetIdx, 0, moved);
+    merchProducts.forEach((p, i) => { p.sortOrder = (i + 1) * 10; });
+    renderMerchProducts();
+    await saveMerchSortOrders();
+  }
+
+  async function saveMerchSortOrders() {
+    try {
+      const orders = merchProducts.map((p, idx) => ({ id: p.id, sortOrder: (idx + 1) * 10 }));
+      const res = await fetch('/.netlify/functions/merch-products', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orders }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to update order');
+      showToast('Product order updated');
+    } catch (err) {
+      showToast('Error reordering products: ' + err.message);
+      loadMerchProducts();
+    }
+  }
+
+  // --- Merch Toggles ---
+  function toggleMerchSoldOut() {
+    editingMerchSoldOut = !editingMerchSoldOut;
+    renderMerchToggles();
+  }
+
+  function toggleMerchActive() {
+    editingMerchActive = !editingMerchActive;
+    renderMerchToggles();
+  }
+
+  function renderMerchToggles() {
+    const sTrack = document.getElementById('mm-soldout-track');
+    const sThumb = document.getElementById('mm-soldout-thumb');
+    const sStatus = document.getElementById('mm-soldout-status');
+    if (sTrack) {
+      if (editingMerchSoldOut) {
+        sTrack.classList.add('on');
+        sTrack.style.background = '#C0392B';
+        if (sThumb) sThumb.style.left = '18px';
+        if (sStatus) sStatus.textContent = 'Sold Out';
+      } else {
+        sTrack.classList.remove('on');
+        sTrack.style.background = '#D4E2EA';
+        if (sThumb) sThumb.style.left = '2px';
+        if (sStatus) sStatus.textContent = 'Available';
+      }
+    }
+    const aTrack = document.getElementById('mm-active-track');
+    const aThumb = document.getElementById('mm-active-thumb');
+    const aStatus = document.getElementById('mm-active-status');
+    if (aTrack) {
+      if (editingMerchActive) {
+        aTrack.classList.add('on');
+        aTrack.style.background = 'var(--sky)';
+        if (aThumb) aThumb.style.left = '18px';
+        if (aStatus) aStatus.textContent = 'Visible';
+      } else {
+        aTrack.classList.remove('on');
+        aTrack.style.background = '#D4E2EA';
+        if (aThumb) aThumb.style.left = '2px';
+        if (aStatus) aStatus.textContent = 'Hidden (Draft)';
+      }
+    }
+  }
+
+  // --- Merch Modal & Reactive Stock UI ---
+  function openMerchModal(id = null) {
+    editingMerchId = id;
+    const p = id ? merchProducts.find(x => x.id === id) : null;
+    document.getElementById('merchModalTitle').textContent = p ? 'Edit Product' : 'Add Product';
+    document.getElementById('mm-name').value = p?.name || '';
+    document.getElementById('mm-price').value = p?.price ?? '';
+    document.getElementById('mm-limit').value = (p?.purchaseLimit === null || p?.purchaseLimit === undefined) ? '' : p.purchaseLimit;
+    document.getElementById('mm-availability').value = p?.availability || '';
+    document.getElementById('mm-description').value = p?.description || '';
+    document.getElementById('mm-sizes').value = (p?.sizes || []).join(', ');
+    document.getElementById('mm-err').style.display = 'none';
+
+    // Toggles state
+    editingMerchSoldOut = !!p?.soldOut;
+    editingMerchActive = p ? !!p.isActive : true;
+    renderMerchToggles();
+
+    // Stock state
+    editingMerchStock = p?.stock ? JSON.parse(JSON.stringify(p.stock)) : {};
+    renderStockGrid(p?.sizes || []);
+
+    // Images state
+    editingMerchImages = Array.isArray(p?.images) ? [...p.images].slice(0, 10) : [];
+    renderMerchImageList();
+
+    document.getElementById('merchModal').style.display = 'flex';
+  }
+
+  function syncStockInputsToState() {
+    const grid = document.getElementById('mm-stock-grid');
+    if (!grid) return;
+    grid.querySelectorAll('input[data-size]').forEach(inp => {
+      const sizeKey = inp.dataset.size;
+      const v = inp.value.trim();
+      if (v === '') {
+        delete editingMerchStock[sizeKey];
+      } else {
+        editingMerchStock[sizeKey] = Math.max(0, parseInt(v, 10) || 0);
+      }
+    });
+  }
+
+  function onSizesInputChanged() {
+    syncStockInputsToState();
+    const sizes = splitList(document.getElementById('mm-sizes').value);
+    renderStockGrid(sizes);
+  }
+
+  function updateStockVal(key, val) {
+    const clean = val.trim();
+    if (clean === '') {
+      delete editingMerchStock[key];
+    } else {
+      editingMerchStock[key] = Math.max(0, parseInt(clean, 10) || 0);
+    }
+  }
+
+  function renderStockGrid(sizes) {
+    const grid = document.getElementById('mm-stock-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    if (sizes && sizes.length) {
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(90px, 1fr))';
+      sizes.forEach(s => {
+        const val = (editingMerchStock[s] !== undefined && editingMerchStock[s] !== null) ? editingMerchStock[s] : '';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#fff;border:1px solid #D4E2EA;border-radius:8px;padding:8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04);';
+        card.innerHTML = `
+          <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(s)}">${esc(s)}</div>
+          <input type="number" min="0" step="1" placeholder="∞" value="${val}" data-size="${esc(s)}" oninput="updateStockVal('${esc(s)}', this.value)" style="width:100%;padding:6px 8px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:13px;text-align:center;background:#fff;outline:none;font-family:inherit;box-sizing:border-box;">
+        `;
+        grid.appendChild(card);
+      });
+    } else {
+      grid.style.display = 'block';
+      const val = (editingMerchStock['__total'] !== undefined && editingMerchStock['__total'] !== null) ? editingMerchStock['__total'] : '';
+      grid.innerHTML = `
+        <div style="background:#fff;border:1px solid #D4E2EA;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--dark);">Total Stock (One Size)</div>
+            <div style="font-size:11px;color:var(--muted);">Product has no sizes. Leave blank for unlimited stock.</div>
+          </div>
+          <input type="number" min="0" step="1" placeholder="Unlimited" value="${val}" data-size="__total" oninput="updateStockVal('__total', this.value)" style="width:110px;padding:8px 10px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:13px;text-align:center;background:#fff;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+      `;
+    }
+  }
+
+  function closeMerchModal() {
+    editingMerchId = null;
+    editingMerchStock = {};
+    editingMerchImages = [];
+    document.getElementById('merchModal').style.display = 'none';
+  }
+
+  async function saveMerchProduct() {
+    const err = document.getElementById('mm-err');
+    err.style.display = 'none';
+
+    syncStockInputsToState();
+    const currentSizes = splitList(document.getElementById('mm-sizes').value);
+
+    // Clean stock object to only keep valid sizes or __total
+    const cleanStock = {};
+    if (currentSizes.length) {
+      currentSizes.forEach(s => {
+        if (editingMerchStock[s] !== undefined && editingMerchStock[s] !== null && editingMerchStock[s] !== '') {
+          cleanStock[s] = Number(editingMerchStock[s]);
+        }
+      });
+    } else if (editingMerchStock['__total'] !== undefined && editingMerchStock['__total'] !== null && editingMerchStock['__total'] !== '') {
+      cleanStock['__total'] = Number(editingMerchStock['__total']);
+    }
+
+    const existingProduct = editingMerchId ? merchProducts.find(x => x.id === editingMerchId) : null;
+    const sortOrder = existingProduct ? (existingProduct.sortOrder || 0) : (merchProducts.length + 1) * 10;
+
+    const product = {
+      id: editingMerchId,
+      name: document.getElementById('mm-name').value.trim(),
+      price: Number(document.getElementById('mm-price').value || 0),
+      sizes: currentSizes,
+      purchaseLimit: document.getElementById('mm-limit').value.trim() === '' ? null : Number(document.getElementById('mm-limit').value),
+      images: editingMerchImages.slice(0, 10),
+      availability: document.getElementById('mm-availability').value.trim(),
+      description: document.getElementById('mm-description').value.trim(),
+      soldOut: editingMerchSoldOut,
+      isActive: editingMerchActive,
+      sortOrder: sortOrder,
+      stock: cleanStock,
+    };
+
+    if (!product.name) { err.textContent = 'Product name is required.'; err.style.display = 'block'; return; }
+    const btn = document.getElementById('mm-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    try {
+      const res = await fetch('/.netlify/functions/merch-products', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingMerchId, product }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      closeMerchModal();
+      showToast('Merch product saved.');
+      loadMerchProducts();
+    } catch (e) {
+      err.textContent = e.message;
+      err.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Product';
+    }
+  }
+
+  // Image upload controls for merch modal
+  document.getElementById('mm-upload').addEventListener('change', async (ev) => {
+    const files = Array.from(ev.target.files || []);
+    if (!files.length) return;
+    if (editingMerchImages.length + files.length > 10) {
+      showToast(`Cannot upload more than 10 photos total (${editingMerchImages.length} already uploaded)`);
+      ev.target.value = '';
+      return;
+    }
+    const zone = document.getElementById('mm-upload-zone');
+    if (zone) zone.style.opacity = '0.6';
+    showToast(`Uploading ${files.length} photo${files.length === 1 ? '' : 's'}…`);
+    for (const f of files) {
+      try {
+        const data = await fileToBase64(f);
+        const payload = { filename: f.name, contentType: f.type || 'image/jpeg', data: data.split(',')[1], productId: editingMerchId };
+        const res = await fetch('/.netlify/functions/merch-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Upload failed');
+        editingMerchImages.push(json.url);
+        renderMerchImageList();
+      } catch (e) { showToast('Upload error: ' + e.message); }
+    }
+    if (zone) zone.style.opacity = '1';
+    ev.target.value = '';
+    showToast('Photos uploaded');
+  });
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function renderMerchImageList() {
+    const container = document.getElementById('mm-image-list');
+    const countEl = document.getElementById('mm-photo-count');
+    const zone = document.getElementById('mm-upload-zone');
+    if (countEl) countEl.textContent = `${editingMerchImages.length}/10 photos`;
+    if (zone) {
+      zone.style.opacity = editingMerchImages.length >= 10 ? '0.5' : '1';
+      zone.style.pointerEvents = editingMerchImages.length >= 10 ? 'none' : 'auto';
+    }
+    if (!container) return;
+    container.innerHTML = '';
+    editingMerchImages.forEach((url, idx) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:96px;background:#fff;border:1.5px solid #D4E2EA;border-radius:10px;padding:6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.05);';
+      const isMain = idx === 0;
+      wrap.innerHTML = `
+        ${isMain ? '<div style="position:absolute;top:9px;left:9px;background:#2E7048;color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;letter-spacing:0.04em;">MAIN</div>' : ''}
+        <img src="${esc(url)}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:6px;display:block;">
+        <div style="display:flex;justify-content:center;gap:4px;margin-top:6px;">
+          <button type="button" onclick="moveImage(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} style="padding:2px 6px;font-size:11px;background:#f0f4f7;border:1px solid #D4E2EA;border-radius:4px;cursor:${idx === 0 ? 'default' : 'pointer'};opacity:${idx === 0 ? '0.35' : '1'};">←</button>
+          <button type="button" onclick="moveImage(${idx}, 1)" ${idx === editingMerchImages.length - 1 ? 'disabled' : ''} style="padding:2px 6px;font-size:11px;background:#f0f4f7;border:1px solid #D4E2EA;border-radius:4px;cursor:${idx === editingMerchImages.length - 1 ? 'default' : 'pointer'};opacity:${idx === editingMerchImages.length - 1 ? '0.35' : '1'};">→</button>
+          <button type="button" onclick="removeImage(${idx})" title="Remove photo" style="padding:2px 6px;font-size:11px;background:#FDECEA;color:#C0392B;border:1px solid #FADBD8;border-radius:4px;cursor:pointer;">✕</button>
+        </div>
+      `;
+      container.appendChild(wrap);
+    });
+  }
+
+  function moveImage(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= editingMerchImages.length) return;
+    const tmp = editingMerchImages[i];
+    editingMerchImages[i] = editingMerchImages[j];
+    editingMerchImages[j] = tmp;
+    renderMerchImageList();
+  }
+
+  async function removeImage(i) {
+    const url = editingMerchImages[i];
+    editingMerchImages.splice(i, 1);
+    renderMerchImageList();
+    try {
+      const path = url.split('/').slice(-3).join('/');
+      await fetch('/.netlify/functions/merch-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ action: 'delete', path })
+      });
+    } catch (e) { /* ignore deletion errors */ }
+  }
+
+  async function deleteMerchProduct(id, name) {
+    if (!confirm(`Delete ${name}? Existing preorder records keep their item details.`)) return;
+    try {
+      const res = await fetch('/.netlify/functions/merch-products?id=' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast('Merch product deleted.');
+      loadMerchProducts();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  function splitList(value) {
+    return String(value || '').split(/\r?\n|,/).map(v => v.trim()).filter(Boolean);
+  }
 
   const ADMIN_ORIGIN = location.origin;
   const ADMIN_PATH   = location.pathname;
@@ -3675,11 +5430,13 @@
     intl: 'reg_intl_closed',
     sms:  'sms_enabled',
     ph_pay_later_enabled: 'ph_pay_later_enabled',
+    merch_preorder_closed: 'merch_preorder_closed',
   };
 
   let currentSettings = {
     reg_ph_closed: false, reg_intl_closed: false, sms_enabled: false,
     ph_pay_later_enabled: false,
+    merch_preorder_closed: false, merch_downpayment_percent: 0,
   };
   let settingsProviders = { sms_configured: false, resend_configured: false };
   let settingsSmsAccount = null;
@@ -3976,6 +5733,16 @@
       ? 'Pay later is enabled for Philippine registrants.'
       : 'Pay later disabled — registrants cannot choose to pay later.';
 
+    // Merch preorder toggle reads the opposite way from the registration
+    // switches above: ON (green) means the page is open, since "Preorder
+    // page is open" next to a toggle that looks off read as contradictory.
+    paintToggle('merch_preorder_closed', !currentSettings.merch_preorder_closed, '#2E7048');
+    document.getElementById('settings-merch-status').textContent = currentSettings.merch_preorder_closed
+      ? 'Preorders are closed — visitors are redirected to a closed notice page.'
+      : 'Preorder page is open.';
+    const dpInput = document.getElementById('settings-merch-dp');
+    if (dpInput && document.activeElement !== dpInput) dpInput.value = currentSettings.merch_downpayment_percent ?? 0;
+
     // SMS switches read the normal way: ON means enabled.
     paintToggle('sms', currentSettings.sms_enabled, '#2E7048');
     for (const c of smsEventCatalogue) {
@@ -4067,6 +5834,39 @@
         showToast('Failed to save Pay-Later: ' + err.message, true);
       }
     }
+
+    // Same immediate-save treatment for the merch preorder switch — an
+    // admin closing preorders mid-event shouldn't have to remember to hit
+    // the page's main Save button afterward.
+    if (key === 'merch_preorder_closed') {
+      const label = 'Merch preorder';
+      try {
+        await saveSingleSetting(column);
+        showToast(label + ' setting saved.');
+      } catch (err) {
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save: ' + err.message, true);
+      }
+    }
+  }
+
+  async function onMerchDpChange() {
+    const input = document.getElementById('settings-merch-dp');
+    let val = parseInt(input.value, 10);
+    if (isNaN(val)) val = 0;
+    val = Math.max(0, Math.min(100, val));
+    input.value = val;
+    const previous = currentSettings.merch_downpayment_percent;
+    currentSettings.merch_downpayment_percent = val;
+    try {
+      await saveSingleSetting('merch_downpayment_percent');
+      showToast('Down payment setting saved.');
+    } catch (err) {
+      currentSettings.merch_downpayment_percent = previous;
+      input.value = previous;
+      showToast('Failed to save down payment: ' + err.message, true);
+    }
   }
 
   async function saveSingleSetting(column) {
@@ -4098,6 +5898,9 @@
         // Skip columns the server didn't report, so a half-migrated database
         // never gets a fabricated false written back over it.
         if (column in data) currentSettings[column] = !!data[column];
+      }
+      if ('merch_downpayment_percent' in data && data.merch_downpayment_percent !== null && data.merch_downpayment_percent !== undefined) {
+        currentSettings.merch_downpayment_percent = Number(data.merch_downpayment_percent);
       }
       for (const c of (data.sms_events || [])) {
         currentSettings[c.column] = data[c.column] || '';
@@ -4164,6 +5967,7 @@
   window.login                = login;
   window.submitNewPassword    = submitNewPassword;
   window.switchTab            = switchTab;
+  window.switchGroup          = switchGroup;
   window.tileFilter           = tileFilter;
   window.resetFilters         = resetFilters;
   window.exportCSV            = exportCSV;
@@ -4202,6 +6006,10 @@
   window.closeAdminModal      = closeAdminModal;
   window.saveAdmin            = saveAdmin;
   window.removeAdmin          = removeAdmin;
+  window.openMerchModal       = openMerchModal;
+  window.closeMerchModal      = closeMerchModal;
+  window.saveMerchProduct     = saveMerchProduct;
+  window.deleteMerchProduct   = deleteMerchProduct;
   window.toggleSetting        = toggleSetting;
   window.saveSettings         = saveSettings;
   window.toggleFollowUpSms          = toggleFollowUpSms;
@@ -4212,6 +6020,28 @@
   window.openBulkFollowUpModal      = openBulkFollowUpModal;
   window.closeBulkFollowUpModal     = closeBulkFollowUpModal;
   window.doBulkFollowUp             = doBulkFollowUp;
+  window.openBulkMerchModalForSelection = openBulkMerchModalForSelection;
+  window.openSingleMerchModal       = openSingleMerchModal;
+  window.closeBulkMerchModal        = closeBulkMerchModal;
+  window.doBulkMerch                = doBulkMerch;
+  window.toggleMerchSoldOut         = toggleMerchSoldOut;
+  window.toggleMerchActive          = toggleMerchActive;
+  window.moveImage                  = moveImage;
+  window.removeImage                = removeImage;
+  window.toggleBulkMerchProviderMenu = toggleBulkMerchProviderMenu;
+  window.selectBulkMerchProvider    = selectBulkMerchProvider;
+  window.openMerchModal             = openMerchModal;
+  window.closeMerchModal            = closeMerchModal;
+  window.saveMerchProduct           = saveMerchProduct;
+  window.deleteMerchProduct         = deleteMerchProduct;
+  window.loadMerchProducts          = loadMerchProducts;
+  window.onSizesInputChanged        = onSizesInputChanged;
+  window.updateStockVal             = updateStockVal;
+  window.onMerchDragStart           = onMerchDragStart;
+  window.onMerchDragOver            = onMerchDragOver;
+  window.onMerchDragLeave           = onMerchDragLeave;
+  window.onMerchDragEnd             = onMerchDragEnd;
+  window.onMerchDrop                = onMerchDrop;
   window.toggleBulkProviderMenu     = toggleBulkProviderMenu;
   window.selectBulkProvider         = selectBulkProvider;
   window.toggleBulkSms              = toggleBulkSms;
@@ -4235,9 +6065,16 @@
   window.closeGroupScopePicker = closeGroupScopePicker;
   window.chooseGroupScope     = chooseGroupScope;
 
-  // Dismiss either provider dropdown on any click outside it
+  // Dismiss provider or preset dropdown on any click outside it
   document.addEventListener('click', e => {
-    for (const [menuId, btnId] of [['followUpProviderMenu', 'followUpProviderBtn'], ['bulkProviderMenu', 'bulkProviderBtn'], ['attendanceProviderMenu', 'attendanceProviderBtn'], ['ph-attendance-presets', 'ph-attendance-caret'], ['ph-followup-presets', 'ph-followup-caret']]) {
+    for (const [menuId, btnId] of [
+      ['followUpProviderMenu', 'followUpProviderBtn'],
+      ['bulkProviderMenu', 'bulkProviderBtn'],
+      ['attendanceProviderMenu', 'attendanceProviderBtn'],
+      ['bulkMerchProviderMenu', 'bulkMerchProviderBtn'],
+      ['ph-attendance-presets', 'ph-attendance-caret'],
+      ['ph-followup-presets', 'ph-followup-caret']
+    ]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
       if (menu.contains(e.target) || e.target.closest('#' + btnId)) continue;

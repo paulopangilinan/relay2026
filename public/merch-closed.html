@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY 2026 — Merch Preorder Closed</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB; --green: #2E7048;
+    --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A;
+    --border: #D4E2EA; --card-bg: #fff;
+  }
+  body {
+    font-family: 'DM Sans', Arial, sans-serif;
+    background: #F2F5F8; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .hero { width: 100%; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
+  .confetti-bar {
+    height: 4px; width: 100%;
+    background: linear-gradient(90deg, #4BAE6A, #3A8BBF, #E8B830, #4BAE6A);
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+  .chips-bar {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    padding: 14px 20px; background: var(--dark); width: 100%;
+  }
+  .chip {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 50px; letter-spacing: 0.03em;
+  }
+  .chip-venue { background: rgba(74,155,196,0.18); color: #8DD4F5; border: 1px solid rgba(74,155,196,0.3); }
+  .chip-date  { background: rgba(232,184,48,0.18);  color: #F5D06A; border: 1px solid rgba(232,184,48,0.3); }
+  .chip-age   { background: rgba(75,174,106,0.18);  color: #7EE0A2; border: 1px solid rgba(75,174,106,0.3); }
+  .page-wrap { width: 100%; max-width: 520px; padding: 40px 20px 64px; text-align: center; }
+  .icon { font-size: 56px; margin-bottom: 16px; }
+  .card {
+    background: var(--card-bg); border-radius: 16px;
+    border: 1px solid var(--border); padding: 36px 28px;
+    box-shadow: 0 2px 20px rgba(28,43,56,0.08);
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px; letter-spacing: 0.06em;
+    color: var(--dark); margin-bottom: 12px;
+  }
+  p {
+    font-size: 14px; color: var(--muted);
+    line-height: 1.7; margin-bottom: 0;
+  }
+  .divider {
+    width: 40px; height: 3px; border-radius: 50px;
+    background: linear-gradient(90deg, var(--sky), var(--green));
+    margin: 16px auto;
+  }
+  .contact {
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 13px; color: var(--muted);
+  }
+  .contact a { color: var(--sky); text-decoration: none; font-weight: 600; }
+  .contact a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
+</div>
+<div class="confetti-bar"></div>
+<div class="chips-bar">
+  <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
+  <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
+  <span class="chip chip-age">👥 Ages 17 to late 30s (Young Adults &amp; Leaders)</span>
+</div>
+
+<div class="page-wrap">
+  <div class="card">
+    <div class="icon">🛍️</div>
+    <h1 id="pageTitle">Merch Preorder is Closed</h1>
+    <div class="divider"></div>
+    <p id="pageBody">
+      The online advance preorder period for RELAY 2026 merchandise is now closed.<br>
+      Preordered items can be claimed at the venue merch booth during the conference.
+    </p>
+    <div class="contact" id="contactWrap" style="display:none;">
+      Have questions or need to follow up on your preorder? Reach out to us at
+      <a href="#" id="contactLink"></a>
+    </div>
+  </div>
+</div>
+
+<script>
+  fetch('/.netlify/functions/contact-info')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.email) return;
+      const wrap = document.getElementById('contactWrap');
+      const link = document.getElementById('contactLink');
+      link.href        = 'mailto:' + d.email;
+      link.textContent = d.email;
+      wrap.style.display = 'block';
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
