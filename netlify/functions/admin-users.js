@@ -58,7 +58,7 @@ export const handler = async (event) => {
         email: email.toLowerCase().trim(),
         name,
         password_hash: hash,
-        permissions: permissions || { receive_updates: true, verify_payment: false, manage_admins: false, manage_churches: false },
+        permissions: permissions || { receive_updates: true, verify_payment: false, merch_order_notify: false, manage_admins: false, manage_churches: false },
         is_super_admin: makeSuperAdmin || false,
         force_password_change: true,
       }).select().single();

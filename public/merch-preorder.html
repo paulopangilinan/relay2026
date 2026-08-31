@@ -1,0 +1,828 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY 2026 - Merch Preorder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF;
+    --sky-light: #EBF5FB;
+    --gold: #C49A1A;
+    --gold-light: #E8B830;
+    --gold-bg: #FDF6E0;
+    --green: #2E7048;
+    --green-bg: #EAF5EE;
+    --green-bright: #4BAE6A;
+    --page: #F2F5F8;
+    --card: #fff;
+    --dark: #1C2B38;
+    --text: #2A3D4A;
+    --muted: #6B8A9A;
+    --border: #D4E2EA;
+    --input-bg: #F7FAFB;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "DM Sans", sans-serif; background: var(--page); color: var(--text); min-height: 100vh; margin: 0; padding: 0; overflow-x: hidden; }
+
+  /* Hero header matching registration page */
+  .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
+  .hero img { width: 100%; height: auto; display: block; margin: 0; padding: 0; }
+  .confetti-bar {
+    height: 4px;
+    background: linear-gradient(90deg, var(--green-bright), var(--sky), var(--gold-light), var(--green-bright));
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 18px 80px; }
+  h1 { font-family: "Bebas Neue", sans-serif; font-size: 38px; letter-spacing: .05em; color: var(--dark); line-height: 1; }
+  .lead { font-size: 14px; color: var(--muted); line-height: 1.6; margin-top: 6px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 22px; margin-top: 18px; }
+  .section-label { font-family: "DM Mono", monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--sky); margin-bottom: 14px; display: flex; gap: 10px; align-items: center; }
+  .section-label:after { content: ""; height: 1px; background: var(--border); flex: 1; }
+
+  .who { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; }
+  .who span { display: block; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .who strong { display: block; margin-top: 3px; color: var(--dark); font-size: 14px; }
+
+  /* Product Items */
+  .product { display: flex; gap: 16px; padding: 18px 0; border-bottom: 1px solid #EDF2F5; align-items: flex-start; }
+  .product:last-of-type { border-bottom: none; }
+  .product-thumb { flex: 0 0 110px; position: relative; }
+  .product-thumb img, .product-img-ph {
+    width: 110px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); display: block; background: #EBF5FB;
+  }
+  .product-img-ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); }
+  .product-img-ph-icon { font-size: 26px; opacity: 0.55; }
+  .product-img-ph-text { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .photo-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(28,43,56,0.75); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+
+  .product-info { flex: 1; min-width: 0; }
+  .product-name { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+  .product-price { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+  .sold-out-stamp {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 3px solid #E05050; border-radius: 4px; color: #E05050;
+    font-family: Georgia, 'Times New Roman', serif; font-weight: 800;
+    font-size: 19px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 7px 20px; margin-top: 4px; transform: rotate(-6deg);
+    opacity: 0.85; -webkit-user-select: none; user-select: none;
+  }
+  .product-description { font-size: 13px; color: var(--text); line-height: 1.5; margin: -6px 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .product-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* Select dropdown matching registration form */
+  .select-wrap { position: relative; display: inline-block; min-width: 110px; }
+  .select-wrap::after {
+    content: "▾"; position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%); pointer-events: none; color: var(--muted); font-size: 13px;
+  }
+  select.size-select {
+    background: var(--input-bg); border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 600;
+    height: 38px; padding: 0 28px 0 12px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; -webkit-appearance: none; appearance: none; cursor: pointer;
+  }
+  select.size-select:focus {
+    border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); background: #fff;
+  }
+
+  .qty-input {
+    height: 38px; width: 64px; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 0 8px; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text); background: var(--input-bg); text-align: center; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .qty-input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); background: #fff; }
+
+  .btn-add {
+    height: 38px; padding: 0 16px; background: var(--green); color: #fff; border: none;
+    border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; white-space: nowrap;
+    transition: background 0.15s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-add:hover:not(:disabled) { background: #3b9060; }
+  .btn-add:disabled { background: #C9D6DE; cursor: default; }
+
+  /* Header Cart Button */
+  .btn-cart-header {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px;
+    border: 0; background: var(--green); color: #fff; cursor: pointer; font-weight: 700; font-size: 14px;
+    transition: all 0.15s; box-shadow: 0 2px 8px rgba(46,112,72,0.25);
+  }
+  .btn-cart-header:hover { background: #3b9060; transform: translateY(-1px); }
+  .badge-count { background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 50px; font-size: 12px; font-weight: 700; min-width: 20px; text-align: center; }
+
+  /* Cart View */
+  .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #EDF2F5; gap: 12px; }
+  .cart-item:last-of-type { border-bottom: none; }
+  .cart-item-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .cart-thumb, .cart-thumb-ph { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); display: block; background: #EBF5FB; flex-shrink: 0; }
+  .cart-thumb-ph { display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--muted); opacity: .55; }
+  .cart-item-left { min-width: 0; }
+  .cart-item-left .item-name { font-weight: 700; font-size: 15px; color: var(--dark); }
+  .cart-item-left .item-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .cart-item-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .cart-qty { width: 56px; height: 34px; border: 1.5px solid var(--border); border-radius: 8px; padding: 0 6px; font: inherit; font-size: 13px; text-align: center; background: var(--input-bg); }
+  .btn-remove { background: none; border: none; color: #E05050; cursor: pointer; font-size: 12px; font-weight: 700; padding: 4px 6px; }
+  .btn-remove:hover { text-decoration: underline; }
+
+  .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+  .totals-row .tlabel { font-size: 14px; font-weight: 600; color: var(--text); }
+  .totals-row .tvalue { font-size: 15px; font-weight: 700; color: var(--dark); font-family: "DM Mono", monospace; }
+  .totals-highlight { background: var(--green-bg); border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .totals-highlight .tlabel, .totals-highlight .tvalue { color: var(--green); font-weight: 700; }
+
+  textarea.notes-ta { width: 100%; min-height: 80px; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font: inherit; resize: vertical; color: var(--text); background: var(--input-bg); font-size: 14px; outline: none; }
+  textarea.notes-ta:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(58,139,191,0.12); background: #fff; }
+
+  .btn-submit { width: 100%; border: 0; border-radius: 10px; background: linear-gradient(135deg, var(--green), #4BAE6A); color: #fff; padding: 16px; font-family: "Bebas Neue", sans-serif; font-size: 22px; letter-spacing: .09em; cursor: pointer; margin-top: 12px; transition: opacity 0.2s; }
+  .btn-submit:disabled { background: #C9D6DE; cursor: default; }
+  .btn-back { display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; background: none; border: none; color: var(--sky); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 8px; }
+  .btn-back:hover { color: var(--dark); }
+
+  .state { text-align: center; padding: 56px 18px; }
+  .state h2 { font-family: "Bebas Neue", sans-serif; font-size: 32px; color: var(--dark); margin-bottom: 8px; }
+  .state p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .note-box { background: var(--gold-bg); border-left: 3px solid #E8B830; border-radius: 0 8px 8px 0; padding: 12px 14px; font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 14px; }
+
+  /* Previous Orders (expandable) */
+  .prev-orders-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; gap: 12px; }
+  .prev-orders-toggle { background: none; border: none; font-size: 13px; color: var(--muted); cursor: pointer; transition: transform .15s ease; flex-shrink: 0; padding: 4px; }
+  .prev-orders-toggle.open { transform: rotate(180deg); }
+  .prev-orders-body { margin-top: 4px; }
+  .prev-order { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+  .prev-order-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .prev-order-date { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .prev-order-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .prev-order-item { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; color: var(--text); }
+  .prev-order-total { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--dark); margin-top: 8px; padding-top: 8px; border-top: 1px solid #EDF2F5; }
+  .pill { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+  .pill-pending { background: #EEF3F6; color: var(--muted); }
+  .pill-completed { background: var(--green-bg); color: var(--green); }
+  .pill-cancelled { background: #FBE9E9; color: #C0392B; }
+  .pill-unpaid { background: #EEF3F6; color: var(--muted); }
+  .pill-partial { background: #F3E8FB; color: #8E44AD; }
+  .pill-paid { background: var(--green-bg); color: var(--green); }
+  .empty-cart { padding: 32px 0; text-align: center; color: var(--muted); font-size: 14px; }
+
+  /* Full-featured Image Carousel Modal */
+  #carouselOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 16px; }
+  #carouselOverlay.open { display: flex; }
+  #carouselBox { background: #fff; border-radius: 16px; padding: 22px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+  .carousel-header { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+  #carousel-stage { position: relative; touch-action: pan-y; }
+  #carousel-main { width: 100%; max-height: 380px; height: auto; object-fit: contain; border-radius: 10px; border: 1px solid var(--border); display: block; background: #fafafa; user-select: none; -webkit-user-drag: none; }
+  #carousel-thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  #carousel-thumbs img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; }
+  #carousel-thumbs img.active-thumb { border-color: var(--sky); }
+  .carousel-close {
+    /* Sits in its own header row above the image now, never over the photo
+       regardless of aspect ratio — no absolute positioning to fight with. */
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    background: #F0F4F7; border: none; border-radius: 50%; font-size: 15px; line-height: 1;
+    cursor: pointer; color: var(--dark); flex-shrink: 0;
+  }
+  .carousel-close:hover { background: #E5EBEF; color: #E05050; }
+  .carousel-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.92); border: none; border-radius: 50%; font-size: 18px;
+    cursor: pointer; color: var(--dark); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .carousel-nav:hover { background: #fff; }
+  .carousel-nav:disabled { opacity: 0; pointer-events: none; }
+  .carousel-nav.prev { left: 8px; }
+  .carousel-nav.next { right: 8px; }
+  .carousel-footer { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .carousel-footer .product-controls { gap: 10px; }
+  .btn-add svg { display: inline-block; vertical-align: -3px; margin-right: 6px; }
+
+  @media(max-width:520px) {
+    .wrap { padding: 20px 14px 80px; }
+    h1 { font-size: 30px; }
+    .who { grid-template-columns: 1fr; }
+    .product-thumb { flex: 0 0 90px; }
+    .product-thumb img, .product-img-ph { width: 90px; height: 90px; }
+    .product-controls { flex-direction: column; align-items: flex-start; }
+    .select-wrap, .qty-input, .btn-add { width: 100%; max-width: none; }
+    #carouselBox { padding: 16px; border-radius: 14px; }
+    .carousel-footer .select-wrap, .carousel-footer .qty-input, .carousel-footer .btn-add { width: 100%; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div>
+<div class="confetti-bar"></div>
+
+<main class="wrap">
+  <div id="loading" class="state"><h2>Loading</h2><p>Opening your confirmed participant merch preorder&#8230;</p></div>
+  <div id="error" class="state" style="display:none"><h2>Link Unavailable</h2><p id="errorText">This preorder link is invalid or expired.</p></div>
+
+  <!-- SHOP VIEW -->
+  <section id="view-shop" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;">
+      <h1 style="margin:0;">Merch Preorder</h1>
+      <button class="btn-cart-header" onclick="showCartView()">
+        <span>🛒</span> <span>Cart</span> <span class="badge-count" id="cartBadge">0</span>
+      </button>
+    </div>
+    <p class="lead">Reserve your RELAY 2026 merch before the conference. Pick up items at the venue.</p>
+
+    <div class="card">
+      <div class="section-label">Confirmed Participant</div>
+      <div class="who"><div><span>Name</span><strong id="pname">Attendee</strong></div><div><span>Church</span><strong id="church">Church</strong></div></div>
+    </div>
+    <div class="card" id="prev-orders-card" style="display:none">
+      <div class="prev-orders-header" onclick="togglePrevOrders()">
+        <div class="section-label" style="margin-bottom:0;">Your Previous Order<span id="prev-orders-count-label"></span></div>
+        <button class="prev-orders-toggle" id="prev-orders-toggle" aria-label="Expand previous orders" onclick="event.stopPropagation();togglePrevOrders()">&#9662;</button>
+      </div>
+      <div class="prev-orders-body" id="prev-orders-body" style="display:none"></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Available Items</div>
+      <div id="products"></div>
+    </div>
+  </section>
+
+  <!-- CART VIEW -->
+  <section id="view-cart" style="display:none">
+    <button class="btn-back" onclick="showShopView()">&#8592; Back to Shop</button>
+    <h1>Your Cart</h1>
+    <p class="lead">Review your items then submit your preorder. Payment will be coordinated by the team.</p>
+    <div class="card">
+      <div class="section-label">Items</div>
+      <div id="cartList"></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Order Summary</div>
+      <div class="totals-row"><span class="tlabel">Subtotal</span><span class="tvalue" id="total">PHP 0</span></div>
+      <div class="totals-highlight"><span class="tlabel" id="depositLabel">Deposit required (50%)</span><span class="tvalue" id="depositAmount">PHP 0</span></div>
+      <div style="margin-top:18px"><div class="section-label">Notes</div><textarea class="notes-ta" id="notes" placeholder="Optional: sizing requests or pickup instructions"></textarea></div>
+      <button id="submit" class="btn-submit" onclick="submitOrder()">Checkout &amp; Submit Preorder</button>
+    </div>
+  </section>
+
+  <div id="done" class="state" style="display:none"><h2>Preorder Received</h2><p id="doneText">Thank you. Your merch preorder has been recorded.</p></div>
+</main>
+
+<!-- Image Carousel Overlay -->
+<div id="carouselOverlay" onclick="maybeCloseCarousel(event)">
+  <div id="carouselBox">
+    <div class="carousel-header">
+      <button class="carousel-close" onclick="closeCarousel()" aria-label="Close">&#x2715;</button>
+    </div>
+    <div id="carousel-stage">
+      <button class="carousel-nav prev" onclick="carouselStep(-1)" aria-label="Previous image">&#x2039;</button>
+      <img id="carousel-main" src="" alt="Product preview">
+      <button class="carousel-nav next" onclick="carouselStep(1)" aria-label="Next image">&#x203A;</button>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-weight:700;font-size:16px;color:var(--dark)" id="carousel-title"></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:3px" id="carousel-desc"></div>
+      <div style="font-size:13px;color:var(--text);margin-top:8px;line-height:1.6;display:none" id="carousel-description"></div>
+    </div>
+    <div id="carousel-thumbs"></div>
+    <div class="carousel-footer" id="carousel-footer"></div>
+  </div>
+</div>
+
+<script>
+let token = '', products = [], cart = [], downpaymentPercent = 50, purchasedQty = {};
+
+window.addEventListener('DOMContentLoaded', loadShop);
+
+async function loadShop() {
+  token = new URLSearchParams(location.search).get('t') || '';
+  const isPreviewParam = new URLSearchParams(location.search).get('preview') === '1';
+  const url = token
+    ? ('/.netlify/functions/merch-preorder?t=' + encodeURIComponent(token))
+    : '/.netlify/functions/merch-preorder?preview=1';
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json && json.closed) { location.href = 'merch-closed.html'; return; }
+    if (!res.ok || json.error) throw new Error(json.error || 'Unable to load preorder');
+    products = json.products || [];
+    purchasedQty = json.purchased || {};
+    downpaymentPercent = (json.downpayment_percent !== undefined && json.downpayment_percent !== null) ? Number(json.downpayment_percent) : 50;
+    document.getElementById('pname').textContent = json.registration?.name || 'Preview Attendee';
+    document.getElementById('church').textContent = json.registration?.church || 'Sample Church';
+    renderProducts();
+    loadCart();
+    renderPrevOrders(json.orders || []);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('view-shop').style.display = 'block';
+  } catch(e) {
+    showError(e.message);
+  }
+}
+
+function showShopView() {
+  document.getElementById('view-cart').style.display = 'none';
+  document.getElementById('view-shop').style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function showCartView() {
+  if (!products.length) return;
+  renderCart();
+  document.getElementById('view-shop').style.display = 'none';
+  document.getElementById('view-cart').style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function saveCart() {
+  try { localStorage.setItem('relay_cart_v2', JSON.stringify(cart)); } catch(e) {}
+  updateCartBadge();
+}
+
+function loadCart() {
+  try {
+    const raw = localStorage.getItem('relay_cart_v2');
+    if (!raw) return;
+    const parsed = JSON.parse(raw) || [];
+    cart = parsed.filter(it => {
+      const p = products.find(x => x.id === it.product_id);
+      if (!p) return false;
+      const avail = it.size ? (p.stock?.[it.size] ?? null) : (p.stock?.['__total'] ?? null);
+      if (avail === null || avail === undefined) return it.quantity > 0;
+      return it.quantity > 0 && Number(it.quantity) <= Number(avail);
+    });
+    // A cart saved earlier (or in another tab) can predate orders placed
+    // since, so re-clamp every line against its remaining purchase limit —
+    // dropping the line if nothing's left, or trimming its quantity down.
+    cart = cart.filter(it => {
+      const p = products.find(x => x.id === it.product_id);
+      const maxAllowed = remainingFor(p, it.size, it.key);
+      if (maxAllowed <= 0) return false;
+      it.quantity = Math.min(it.quantity, maxAllowed);
+      return true;
+    });
+  } catch(e) { cart = []; }
+  updateCartBadge();
+}
+
+function updateCartBadge() {
+  const total = cart.reduce((s, it) => s + Number(it.quantity || 0), 0);
+  const badge = document.getElementById('cartBadge');
+  if (badge) badge.textContent = total;
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const STATUS_LABELS = { pending: 'Pending', completed: 'Completed', cancelled: 'Cancelled' };
+const PAYMENT_LABELS = { unpaid: 'Unpaid', partial: 'Partially Paid', paid: 'Paid' };
+
+function renderPrevOrders(orders) {
+  const card = document.getElementById('prev-orders-card');
+  if (!orders || !orders.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  document.getElementById('prev-orders-count-label').textContent = orders.length > 1 ? 's (' + orders.length + ')' : '';
+  const body = document.getElementById('prev-orders-body');
+  body.innerHTML = orders.map(o => {
+    const status = o.status || 'pending';
+    const payment = o.payment_status || 'unpaid';
+    // When an order is cancelled, payment_status also gets set to
+    // 'cancelled' — showing both pills is just the same word twice, so only
+    // show the payment pill when it's telling us something different.
+    const paymentBadge = (status === 'cancelled' && payment === 'cancelled')
+      ? ''
+      : '<span class="pill pill-' + esc(payment) + '">' + esc(PAYMENT_LABELS[payment] || payment) + '</span>';
+    const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+    const items = Array.isArray(o.items) ? o.items : [];
+    const itemsHtml = items.map(it =>
+      '<div class="prev-order-item"><span>' + esc(it.name) + (it.size ? ' \xb7 ' + esc(it.size) : '') + ' \xd7 ' + it.quantity + '</span><span>PHP ' + (Number(it.price || 0) * Number(it.quantity || 0)).toLocaleString() + '</span></div>'
+    ).join('') || '<div class="prev-order-item" style="color:var(--muted)">No items on this order.</div>';
+    return '<div class="prev-order">'
+      + '<div class="prev-order-head">'
+      + '<span class="prev-order-date">' + (o.order_code ? esc(o.order_code) + ' \xb7 ' : '') + esc(date) + '</span>'
+      + '<span class="prev-order-badges"><span class="pill pill-' + esc(status) + '">' + esc(STATUS_LABELS[status] || status) + '</span>'
+      + paymentBadge + '</span>'
+      + '</div>'
+      + itemsHtml
+      + '<div class="prev-order-total"><span>Total</span><span>PHP ' + Number(o.total_amount || 0).toLocaleString() + '</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+function togglePrevOrders() {
+  const body = document.getElementById('prev-orders-body');
+  const btn = document.getElementById('prev-orders-toggle');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('open', !open);
+}
+
+// Purchase limits are per product+size, and count what's already been
+// ordered (across the participant's whole order history, from the server)
+// plus whatever's already sitting in the cart for that same size — so the
+// number this returns is genuinely how many more they're allowed to add.
+// A null purchaseLimit means unlimited.
+function remainingFor(product, size, excludeCartKey) {
+  if (product.purchaseLimit === null || product.purchaseLimit === undefined) return Infinity;
+  const key = product.id + '::' + (size || '');
+  const already = purchasedQty[key] || 0;
+  const inCart = cart
+    .filter(c => c.key !== excludeCartKey && c.product_id === product.id && (c.size || '') === (size || ''))
+    .reduce((s, c) => s + Number(c.quantity || 0), 0);
+  return Math.max(0, product.purchaseLimit - already - inCart);
+}
+
+// Applies the remaining-quantity cap to a quantity <input>, disabling it
+// once the limit is fully used.
+function applyQtyLimit(qtyEl, product, size) {
+  if (!qtyEl) return;
+  const soldOut = qtyEl.dataset.soldout === '1'; // don't let the limit check re-enable a sold-out input
+  const remaining = remainingFor(product, size);
+  if (remaining === Infinity) { qtyEl.removeAttribute('max'); qtyEl.disabled = soldOut; return; }
+  qtyEl.max = remaining;
+  if (Number(qtyEl.value || 1) > remaining) qtyEl.value = Math.max(remaining, 1);
+  qtyEl.disabled = soldOut || remaining <= 0;
+}
+
+// Purchase limits apply per size, so switching the size dropdown needs to
+// re-check the cap against that size's own remaining quantity.
+function onSizeChange(selectEl) {
+  const productId = selectEl.dataset.pid;
+  const product = products.find(p => p.id === productId);
+  if (!product) return;
+  const isModal = selectEl.id === 'modal-size-select';
+  const qtyEl = isModal ? document.getElementById('modal-qty-input') : document.getElementById('qty-' + productId);
+  applyQtyLimit(qtyEl, product, selectEl.value);
+}
+
+function buildSizeControlsHtml(p, selectAttrs) {
+  const stock = p.stock || {};
+  let sizeHtml = '', allSold = false;
+  if (p.sizes && p.sizes.length) {
+    const opts = p.sizes.map(s => {
+      const v = stock[s]; const sold = v !== undefined && v !== null && Number(v) <= 0;
+      return '<option value="' + esc(s) + '"' + (sold ? ' disabled' : '') + '>' + esc(s) + (sold ? ' (Sold out)' : '') + '</option>';
+    }).join('');
+    allSold = p.sizes.every(s => { const v = stock[s]; return v !== undefined && v !== null && Number(v) <= 0; });
+    sizeHtml = '<div class="select-wrap"><select class="size-select" data-pid="' + esc(p.id) + '" onchange="onSizeChange(this)" ' + selectAttrs + '>' + opts + '</select></div>';
+  } else {
+    const v = stock['__total']; allSold = v !== undefined && v !== null && Number(v) <= 0;
+    sizeHtml = '<div style="font-size:13px;color:var(--muted);padding:8px 0;font-weight:600">' + (allSold ? '<span style="color:#E05050">Sold out</span>' : 'One size') + '</div>';
+  }
+  return { sizeHtml, allSold };
+}
+
+function renderProducts() {
+  const container = document.getElementById('products');
+  if (!products.length) {
+    container.innerHTML = '<div style="padding:28px 0;text-align:center;color:var(--muted)">No merch products available at this time.</div>';
+    return;
+  }
+  container.innerHTML = products.map(p => {
+    const { sizeHtml, allSold } = buildSizeControlsHtml(p, 'data-id="' + p.id + '"');
+    const soldOut = p.soldOut || allSold;
+    const dis = soldOut ? 'disabled' : '';
+    const photos = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+    const hasThumbs = photos.length > 0;
+    const noImgHtml = '<span class="product-img-ph-icon">🖼️</span><span class="product-img-ph-text">No Image</span>';
+    // Fallback markup used inside the onerror handler (broken image URL) is
+    // nested inside several layers of quoting already, so it avoids double
+    // quotes (which would prematurely close the onerror="..." attribute)
+    // and uses unquoted inline styles instead of a class.
+    const noImgHtmlFallback = '<span style=font-size:26px;opacity:.55>🖼️</span><span style=font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em>No Image</span>';
+    const imgHtml = hasThumbs
+      ? '<img src="' + esc(photos[0]) + '" alt="' + esc(p.name) + '" loading="lazy" style="cursor:pointer" onclick="openCarousel(\'' + p.id + '\')" onerror="this.onerror=null;this.parentElement.innerHTML=\'<div class=\\\'product-img-ph\\\'>' + noImgHtmlFallback + '<\\/div>\';">' + (photos.length > 1 ? '<span class="photo-badge">' + photos.length + ' photos</span>' : '')
+      : '<div class="product-img-ph" style="cursor:pointer" onclick="openCarousel(\'' + p.id + '\')">' + noImgHtml + '</div>';
+
+    const controlsHtml = soldOut
+      ? '<div class="sold-out-stamp">Sold Out</div>'
+      : '<div class="product-controls">' + sizeHtml + '<input id="qty-' + p.id + '" class="qty-input" type="number" min="1" value="1" data-soldout="0" aria-label="Quantity"><button class="btn-add" onclick="addToCart(\'' + p.id + '\')"><span>🛒</span> Add to Cart</button></div>';
+
+    return '<div class="product" data-id="' + p.id + '">'
+      + '<div class="product-thumb">' + imgHtml + '</div>'
+      + '<div class="product-info">'
+      + '<div class="product-name">' + esc(p.name) + '</div>'
+      + '<div class="product-price">PHP ' + p.price.toLocaleString() + (p.availability ? ' \xb7 ' + esc(p.availability) : '') + '</div>'
+      + (p.description ? '<div class="product-description">' + esc(p.description) + '</div>' : '')
+      + controlsHtml
+      + '</div></div>';
+  }).join('');
+  // Apply each product's remaining purchase-limit to its quantity input now
+  // that the controls exist in the DOM, using the currently-selected size.
+  products.forEach(p => {
+    const qtyEl = document.getElementById('qty-' + p.id);
+    const sizeEl = document.querySelector('select.size-select[data-pid="' + p.id + '"]');
+    applyQtyLimit(qtyEl, p, sizeEl ? sizeEl.value : null);
+  });
+}
+
+function addItemToCart(productId, size, rawQuantity, btn) {
+  const product = products.find(p => p.id === productId);
+  if (!product) return;
+  const key = productId + '::' + (size || '__no');
+  // Room left for this exact product+size, counting what's already been
+  // ordered plus every OTHER cart line for that size (this line excluded,
+  // so topping up an existing line works correctly).
+  const remaining = remainingFor(product, size, key);
+  if (remaining <= 0) {
+    alert('You\u2019ve reached the purchase limit for ' + product.name + (size ? ' (' + size + ')' : '') + '.');
+    return;
+  }
+  const existing = cart.find(c => c.key === key);
+  const addQty = Math.max(1, Number(rawQuantity) || 1);
+  const quantity = Math.min((existing?.quantity || 0) + addQty, remaining);
+  if (existing) existing.quantity = quantity;
+  else cart.push({ key, product_id: productId, size, quantity });
+  saveCart();
+  if (btn) {
+    const orig = btn.innerHTML; btn.innerHTML = '\u2713 Added'; btn.style.background = '#3A8BBF';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 1200);
+  }
+}
+
+function addToCart(productId) {
+  const sizeEl = document.querySelector('select.size-select[data-id="' + productId + '"]');
+  const size = sizeEl ? sizeEl.value : null;
+  const qtyEl = document.getElementById('qty-' + productId);
+  const quantity = qtyEl?.value || 1;
+  const btn = document.querySelector('.product[data-id="' + productId + '"] .btn-add');
+  addItemToCart(productId, size, quantity, btn);
+}
+
+function addToCartFromModal() {
+  if (!carouselProductId) return;
+  const sizeEl = document.getElementById('modal-size-select');
+  const size = sizeEl ? sizeEl.value : null;
+  const qtyEl = document.getElementById('modal-qty-input');
+  const quantity = qtyEl?.value || 1;
+  const btn = document.getElementById('modal-add-btn');
+  addItemToCart(carouselProductId, size, quantity, btn);
+}
+
+function renderCart() {
+  const wrap = document.getElementById('cartList');
+  if (!wrap) return;
+  if (!cart.length) {
+    wrap.innerHTML = '<div class="empty-cart">Your cart is empty.<br><button onclick="showShopView()" style="margin-top:12px;padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700">Browse Items</button></div>';
+    updateTotals(0); return;
+  }
+  wrap.innerHTML = '';
+  cart.forEach((it, idx) => {
+    const p = products.find(x => x.id === it.product_id);
+    if (!p) return;
+    const photos = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+    const thumbHtml = photos.length
+      ? '<img class="cart-thumb" src="' + esc(photos[0]) + '" alt="" loading="lazy" onerror="this.onerror=null;this.outerHTML=\'<div class=\\\'cart-thumb-ph\\\' title=\\\'No image\\\'>\\ud83d\\uddbc\\ufe0f<\\/div>\';">'
+      : '<div class="cart-thumb-ph" title="No image">\ud83d\uddbc\ufe0f</div>';
+    // Max achievable total for this exact line: remaining room excluding
+    // this line's own quantity (so editing it doesn't count against itself).
+    const remaining = remainingFor(p, it.size, it.key);
+    const maxAttr = remaining === Infinity ? '' : ' max="' + remaining + '" data-max="' + remaining + '"';
+    const row = document.createElement('div'); row.className = 'cart-item';
+    row.innerHTML = '<div class="cart-item-main">' + thumbHtml + '<div class="cart-item-left"><div class="item-name">' + esc(p.name) + (it.size ? ' \xb7 ' + esc(it.size) : '') + '</div><div class="item-sub">PHP ' + p.price.toLocaleString() + ' each \xb7 subtotal PHP ' + (p.price * it.quantity).toLocaleString() + '</div></div></div>'
+      + '<div class="cart-item-right"><input class="cart-qty" type="number" min="1"' + maxAttr + ' value="' + it.quantity + '" data-idx="' + idx + '"><button class="btn-remove" data-idx="' + idx + '">Remove</button></div>';
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('.cart-qty').forEach(el => {
+    el.addEventListener('change', () => {
+      const idx = Number(el.dataset.idx);
+      const maxAttr = el.dataset.max;
+      const max = (maxAttr === undefined || maxAttr === '') ? Infinity : Number(maxAttr);
+      cart[idx].quantity = Math.max(1, Math.min(Number(el.value) || 1, max));
+      saveCart(); recalcTotals();
+    });
+  });
+  wrap.querySelectorAll('.btn-remove').forEach(el => {
+    el.addEventListener('click', () => { cart.splice(Number(el.dataset.idx), 1); saveCart(); renderCart(); });
+  });
+  recalcTotals();
+}
+
+function recalcTotals() {
+  const total = cart.reduce((s, it) => { const p = products.find(x => x.id === it.product_id); return s + (p ? p.price * it.quantity : 0); }, 0);
+  updateTotals(total);
+}
+
+function updateTotals(total) {
+  document.getElementById('total').textContent = 'PHP ' + total.toLocaleString();
+  const label = document.getElementById('depositLabel');
+  if (downpaymentPercent > 0) {
+    if (label) label.textContent = `Deposit required (${downpaymentPercent}%)`;
+    document.getElementById('depositAmount').textContent = 'PHP ' + Math.ceil(total * (downpaymentPercent / 100)).toLocaleString();
+  } else {
+    if (label) label.textContent = 'Pay in full at the venue';
+    document.getElementById('depositAmount').textContent = 'PHP 0';
+  }
+}
+
+async function submitOrder() {
+  if (!cart.length) return alert('Your cart is empty. Add items before checking out.');
+  const btn = document.getElementById('submit');
+  btn.disabled = true; btn.textContent = 'Submitting\u2026';
+  try {
+    const items = cart.map(it => ({ product_id: it.product_id, quantity: it.quantity, size: it.size }));
+    const total = items.reduce((s, it) => { const p = products.find(x => x.id === it.product_id); return s + (p ? p.price * it.quantity : 0); }, 0);
+    const deposit_amount = downpaymentPercent > 0 ? Math.ceil(total * (downpaymentPercent / 100)) : 0;
+    const res = await fetch('/.netlify/functions/merch-preorder', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token, items, notes: document.getElementById('notes').value, deposit_amount }),
+    });
+    const json = await res.json();
+    if (json && json.closed) { location.href = 'merch-closed.html'; return; }
+    if (!res.ok || json.error) throw new Error(json.error || 'Unable to submit preorder');
+    cart = []; try { localStorage.removeItem('relay_cart_v2'); } catch(e) {}
+    document.getElementById('view-cart').style.display = 'none';
+    if (deposit_amount > 0) {
+      document.getElementById('doneText').textContent = 'Thank you! Your preorder total is PHP ' + json.total_amount.toLocaleString() + '. Please upload your proof of payment to complete checkout.';
+      document.getElementById('done').style.display = 'block';
+      if (json.id) renderReceiptUpload(json.id, json.total_amount, json.order_code);
+    } else {
+      renderNoPaymentDone(json.total_amount, json.order_code);
+      document.getElementById('done').style.display = 'block';
+    }
+  } catch(e) {
+    alert(e.message);
+    btn.disabled = false; btn.textContent = 'Checkout & Submit Preorder';
+  }
+}
+
+function orderCodeBadge(orderCode) {
+  return orderCode
+    ? '<div style="display:inline-block;margin-top:6px;padding:4px 10px;background:var(--sky-light,#EBF5FB);color:var(--sky,#3A8BBF);border-radius:50px;font-size:12px;font-weight:700;letter-spacing:0.03em;">Order ' + orderCode + '</div>'
+    : '';
+}
+
+function renderNoPaymentDone(totalAmount, orderCode) {
+  const done = document.getElementById('done');
+  done.innerHTML = '<h2>Preorder Received</h2>' + orderCodeBadge(orderCode) + '<p>Your preorder total is <strong>PHP ' + totalAmount.toLocaleString() + '</strong>.</p>'
+    + '<div style="margin-top:18px;text-align:left;background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)">'
+    + '<div style="font-size:13px;color:var(--muted);">No deposit is required for this order — please pay the full amount in person at the venue. No receipt upload is needed right now.</div>'
+    + '</div>';
+}
+
+function renderReceiptUpload(preorderId, totalAmount, orderCode) {
+  const done = document.getElementById('done');
+  done.innerHTML = '<h2>Preorder Received</h2>' + orderCodeBadge(orderCode) + '<p>Your preorder total is <strong>PHP ' + totalAmount.toLocaleString() + '</strong>.</p>'
+    + '<div style="margin-top:18px;text-align:left;background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)">'
+    + '<label style="display:block;font-weight:700;margin-bottom:4px;font-size:14px">Upload transaction receipt</label>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload a clear photo of your GCash or bank transfer receipt. Admins will verify it.</div>'
+    + '<div class="upload-area" id="receipt-upload-zone" style="border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:var(--input-bg);position:relative;transition:all 0.2s;">'
+    + '  <input type="file" id="receiptUpload" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">'
+    + '  <div style="font-size:24px;margin-bottom:4px;">🧾</div>'
+    + '  <div style="font-size:12px;color:var(--muted);line-height:1.5;"><strong style="color:var(--sky);">Click to upload receipt</strong> or drag and drop<br><span style="font-size:11px;color:var(--muted);">PNG, JPG, or WEBP</span></div>'
+    + '</div>'
+    + '<div id="receipt-preview" style="margin-top:12px;"></div>'
+    + '<div id="receiptMsg" style="font-size:13px;color:var(--muted);margin-top:10px"></div>'
+    + '</div>';
+  document.getElementById('receiptUpload').addEventListener('change', (ev) => {
+    const f = ev.target.files?.[0];
+    if (f) uploadReceipt(preorderId, f);
+  });
+}
+
+async function uploadReceipt(preorderId, file) {
+  const zone = document.getElementById('receipt-upload-zone');
+  const preview = document.getElementById('receipt-preview');
+  const msg = document.getElementById('receiptMsg');
+  if (zone) { zone.style.opacity = '0.6'; zone.style.pointerEvents = 'none'; }
+  msg.style.color = 'var(--muted)'; msg.textContent = 'Uploading…';
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const dataUrl = reader.result;
+      // Show the picked photo immediately, same as the admin photo uploader.
+      preview.innerHTML = `<div style="position:relative;width:96px;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:6px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.05);display:inline-block;">
+        <img src="${dataUrl}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:6px;display:block;">
+      </div>`;
+      const data = dataUrl.split(',')[1];
+      const payload = { filename: file.name, contentType: file.type || 'image/jpeg', data, productId: preorderId };
+      const res = await fetch('/.netlify/functions/merch-upload', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Upload failed');
+      const attach = await fetch('/.netlify/functions/merch-preorder-attach-receipt', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ id: preorderId, url: json.url, path: json.path }),
+      });
+      const aj = await attach.json();
+      if (!attach.ok || aj.error) throw new Error(aj.error || 'Attach failed');
+      msg.style.color = '#2E7048'; msg.textContent = '\u2713 Receipt uploaded \u2014 awaiting admin verification.';
+    } catch(e) {
+      msg.style.color = '#C0392B'; msg.textContent = e.message;
+    } finally {
+      if (zone) { zone.style.opacity = '1'; zone.style.pointerEvents = 'auto'; }
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function showError(message) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('errorText').textContent = message;
+  document.getElementById('error').style.display = 'block';
+}
+
+let carouselProductId = null;
+let carouselPhotos = [];
+let carouselIndex = 0;
+
+function openCarousel(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  const photos = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  if (!photos.length) return;
+  carouselProductId = productId;
+  carouselPhotos = photos;
+  carouselIndex = 0;
+  document.getElementById('carousel-title').textContent = p.name;
+  document.getElementById('carousel-desc').textContent = 'PHP ' + p.price.toLocaleString() + (p.availability ? ' \xb7 ' + p.availability : '');
+  const descEl = document.getElementById('carousel-description');
+  if (p.description) { descEl.textContent = p.description; descEl.style.display = 'block'; }
+  else { descEl.textContent = ''; descEl.style.display = 'none'; }
+  renderCarouselFooter(p);
+  showCarouselImage();
+  document.getElementById('carouselOverlay').classList.add('open');
+  document.addEventListener('keydown', handleCarouselKeydown);
+}
+
+function renderCarouselFooter(p) {
+  const { sizeHtml, allSold } = buildSizeControlsHtml(p, 'id="modal-size-select"');
+  const soldOut = p.soldOut || allSold;
+  if (soldOut) {
+    document.getElementById('carousel-footer').innerHTML = '<div class="sold-out-stamp">Sold Out</div>';
+    return;
+  }
+  document.getElementById('carousel-footer').innerHTML =
+    '<div class="product-controls">' + sizeHtml
+    + '<input id="modal-qty-input" class="qty-input" type="number" min="1" value="1" data-soldout="0" aria-label="Quantity">'
+    + '<button class="btn-add" id="modal-add-btn" onclick="addToCartFromModal()"><span>🛒</span> Add to Cart</button>'
+    + '</div>';
+  const sizeEl = document.getElementById('modal-size-select');
+  applyQtyLimit(document.getElementById('modal-qty-input'), p, sizeEl ? sizeEl.value : null);
+}
+
+function showCarouselImage() {
+  const total = carouselPhotos.length;
+  document.getElementById('carousel-main').src = carouselPhotos[carouselIndex];
+  const prevBtn = document.querySelector('.carousel-nav.prev');
+  const nextBtn = document.querySelector('.carousel-nav.next');
+  if (prevBtn) prevBtn.disabled = total <= 1;
+  if (nextBtn) nextBtn.disabled = total <= 1;
+  const thumbs = document.getElementById('carousel-thumbs'); thumbs.innerHTML = '';
+  if (total > 1) {
+    carouselPhotos.forEach((u, i) => {
+      const t = document.createElement('img'); t.src = u;
+      if (i === carouselIndex) t.classList.add('active-thumb');
+      t.onclick = () => { carouselIndex = i; showCarouselImage(); };
+      thumbs.appendChild(t);
+    });
+  }
+}
+
+function carouselStep(direction) {
+  const total = carouselPhotos.length;
+  if (total <= 1) return;
+  carouselIndex = (carouselIndex + direction + total) % total;
+  showCarouselImage();
+}
+
+function handleCarouselKeydown(e) {
+  if (!document.getElementById('carouselOverlay').classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') carouselStep(-1);
+  else if (e.key === 'ArrowRight') carouselStep(1);
+  else if (e.key === 'Escape') closeCarousel();
+}
+
+// Swipe support for touch devices
+let carouselTouchStartX = null;
+(function attachCarouselSwipe() {
+  const stage = document.getElementById('carousel-stage');
+  if (!stage) return;
+  stage.addEventListener('touchstart', (e) => {
+    carouselTouchStartX = e.touches[0].clientX;
+  }, { passive: true });
+  stage.addEventListener('touchend', (e) => {
+    if (carouselTouchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - carouselTouchStartX;
+    carouselTouchStartX = null;
+    if (Math.abs(dx) < 40) return; // ignore small/accidental swipes
+    carouselStep(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
+
+function maybeCloseCarousel(e) {
+  if (e.target === document.getElementById('carouselOverlay')) closeCarousel();
+}
+function closeCarousel() {
+  document.getElementById('carouselOverlay').classList.remove('open');
+  document.removeEventListener('keydown', handleCarouselKeydown);
+  carouselProductId = null;
+}
+</script>
+</body>
+</html>
