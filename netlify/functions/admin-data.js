@@ -849,19 +849,29 @@ async function runAttendanceInvite(reg, { provider, sendSms, settings, requester
   return { mailResult, smsResult };
 }
 
-// Merch preorder invite — email always, SMS only when merch_sms_enabled is
-// on (its own dedicated switch, independent of the shared sms_enabled gate
-// the other event types share) and the caller didn't opt out.
-async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl }) {
+// Merch preorder invite — email always (unless skipped because a group
+// member already received it), SMS only when merch_sms_enabled is on (its
+// own dedicated switch, independent of the shared sms_enabled gate the
+// other event types share) and the caller didn't opt out.
+async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl }, { skipEmail = false } = {}) {
   const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl || '').replace(/\/+$/, '');
   const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
-  const mailResult = await sendEmail({
-    provider,
-    to:      reg.email,
-    subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
-    html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id) }),
-  });
+  let mailResult = null;
+  if (!skipEmail) {
+    const { data: productRows } = await supabase
+      .from('merch_products')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    mailResult = await sendEmail({
+      provider,
+      to:      reg.email,
+      subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
+      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [] }),
+    });
+  }
 
   let smsResult = null;
   if (sendSms && settings?.merch_sms_enabled) {
@@ -1133,36 +1143,97 @@ function attendanceEmail({ name, heroUrl, links }) {
   </div></body></html>`;
 }
 
-function merchInviteEmail({ name, heroUrl, orderLink }) {
+function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
   const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body{font-family:Arial,sans-serif;background:#F2F5F8;margin:0;padding:0;}
-    .wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
-    .bar{height:4px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);}
-    .hero-img{width:100%;display:block;}
-    .header{background:linear-gradient(135deg,#1C2B38,#2E7048);padding:28px 32px;text-align:center;}
-    .header h1{color:#fff;font-size:22px;margin:0;}
-    .header p{color:rgba(255,255,255,0.65);font-size:13px;margin:6px 0 0;}
-    .body{padding:32px;}
-    .note{background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:12px 16px;font-size:13px;color:#7A5A10;line-height:1.6;margin:18px 0;}
-    .footer{background:#f7fafb;padding:16px 32px;text-align:center;font-size:11px;color:#6B8A9A;border-top:1px solid #D4E2EA;}
-  </style></head><body><div class="wrap">
-    <div class="bar"></div>
-    <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
-    <div class="header"><h1>Merch Preorders Are Open</h1><p>RELAY Conference Asia Pacific 2026</p></div>
-    <div class="body">
-      <p style="font-size:15px;color:#2A3D4A;margin-bottom:14px;">Hi <strong>${firstName}</strong>,</p>
-      <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;">
-        Your conference payment is confirmed, so you can now reserve RELAY 2026 merch before the event.
-      </p>
-      <div class="note">This preorder page is only available through your confirmed-participant link.</div>
-      <div style="text-align:center;margin:24px 0 14px;">
-        <a href="${orderLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:linear-gradient(135deg,#2E7048,#4BAE6A);">Open Merch Preorder</a>
-      </div>
-      <p style="font-size:11px;color:#6B8A9A;text-align:center;line-height:1.6;">Button not working? Copy this link:<br>${orderLink}</p>
-    </div>
-    <div class="footer">RELAY 2026 · Sovereign Grace Churches Asia Pacific · Questions? Reply to this email.</div>
-  </div></body></html>`;
+
+  const escapeHtml = (s) => String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const formatPrice = (price) => {
+    const n = Number(price);
+    return `PHP ${Number.isFinite(n) ? n.toLocaleString() : escapeHtml(price)}`;
+  };
+
+  const productRows = products.map((p, i) => {
+    const image = Array.isArray(p.images) ? p.images[0] : p.image || p.image_url;
+    const isLast = i === products.length - 1;
+    return `
+  <table class="product-block" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td>
+      ${image ? `<img class="product-photo" src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}">` : ''}
+    </td></tr>
+    <tr><td class="product-info" align="center">
+      <p class="product-name">${escapeHtml(p.name)}</p>
+      ${p.description ? `<p class="product-desc">${escapeHtml(p.description)}</p>` : ''}
+      <span class="product-price">${formatPrice(p.price)}</span>
+      <a href="${orderLink}" style="display:inline-block;margin-left:8px;padding:4px 16px;border-radius:20px;font-size:13px;font-weight:700;text-decoration:none;color:#ffffff;background-color:#2E7048;background-image:linear-gradient(135deg,#2E7048,#4BAE6A);vertical-align:middle;">Pre-Order</a>
+    </td></tr>
+  </table>
+  ${isLast ? '' : '<hr class="divider">'}`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merch Preorders Are Open — RELAY 2026</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #F2F5F8; margin: 0; padding: 0; }
+  .wrap { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .bar { height: 4px; background: linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A); }
+  .hero-img { width: 100%; display: block; }
+  .header { background: linear-gradient(135deg,#1C2B38,#2E7048); padding: 34px 32px; text-align: center; }
+  .header h1 { color: #fff; font-size: 26px; margin: 0; letter-spacing: -.01em; }
+  .header p { color: rgba(255,255,255,0.65); font-size: 13px; margin: 8px 0 0; }
+  .intro { padding: 28px 32px 6px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #6B8A9A; text-align: center; margin: 28px 0 4px; }
+  .section-title { font-size: 19px; font-weight: 800; color: #1C2B38; text-align: center; margin: 0 0 20px; }
+  .product-block { padding: 0 24px; margin-bottom: 22px; }
+  .product-photo { width: 100%; display: block; border-radius: 12px; }
+  .product-info { padding: 14px 8px 4px; text-align: center; }
+  .product-name { font-size: 16px; font-weight: 800; color: #1C2B38; margin: 0 0 4px; }
+  .product-desc { font-size: 12.5px; color: #6B8A9A; margin: 0 0 8px; line-height: 1.5; }
+  .product-price { display: inline-block; font-size: 13.5px; font-weight: 800; color: #fff; background: #3A8BBF; border-radius: 20px; padding: 4px 14px; }
+  .divider { border: none; border-top: 1px solid #E9EEF1; margin: 4px 40px 22px; }
+  .note { background: #FDF6E0; border-left: 3px solid #E8B830; border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 13px; color: #7A5A10; line-height: 1.6; margin: 4px 32px 24px; }
+  .cta-wrap { text-align: center; margin: 4px 0 16px; }
+  .link-fallback { font-size: 11px; color: #6B8A9A; text-align: center; line-height: 1.6; padding: 0 32px 28px; }
+  .footer { background: #f7fafb; padding: 16px 32px; text-align: center; font-size: 11px; color: #6B8A9A; border-top: 1px solid #D4E2EA; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"></div>
+  <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
+  <div class="header">
+    <h1>Merch Preorders Are Open 🛍️</h1>
+    <p>RELAY Conference Asia Pacific 2026</p>
+  </div>
+
+  <div class="intro">
+    <p style="font-size:15px;color:#2A3D4A;margin-bottom:8px;">Hi <strong>${escapeHtml(firstName)}</strong>,</p>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:0;text-align:center;">
+      Your conference payment is confirmed — reserve your RELAY 2026 gear before it's gone.
+    </p>
+  </div>
+
+  <!-- Product showcase -->
+  <p class="section-label">This year's drop</p>
+  <p class="section-title">Get your RELAY 2026 gear</p>
+  ${productRows}
+
+  <div class="note">This preorder page is only available through your confirmed-participant link.</div>
+
+  <div class="cta-wrap">
+    <a href="${orderLink}" style="display:inline-block;padding:15px 40px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#ffffff;background-color:#2E7048;background-image:linear-gradient(135deg,#2E7048,#4BAE6A);">Open Merch Preorder</a>
+  </div>
+  <p class="link-fallback">Button not working? Copy this link:<br>${orderLink}</p>
+
+  <div class="footer">RELAY 2026 &middot; Sovereign Grace Churches Asia Pacific &middot; Questions? Reply to this email.</div>
+</div>
+</body>
+</html>`;
 }
 
 function partialPaymentEmail({ primaryName, amount, date, payment_method, totalFee, newPartialTotal, remaining, isGroup, heroUrl, siteUrl, registrationId, group_id }) {
