@@ -48,7 +48,18 @@
   .btn-topbar-action{display:inline-flex;align-items:center;gap:6px;}
   .tb-icon{display:inline-flex;align-items:center;justify-content:center;line-height:1;}
   .tb-text{line-height:1;}
-  .topbar-right .ts{font-size:11px;color:rgba(255,255,255,0.4);}
+  /* Settings menu (Churches / Merch Settings / Admins / Site Settings / Refresh / Sign Out grouped together) */
+  .topbar-menu-wrap{position:relative;display:inline-flex;align-items:center;}
+  #tab-settings-menu{display:flex;width:40px;height:40px;padding:0;justify-content:center;align-items:center;border-radius:10px;flex-shrink:0;}
+  #tab-settings-menu .tb-icon{font-size:18px;}
+  .topbar-menu-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#1B2A33;border:1px solid rgba(255,255,255,0.14);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.35);overflow:hidden;z-index:50;min-width:190px;padding:6px;}
+  .topbar-menu-wrap.open .topbar-menu-dropdown{display:block;}
+  .topbar-menu-item{display:none;align-items:center;gap:10px;width:100%;background:none;border:none;color:rgba(255,255,255,0.75);padding:9px 10px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;transition:background 0.15s;}
+  .topbar-menu-item:hover{background:rgba(255,255,255,0.1);color:#fff;}
+  .topbar-menu-item.active{background:rgba(58,139,191,0.3);color:var(--sky);}
+  .topbar-menu-item.topbar-menu-item-always{display:flex;}
+  .topbar-menu-divider{height:1px;background:rgba(255,255,255,0.12);margin:6px 4px;}
+  .tmi-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;flex-shrink:0;}
   .btn-sm{padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;}
   .btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);}
   .btn-outline:hover{border-color:#fff;color:#fff;}
@@ -71,6 +82,17 @@
   .group-tab-bar .tab-btn .tab-badge{background:rgba(28,43,56,0.08);color:var(--muted);}
   .group-tab-bar .tab-btn:hover{background:#E3EBF0;color:var(--dark);}
   .group-tab-bar .tab-btn.active{background:linear-gradient(135deg,#1C2B38,#2E7048);color:#fff;box-shadow:0 2px 10px rgba(28,43,56,0.3);}
+  .btn-back-dashboard{
+    display:inline-flex;align-items:center;gap:8px;padding:11px 20px;min-height:44px;box-sizing:border-box;
+    background:#fff;color:var(--sky);border:1.5px solid var(--sky);border-radius:10px;
+    font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s,color 0.15s,box-shadow 0.15s;
+  }
+  .btn-back-dashboard:hover{background:var(--sky);color:#fff;box-shadow:0 2px 8px rgba(58,139,191,0.3);}
+  .btn-back-dashboard:active{transform:translateY(1px);}
+  .btn-back-dashboard .bd-arrow{font-size:16px;line-height:1;}
+  @media(max-width:768px){
+    .btn-back-dashboard{width:100%;justify-content:center;padding:13px 16px;font-size:15px;}
+  }
   .group-tab-bar .tab-btn.active .tab-badge{background:rgba(255,255,255,0.25);color:#fff;}
   #registrations-subtabs{padding-left:16px;background:#F7FAFC;border-bottom:1px solid var(--border);margin-bottom:24px;}
   #registrations-subtabs .tab-btn{font-size:12px;font-weight:600;padding:9px 18px;border-bottom-width:2px;color:var(--muted);}
@@ -256,7 +278,7 @@
   .btn-partial-row .btn-label-icon{display:none;}
   /* Merch order row actions — same icon/text pattern as the registration
      row buttons above. Payment actions (Mark as Paid / Add Partial Payment)
-     and order actions (Complete Order / Cancel Order) are separate button
+     and order actions (Confirm Order / Cancel Order) are separate button
      sets living under separate columns. */
   .btn-markpaid-row{background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;margin-bottom:4px;}
   .btn-markpaid-row:hover{background:var(--green-bright);}
@@ -300,12 +322,11 @@
   @media(max-width:1100px){.tiles-row{grid-template-columns:repeat(2,1fr);}.tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}}
   @media(max-width:768px){
     .login-card{width:calc(100vw - 40px);padding:32px 24px;}
-    .topbar{padding:0 16px;height:auto;flex-wrap:wrap;gap:8px;padding-top:10px;padding-bottom:10px;}
-    .topbar-sub,.ts{display:none;}
-    .topbar-right{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-    .btn-topbar-icon,.btn-topbar-action{width:100%;box-sizing:border-box;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 6px;font-size:10px;text-align:center;min-width:0;min-height:52px;}
-    .tb-icon{width:24px;height:24px;font-size:18px;display:flex;align-items:center;justify-content:center;margin:0 auto;}
-    .tb-icon svg{width:18px;height:18px;display:block;}
+    .topbar{padding:0 16px;height:auto;padding-top:12px;padding-bottom:12px;}
+    .topbar-sub{display:none;}
+    .topbar-right{width:auto;gap:8px;}
+    .topbar-menu-dropdown{left:auto;right:0;min-width:210px;top:calc(100% + 8px);}
+    .topbar-menu-item{padding:11px 12px;font-size:14px;}
     .main{padding:16px;}
     .tiles-row{grid-template-columns:repeat(2,1fr);gap:10px;}
     .tiles-row.intl-tiles{grid-template-columns:repeat(2,1fr);}
@@ -548,14 +569,25 @@
   </div>
 </div>
 
-<!-- MERCH: COMPLETE ORDER MODAL -->
+<!-- MERCH: CONFIRM ORDER MODAL -->
 <div class="modal-overlay" id="merchCompleteModal">
   <div class="modal">
-    <h3>Complete this order?</h3>
-    <p>This will mark <strong id="merchCompleteName"></strong>'s order as completed and send them a confirmation email.</p>
+    <h3>Confirm this order?</h3>
+    <p>This will mark <strong id="merchCompleteName"></strong>'s order as confirmed.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#2A3D4A;cursor:pointer;">
+        <input type="checkbox" id="merchCompleteSendEmail" checked style="width:16px;height:16px;accent-color:#2E7048;">
+        📧 Send email notification
+      </label>
+      <label id="merchCompleteSendSmsRow" style="display:flex;align-items:center;gap:9px;font-size:13px;color:#2A3D4A;cursor:pointer;">
+        <input type="checkbox" id="merchCompleteSendSms" style="width:16px;height:16px;accent-color:#2E7048;">
+        📱 Send SMS notification
+      </label>
+      <div id="merchCompleteSendSmsOffHint" style="display:none;font-size:11px;color:#6B8A9A;padding-left:25px;">Order confirmation SMS is off — enable it under Merch settings to offer this.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeMerchCompleteModal()">Cancel</button>
-      <button class="btn-confirm-modal" onclick="doCompleteMerchOrder()">📦 Complete Order</button>
+      <button class="btn-confirm-modal" onclick="doCompleteMerchOrder()">✅ Confirm Order</button>
     </div>
   </div>
 </div>
@@ -565,6 +597,17 @@
   <div class="modal">
     <h3>Cancel this order?</h3>
     <p>This will cancel <strong id="merchCancelOrderName"></strong>'s order — both its payment status and order status will be set to cancelled. This cannot be undone.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:16px 0;">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#2A3D4A;cursor:pointer;">
+        <input type="checkbox" id="merchCancelSendEmail" checked style="width:16px;height:16px;accent-color:#E05050;">
+        📧 Send email notification
+      </label>
+      <label id="merchCancelSendSmsRow" style="display:flex;align-items:center;gap:9px;font-size:13px;color:#2A3D4A;cursor:pointer;">
+        <input type="checkbox" id="merchCancelSendSms" style="width:16px;height:16px;accent-color:#E05050;">
+        📱 Send SMS notification
+      </label>
+      <div id="merchCancelSendSmsOffHint" style="display:none;font-size:11px;color:#6B8A9A;padding-left:25px;">Order cancellation SMS is off — enable it under Merch settings to offer this.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeMerchCancelOrderModal()">No, keep it</button>
       <button class="btn-confirm-modal" style="background:#E05050;" onclick="doCancelMerchOrder()">✕ Cancel Order</button>
@@ -737,13 +780,20 @@
       </div>
     </div>
     <div class="topbar-right">
-      <span class="ts" id="lastRefresh"></span>
-      <button class="btn-topbar-icon" id="tab-churches" onclick="switchTab('churches')"><span class="tb-icon">⛪</span><span class="tb-text">Churches</span></button>
-      <button class="btn-topbar-icon" id="tab-merch" onclick="switchTab('merch')"><span class="tb-icon">🛍️</span><span class="tb-text">Merch Settings</span></button>
-      <button class="btn-topbar-icon" id="tab-admins" onclick="switchTab('admins')"><span class="tb-icon">🛡️</span><span class="tb-text">Admins</span></button>
-      <button class="btn-topbar-icon" id="tab-settings" onclick="switchTab('settings')"><span class="tb-icon">🔌</span><span class="tb-text">Site Settings</span></button>
-      <button class="btn-sm btn-outline btn-topbar-action" onclick="loadData()"><span class="tb-icon">🔄</span><span class="tb-text">Refresh Data</span></button>
-      <button class="btn-sm btn-outline btn-topbar-action" onclick="logout()"><span class="tb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span class="tb-text">Sign Out</span></button>
+      <div class="topbar-menu-wrap" id="settingsMenuWrap">
+        <button class="btn-topbar-icon" id="tab-settings-menu" onclick="toggleSettingsMenu(event)" aria-haspopup="true" aria-expanded="false" title="Settings" aria-label="Settings">
+          <span class="tb-icon">⚙️</span>
+        </button>
+        <div class="topbar-menu-dropdown" id="settingsMenuDropdown">
+          <button class="topbar-menu-item" id="tab-churches" onclick="switchTab('churches');closeSettingsMenu();"><span class="tmi-icon">⛪</span><span>Churches</span></button>
+          <button class="topbar-menu-item" id="tab-merch" onclick="switchTab('merch');closeSettingsMenu();"><span class="tmi-icon">🛍️</span><span>Merch Settings</span></button>
+          <button class="topbar-menu-item" id="tab-admins" onclick="switchTab('admins');closeSettingsMenu();"><span class="tmi-icon">🛡️</span><span>Admins</span></button>
+          <button class="topbar-menu-item" id="tab-settings" onclick="switchTab('settings');closeSettingsMenu();"><span class="tmi-icon">🔌</span><span>Site Settings</span></button>
+          <button class="topbar-menu-item topbar-menu-item-always" id="menu-refresh" onclick="loadData();closeSettingsMenu();" title="Refresh Data"><span class="tmi-icon">🔄</span><span>Refresh Data</span></button>
+          <div class="topbar-menu-divider"></div>
+          <button class="topbar-menu-item topbar-menu-item-always" id="menu-signout" onclick="logout();closeSettingsMenu();"><span class="tmi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span><span>Sign Out</span></button>
+        </div>
+      </div>
     </div>
     <div class="topbar-bar"></div>
   </div>
@@ -751,21 +801,28 @@
   <div class="main">
 
     <!-- TABS -->
-    <div class="tab-bar group-tab-bar">
-      <button class="tab-btn active" onclick="switchGroup('registrations')" id="group-registrations">
-        📋 Registrations <span class="tab-badge" id="badge-registrations">0</span>
-      </button>
-      <button class="tab-btn" onclick="switchGroup('orders')" id="group-orders">
-        🧾 Merch Orders <span class="tab-badge" id="badge-orders">0</span>
-      </button>
+    <div id="dashboard-tabs">
+      <div class="tab-bar group-tab-bar">
+        <button class="tab-btn active" onclick="switchGroup('registrations')" id="group-registrations">
+          📋 Registrations <span class="tab-badge" id="badge-registrations">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchGroup('orders')" id="group-orders">
+          🧾 Merch Orders <span class="tab-badge" id="badge-orders">0</span>
+        </button>
+      </div>
+      <div style="height:4px;border-radius:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);margin:-14px 0 18px;"></div>
+      <div class="tab-bar sub-tab-bar" id="registrations-subtabs">
+        <button class="tab-btn active" onclick="switchTab('ph')" id="tab-ph">
+          🇵🇭 Philippines <span class="tab-badge" id="badge-ph">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
+          🌏 International <span class="tab-badge" id="badge-intl">0</span>
+        </button>
+      </div>
     </div>
-    <div style="height:4px;border-radius:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);margin:-14px 0 18px;"></div>
-    <div class="tab-bar sub-tab-bar" id="registrations-subtabs">
-      <button class="tab-btn active" onclick="switchTab('ph')" id="tab-ph">
-        🇵🇭 Philippines <span class="tab-badge" id="badge-ph">0</span>
-      </button>
-      <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
-        🌏 International <span class="tab-badge" id="badge-intl">0</span>
+    <div id="back-to-dashboard-bar" style="display:none;margin-bottom:22px;">
+      <button class="btn-back-dashboard" onclick="backToDashboard()">
+        <span class="bd-arrow">←</span> Back to Dashboard
       </button>
     </div>
 
@@ -1114,11 +1171,119 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
           <div style="flex:1;min-width:200px;">
             <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px;">Required Down Payment</div>
-            <div style="font-size:12px;color:var(--muted);">Disabled for now — there's no payment method configured yet, so no down payment is required at checkout.</div>
+            <div style="font-size:12px;color:var(--muted);" id="settings-merch-dp-note">Disabled for now — there's no payment method configured yet, so no down payment is required at checkout.</div>
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
             <input type="number" id="settings-merch-dp" min="0" max="100" step="5" value="0" disabled title="Disabled — no payment method configured yet" style="width:76px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;text-align:right;background:#F0F4F7;color:var(--muted);cursor:not-allowed;" onchange="onMerchDpChange()">
             <span style="font-size:13px;color:var(--muted);font-weight:600;">%</span>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+          <div id="merch-sms-header" onclick="toggleMerchSmsCollapse()" style="flex:1;min-width:0;cursor:pointer;">
+            <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px;display:flex;align-items:center;gap:6px;">📱 Preorder SMS<span id="merch-sms-collapse-icon" style="font-size:10px;color:var(--muted);display:none;transition:transform 0.2s;">▾</span></div>
+            <div style="font-size:12px;color:var(--muted);" id="settings-merch-sms-status">Loading…</div>
+          </div>
+          <div onclick="toggleSetting('merch_sms_enabled')" id="settings-merch_sms_enabled-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+            <div id="settings-merch_sms_enabled-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+          </div>
+        </div>
+
+        <div id="merch-sms-editor" style="display:none;margin-top:14px;">
+          <div class="sms-body-grid">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Message</label>
+              <textarea id="merch-sms-template" rows="6" placeholder="Hi {name}, you can now preorder your RELAY 2026 merch! Check your email - including junk/spam - for the link. Questions? Text {contact}." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;" oninput="onMerchSmsTemplateInput()"></textarea>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Preview</div>
+              <div id="merch-sms-preview" style="background:#EBF5FB;border-radius:10px;padding:12px 14px;font-size:13px;color:#2A3D4A;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:120px;box-sizing:border-box;"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:5px;">Placeholders — click to insert</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <code onclick="insertMerchPlaceholder('{name}')" title="Click to insert · e.g. Juan" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{name}</code>
+            <code onclick="insertMerchPlaceholder('{contact}')" title="Click to insert · e.g. 09475424079" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{contact}</code>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;" id="merch-sms-segments">–</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="saveMerchSmsTemplate()" id="merch-sms-save-btn" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Save Message</button>
+            <button onclick="resetMerchSmsTemplate()" style="padding:9px 16px;background:#f0f4f7;color:var(--dark);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Reset to Default</button>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+          <div id="merch-complete-sms-header" onclick="toggleMerchCompleteSmsCollapse()" style="flex:1;min-width:0;cursor:pointer;">
+            <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px;display:flex;align-items:center;gap:6px;">✅ Order Confirmation SMS<span id="merch-complete-sms-collapse-icon" style="font-size:10px;color:var(--muted);display:none;transition:transform 0.2s;">▾</span></div>
+            <div style="font-size:12px;color:var(--muted);" id="settings-merch-complete-sms-status">Loading…</div>
+          </div>
+          <div onclick="toggleSetting('merch_complete_sms_enabled')" id="settings-merch_complete_sms_enabled-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+            <div id="settings-merch_complete_sms_enabled-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+          </div>
+        </div>
+
+        <div id="merch-complete-sms-editor" style="display:none;margin-top:14px;">
+          <div class="sms-body-grid">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Message</label>
+              <textarea id="merch-complete-sms-template" rows="6" placeholder="Hi {name}, your RELAY 2026 merch order {order_id} ({amount}) is confirmed! Pick it up at the venue. Questions? Text {contact}." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;" oninput="onMerchCompleteSmsTemplateInput()"></textarea>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Preview</div>
+              <div id="merch-complete-sms-preview" style="background:#EBF5FB;border-radius:10px;padding:12px 14px;font-size:13px;color:#2A3D4A;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:120px;box-sizing:border-box;"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:5px;">Placeholders — click to insert</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <code onclick="insertMerchCompletePlaceholder('{name}')" title="Click to insert · e.g. Juan" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{name}</code>
+            <code onclick="insertMerchCompletePlaceholder('{order_id}')" title="Click to insert · e.g. RLY-00042" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{order_id}</code>
+            <code onclick="insertMerchCompletePlaceholder('{amount}')" title="Click to insert · e.g. PHP 1,500" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{amount}</code>
+            <code onclick="insertMerchCompletePlaceholder('{contact}')" title="Click to insert · e.g. 09475424079" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{contact}</code>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;" id="merch-complete-sms-segments">–</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="saveMerchCompleteSmsTemplate()" id="merch-complete-sms-save-btn" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Save Message</button>
+            <button onclick="resetMerchCompleteSmsTemplate()" style="padding:9px 16px;background:#f0f4f7;color:var(--dark);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Reset to Default</button>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:16px 0;"></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+          <div id="merch-cancel-sms-header" onclick="toggleMerchCancelSmsCollapse()" style="flex:1;min-width:0;cursor:pointer;">
+            <div style="font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px;display:flex;align-items:center;gap:6px;">🚫 Cancel Order SMS<span id="merch-cancel-sms-collapse-icon" style="font-size:10px;color:var(--muted);display:none;transition:transform 0.2s;">▾</span></div>
+            <div style="font-size:12px;color:var(--muted);" id="settings-merch-cancel-sms-status">Loading…</div>
+          </div>
+          <div onclick="toggleSetting('merch_cancel_sms_enabled')" id="settings-merch_cancel_sms_enabled-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+            <div id="settings-merch_cancel_sms_enabled-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+          </div>
+        </div>
+
+        <div id="merch-cancel-sms-editor" style="display:none;margin-top:14px;">
+          <div class="sms-body-grid">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Message</label>
+              <textarea id="merch-cancel-sms-template" rows="6" placeholder="Hi {name}, your RELAY 2026 merch order {order_id} has been cancelled. Questions? Text {contact}." style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;" oninput="onMerchCancelSmsTemplateInput()"></textarea>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Preview</div>
+              <div id="merch-cancel-sms-preview" style="background:#EBF5FB;border-radius:10px;padding:12px 14px;font-size:13px;color:#2A3D4A;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:120px;box-sizing:border-box;"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:5px;">Placeholders — click to insert</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <code onclick="insertMerchCancelPlaceholder('{name}')" title="Click to insert · e.g. Juan" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{name}</code>
+            <code onclick="insertMerchCancelPlaceholder('{order_id}')" title="Click to insert · e.g. RLY-00042" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{order_id}</code>
+            <code onclick="insertMerchCancelPlaceholder('{contact}')" title="Click to insert · e.g. 09475424079" style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{contact}</code>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;" id="merch-cancel-sms-segments">–</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="saveMerchCancelSmsTemplate()" id="merch-cancel-sms-save-btn" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Save Message</button>
+            <button onclick="resetMerchCancelSmsTemplate()" style="padding:9px 16px;background:#f0f4f7;color:var(--dark);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Reset to Default</button>
           </div>
         </div>
 
@@ -1130,7 +1295,7 @@
           <div style="font-size:12px;color:var(--muted);margin-top:2px;">Active products appear on the preorder page. Drag rows by the ⠿ handle to reorder.</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <a href="/merch-preorder.html?preview=1" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;background:#f0f4f7;color:var(--dark);border:1px solid #D4E2EA;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">Preview Store ↗</a>
+          <a href="/merch-preorder.html?preview=1" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;background:#f0f4f7;color:var(--dark);border:1px solid #D4E2EA;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;"><span class="tb-icon">🛍️</span>Preview Store ↗</a>
           <button onclick="openMerchModal()" style="padding:10px 18px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">+ Add Product</button>
         </div>
       </div>
@@ -1470,6 +1635,18 @@
     <div id="bulkMerchSummary" style="background:#EBF5FB;border-radius:10px;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;"></div>
     <div id="bulkMerchWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
 
+    <!-- SMS companion -->
+    <div id="merchSmsRow" style="display:none;align-items:center;justify-content:space-between;gap:12px;background:#f7fafb;border:1px solid #D4E2EA;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#2A3D4A;">📱 Also send SMS</div>
+        <div style="font-size:11px;color:#6B8A9A;margin-top:2px;" id="merchSmsDetail"></div>
+      </div>
+      <div onclick="toggleMerchSms()" id="merchSmsTrack" style="width:44px;height:24px;border-radius:50px;background:#2E7048;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+        <div id="merchSmsThumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+      </div>
+    </div>
+    <div id="merchSmsBalance" style="display:none;border-radius:8px;padding:9px 13px;font-size:12px;line-height:1.5;margin-bottom:14px;"></div>
+
     <div id="bulkMerchProgressWrap" style="display:none;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B8A9A;margin-bottom:6px;">
         <span id="bulkMerchProgressLabel">Sending…</span><span id="bulkMerchProgressPct">0%</span>
@@ -1704,6 +1881,38 @@
     if (merchTab)    merchTab.style.display    = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
     if (settingsTab) settingsTab.style.display = adminSession?.is_super_admin               ? 'flex' : 'none';
     if (ordersTab)   ordersTab.style.display   = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
+    // Note: the Settings menu button itself stays visible for every admin —
+    // Refresh Data and Sign Out live inside it regardless of permissions.
+  }
+
+  let settingsMenuHoverTimer = null;
+
+  function toggleSettingsMenu(e) {
+    e.stopPropagation();
+    clearTimeout(settingsMenuHoverTimer);
+    const wrap = document.getElementById('settingsMenuWrap');
+    if (!wrap) return;
+    const isOpen = wrap.classList.toggle('open');
+    document.getElementById('tab-settings-menu')?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  function openSettingsMenu() {
+    clearTimeout(settingsMenuHoverTimer);
+    document.getElementById('settingsMenuWrap')?.classList.add('open');
+    document.getElementById('tab-settings-menu')?.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSettingsMenu() {
+    clearTimeout(settingsMenuHoverTimer);
+    document.getElementById('settingsMenuWrap')?.classList.remove('open');
+    document.getElementById('tab-settings-menu')?.setAttribute('aria-expanded', 'false');
+  }
+
+  // Give hover users (desktop) a short grace period before the dropdown
+  // closes, so moving the pointer down into the menu doesn't dismiss it.
+  function scheduleCloseSettingsMenu() {
+    clearTimeout(settingsMenuHoverTimer);
+    settingsMenuHoverTimer = setTimeout(closeSettingsMenu, 450);
   }
 
   function logout() {
@@ -1754,7 +1963,7 @@
       applyFilters('ph');
       applyFilters('intl');
       renderBreakdowns(intl);
-      document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      document.getElementById('menu-refresh').title = 'Updated ' + new Date().toLocaleTimeString();
       initSortableHeaders();
       return true;
     } catch (e) { showToast('Error: ' + e.message); return false; }
@@ -2296,8 +2505,12 @@
   let activeGroup = 'registrations';
   let lastRegistrationsTab = 'ph';
 
+  let lastDashboardGroup = 'registrations';
+  const SETTINGS_TABS = ['churches', 'merch', 'admins', 'settings'];
+
   function switchGroup(group) {
     activeGroup = group;
+    lastDashboardGroup = group;
     document.getElementById('group-registrations').classList.toggle('active', group === 'registrations');
     document.getElementById('group-orders').classList.toggle('active', group === 'orders');
     document.getElementById('registrations-subtabs').style.display = group === 'registrations' ? 'flex' : 'none';
@@ -2305,23 +2518,36 @@
     else switchTab('orders');
   }
 
+  function backToDashboard() {
+    switchGroup(lastDashboardGroup);
+  }
+
   function switchTab(tab) {
     activeTab = tab;
+    const isSettingsTab = SETTINGS_TABS.includes(tab);
+    document.getElementById('dashboard-tabs').style.display = isSettingsTab ? 'none' : 'block';
+    document.getElementById('back-to-dashboard-bar').style.display = isSettingsTab ? 'block' : 'none';
     if (tab === 'ph' || tab === 'intl') { activeGroup = 'registrations'; lastRegistrationsTab = tab; }
     else if (tab === 'orders') { activeGroup = 'orders'; }
     // Keep the two top-level group buttons in sync with whichever tab is active.
     const groupReg = document.getElementById('group-registrations');
     const groupOrders = document.getElementById('group-orders');
     const subtabs = document.getElementById('registrations-subtabs');
-    if (groupReg)    groupReg.classList.toggle('active', activeGroup === 'registrations');
-    if (groupOrders) groupOrders.classList.toggle('active', activeGroup === 'orders');
-    if (subtabs)     subtabs.style.display = activeGroup === 'registrations' ? 'flex' : 'none';
+    if (!isSettingsTab) {
+      if (groupReg)    groupReg.classList.toggle('active', activeGroup === 'registrations');
+      if (groupOrders) groupOrders.classList.toggle('active', activeGroup === 'orders');
+      if (subtabs)     subtabs.style.display = activeGroup === 'registrations' ? 'flex' : 'none';
+    }
     // Clear all tab buttons and topbar icon buttons
     document.querySelectorAll('.sub-tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.btn-topbar-icon').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.topbar-menu-item').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     const btn = document.getElementById(`tab-${tab}`);
     if (btn) btn.classList.add('active');
+    // Keep the Settings menu button itself highlighted whenever one of its
+    // grouped sub-items (Churches / Merch Settings / Admins / Site Settings) is active.
+    document.getElementById('tab-settings-menu')?.classList.toggle('active', isSettingsTab);
     document.getElementById(`content-${tab}`).classList.add('active');
     if (tab === 'admins')   loadAdmins();
     if (tab === 'churches') loadChurches();
@@ -2569,11 +2795,12 @@
     el.style.borderRadius = '0 8px 8px 0';
 
     const shortfall = needed > credits;
+    const topUpLink = `<a href="https://semaphore.co/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;font-weight:700;">Top up now</a>`;
     el.innerHTML =
       `${tone.icon} <strong>${credits.toLocaleString()}</strong> credit${credits === 1 ? '' : 's'} remaining`
       + (needed && !shortfall ? ` · <strong>${after.toLocaleString()}</strong> after this send` : '')
-      + (tone.label && !shortfall ? ` — <strong>${tone.label}</strong>` : '')
-      + (shortfall ? `<br><strong>Not enough for this send — it needs ${needed.toLocaleString()}. SMS has been switched off; the email will still go.</strong>` : '');
+      + (tone.label && !shortfall ? ` — ${tone.label === 'Top up now' ? topUpLink : `<strong>${tone.label}</strong>`}` : '')
+      + (shortfall ? `<br><strong>Not enough for this send — it needs ${needed.toLocaleString()}. SMS has been switched off; the email will still go.</strong> ${topUpLink}` : '');
 
     if (shortfall) blockSmsForCredits(prefix, credits, needed);
   }
@@ -2595,6 +2822,7 @@
     if (prefix === 'followUpSms')   { followUpSmsOn = false;   followUpSmsAvailable = false; }
     if (prefix === 'bulkSms')       { bulkSmsOn = false;       bulkSmsAvailable = false; }
     if (prefix === 'attendanceSms') { attendanceSmsOn = false; attendanceSmsAvailable = false; }
+    if (prefix === 'merchSms')      { merchSmsOn = false;      merchSmsAvailable = false; }
   }
 
   // Shared guard for the three toggles.
@@ -3589,6 +3817,38 @@
   let merchSending = false;
   let merchTargetIds = [];
   let bulkMerchProvider = 'gmail';
+  let merchSmsOn = true, merchSmsAvailable = false;
+
+  // Kept in step with MERCH_INVITE_SMS_DEFAULT in netlify/lib/sms-templates.js —
+  // used only for the client-side credit estimate shown in this modal.
+  const MERCH_SMS_DEFAULT_CLIENT_TEXT = 'Hi {name}, you can now preorder your RELAY 2026 merch! Check your email - including your junk or spam folder - for the link. Questions? Text {contact}.';
+
+  function toggleMerchSms() {
+    merchSmsOn = !merchSmsOn;
+    document.getElementById('merchSmsTrack').style.background = merchSmsOn ? '#2E7048' : '#D4E2EA';
+    document.getElementById('merchSmsThumb').style.left       = merchSmsOn ? '22px'    : '2px';
+  }
+
+  function prepMerchModal(targets) {
+    const notReady  = smsNotReadyReason();
+    const phMobiles = new Set();
+    for (const t of targets) { const n = normPHMobile(t.mobile); if (n) phMobiles.add(n); }
+    const wouldSend = !!(notifyConfig.merch_sms_enabled && phMobiles.size);
+    merchSmsAvailable = !notReady && wouldSend;
+
+    if (notReady) {
+      merchSmsOn = false;
+      applySmsRow('merchSms', 'disabled', notReady, false);
+    } else if (wouldSend) {
+      merchSmsOn = true;
+      const segs = creditsFor(renderSmsPreview(notifyConfig.merch_sms_template || MERCH_SMS_DEFAULT_CLIENT_TEXT));
+      applySmsRow('merchSms', 'enabled',
+        `${phMobiles.size} mobile${phMobiles.size === 1 ? '' : 's'} · ~${phMobiles.size * segs} credits`, true);
+      renderSmsBalance('merchSms', phMobiles.size * segs);
+    } else {
+      applySmsRow('merchSms', 'hidden');
+    }
+  }
 
   function renderBulkMerchProvider() {
     const btn = document.getElementById('bulkMerchConfirmBtn');
@@ -3644,6 +3904,7 @@
     const menu = document.getElementById('bulkMerchProviderMenu');
     if (menu) menu.style.display = 'none';
     renderBulkMerchProvider();
+    prepMerchModal(reg ? [reg] : []);
     document.getElementById('bulkMerchModal').style.display = 'flex';
   }
 
@@ -3664,6 +3925,7 @@
     const menu = document.getElementById('bulkMerchProviderMenu');
     if (menu) menu.style.display = 'none';
     renderBulkMerchProvider();
+    prepMerchModal(eligible);
     document.getElementById('bulkMerchModal').style.display = 'flex';
   }
 
@@ -3686,7 +3948,8 @@
     cancelBtn.style.opacity = '0.5';
     document.getElementById('bulkMerchProgressWrap').style.display = 'block';
 
-    const totals = { sent: 0, failed: 0 };
+    const sendSms = merchSmsAvailable && merchSmsOn;
+    const totals = { sent: 0, failed: 0, sms_sent: 0, sms_failed: 0, sms_credits: 0 };
     const failures = [];
     let done = 0;
     try {
@@ -3695,13 +3958,16 @@
         const res = await fetch('/.netlify/functions/admin-data', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'gmail' }),
+          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'gmail', send_sms: sendSms }),
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'Bulk merch send failed');
 
         totals.sent += json.sent || 0;
         totals.failed += json.failed || 0;
+        totals.sms_sent += json.sms_sent || 0;
+        totals.sms_failed += json.sms_failed || 0;
+        totals.sms_credits += json.sms_credits || 0;
         failures.push(...(json.results || []).filter(r => !r.ok));
 
         done = i + chunk.length;
@@ -3713,9 +3979,12 @@
 
       document.getElementById('bulkMerchProgressLabel').textContent = 'Done';
       const via = (bulkMerchProvider === 'resend') ? 'Resend' : 'Gmail';
-      document.getElementById('bulkMerchResults').innerHTML = `✅ <strong>${totals.sent}</strong> sent via ${via}` + (totals.failed ? `<br>❌ <strong>${totals.failed}</strong> failed` : '');
+      const smsSuffix = sendSms
+        ? `<br>📱 <strong>${totals.sms_sent}</strong> SMS sent (${totals.sms_credits} credit${totals.sms_credits === 1 ? '' : 's'})` + (totals.sms_failed ? ` · <strong>${totals.sms_failed}</strong> failed` : '')
+        : '';
+      document.getElementById('bulkMerchResults').innerHTML = `✅ <strong>${totals.sent}</strong> sent via ${via}` + (totals.failed ? `<br>❌ <strong>${totals.failed}</strong> failed` : '') + smsSuffix;
       merchTargetIds = [];
-      showToast(`Merch blast sent to ${totals.sent} participant${totals.sent===1?'':'s'} via ${via}`);
+      showToast(`Merch blast sent to ${totals.sent} participant${totals.sent===1?'':'s'} via ${via}` + (sendSms ? ` · 📱 ${totals.sms_sent} SMS sent` : ''));
       loadData();
     } catch (e) {
       document.getElementById('bulkMerchProgressLabel').textContent = 'Stopped early';
@@ -4499,15 +4768,15 @@
 
     document.getElementById('morders-confirmed').textContent = paid.length;
     document.getElementById('morders-rev-confirmed').textContent = 'PHP ' + paidAmount.toLocaleString();
-    document.getElementById('morders-confirmed-sub').textContent = `${paidPending} pending order · ${paidCompleted} completed order`;
+    document.getElementById('morders-confirmed-sub').textContent = `${paidPending} pending order · ${paidCompleted} confirmed order`;
 
     document.getElementById('morders-pending').textContent = unpaid.length;
     document.getElementById('morders-rev-pending').textContent = 'PHP ' + unpaidAmount.toLocaleString();
-    document.getElementById('morders-pending-sub').textContent = `${unpaidPending} pending order · ${unpaidCompleted} completed order`;
+    document.getElementById('morders-pending-sub').textContent = `${unpaidPending} pending order · ${unpaidCompleted} confirmed order`;
 
     document.getElementById('morders-partial').textContent = partial.length;
     document.getElementById('morders-rev-partial').textContent = 'PHP ' + partialAmount.toLocaleString();
-    document.getElementById('morders-partial-sub').textContent = `${partialPending} pending order · ${partialCompleted} completed order`;
+    document.getElementById('morders-partial-sub').textContent = `${partialPending} pending order · ${partialCompleted} confirmed order`;
 
     document.getElementById('morders-cancelled').textContent = cancelled.length;
   }
@@ -4596,7 +4865,7 @@
   function merchStatusBadge(status) {
     const s = status || 'pending';
     const colors = { pending: 'badge-gray', completed: 'badge-green', cancelled: 'badge-red' };
-    const labels = { pending: 'Pending', completed: 'Completed', cancelled: 'Cancelled' };
+    const labels = { pending: 'Pending', completed: 'Confirmed', cancelled: 'Cancelled' };
     return `<span class="badge ${colors[s] || 'badge-gray'}">${esc(labels[s] || s)}</span>`;
   }
 
@@ -4672,7 +4941,7 @@
           ${showOrderActions ? `
           <div class="action-col">
             <span class="lbl">Order Actions</span>
-            <button class="btn-completeorder-row" onclick="openMerchCompleteModal('${o.id}')"><span class="btn-label-icon">📦</span><span class="btn-label-text">Complete Order</span></button>
+            <button class="btn-completeorder-row" onclick="openMerchCompleteModal('${o.id}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Confirm Order</span></button>
             <button class="btn-cancelorder-row" onclick="openMerchCancelOrderModal('${o.id}')"><span class="btn-label-icon">✕</span><span class="btn-label-text">Cancel Order</span></button>
           </div>` : ''}
         </div>
@@ -4898,6 +5167,13 @@
     const o = findMerchOrder(id); if (!o) return;
     pendingMerchOrderId = id;
     document.getElementById('merchCompleteName').textContent = o.participant_name;
+    document.getElementById('merchCompleteSendEmail').checked = true;
+    const smsEnabled = !!currentSettings.merch_complete_sms_enabled;
+    const smsCheckbox = document.getElementById('merchCompleteSendSms');
+    smsCheckbox.checked = false;
+    smsCheckbox.disabled = !smsEnabled;
+    document.getElementById('merchCompleteSendSmsRow').style.opacity = smsEnabled ? '1' : '0.5';
+    document.getElementById('merchCompleteSendSmsOffHint').style.display = smsEnabled ? 'none' : 'block';
     document.getElementById('merchCompleteModal').classList.add('visible');
   }
   function closeMerchCompleteModal() {
@@ -4907,11 +5183,17 @@
   async function doCompleteMerchOrder() {
     if (!pendingMerchOrderId) return;
     const id = pendingMerchOrderId;
+    const sendEmail = document.getElementById('merchCompleteSendEmail').checked;
+    const sendSms   = document.getElementById('merchCompleteSendSms').checked;
     closeMerchCompleteModal();
     try {
-      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'complete' }) });
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'complete', send_email: sendEmail, send_sms: sendSms }) });
       const json = await res.json(); if(!res.ok || json.error) throw new Error(json.error||'Failed');
-      showToast('Order completed'); loadMerchOrders();
+      const notes = [];
+      if (sendEmail) notes.push(json.email_sent ? 'email sent' : 'email failed');
+      if (sendSms) notes.push(json.sms_sent ? 'SMS sent' : `SMS not sent${json.sms_skipped_reason ? ' — ' + json.sms_skipped_reason : ''}`);
+      showToast('Order confirmed' + (notes.length ? ' — ' + notes.join(', ') : ''));
+      loadMerchOrders();
     } catch(e) { showToast(e.message); }
   }
 
@@ -4919,6 +5201,13 @@
     const o = findMerchOrder(id); if (!o) return;
     pendingMerchOrderId = id;
     document.getElementById('merchCancelOrderName').textContent = o.participant_name;
+    document.getElementById('merchCancelSendEmail').checked = true;
+    const smsEnabled = !!currentSettings.merch_cancel_sms_enabled;
+    const smsCheckbox = document.getElementById('merchCancelSendSms');
+    smsCheckbox.checked = false;
+    smsCheckbox.disabled = !smsEnabled;
+    document.getElementById('merchCancelSendSmsRow').style.opacity = smsEnabled ? '1' : '0.5';
+    document.getElementById('merchCancelSendSmsOffHint').style.display = smsEnabled ? 'none' : 'block';
     document.getElementById('merchCancelOrderModal').classList.add('visible');
   }
   function closeMerchCancelOrderModal() {
@@ -4928,11 +5217,17 @@
   async function doCancelMerchOrder() {
     if (!pendingMerchOrderId) return;
     const id = pendingMerchOrderId;
+    const sendEmail = document.getElementById('merchCancelSendEmail').checked;
+    const sendSms   = document.getElementById('merchCancelSendSms').checked;
     closeMerchCancelOrderModal();
     try {
-      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'cancel' }) });
+      const res = await fetch('/.netlify/functions/admin-merch-orders', { method:'POST', headers:{ 'Authorization':'Bearer '+adminToken, 'Content-Type':'application/json' }, body: JSON.stringify({ id, action:'cancel', send_email: sendEmail, send_sms: sendSms }) });
       const json = await res.json(); if(!res.ok || json.error) throw new Error(json.error||'Failed');
-      showToast('Order cancelled'); loadMerchOrders();
+      const notes = [];
+      if (sendEmail) notes.push(json.email_sent ? 'email sent' : 'email failed');
+      if (sendSms) notes.push(json.sms_sent ? 'SMS sent' : `SMS not sent${json.sms_skipped_reason ? ' — ' + json.sms_skipped_reason : ''}`);
+      showToast('Order cancelled' + (notes.length ? ' — ' + notes.join(', ') : ''));
+      loadMerchOrders();
     } catch(e) { showToast(e.message); }
   }
 
@@ -5431,18 +5726,32 @@
     sms:  'sms_enabled',
     ph_pay_later_enabled: 'ph_pay_later_enabled',
     merch_preorder_closed: 'merch_preorder_closed',
+    merch_sms_enabled: 'merch_sms_enabled',
+    merch_complete_sms_enabled: 'merch_complete_sms_enabled',
+    merch_cancel_sms_enabled: 'merch_cancel_sms_enabled',
   };
 
   let currentSettings = {
     reg_ph_closed: false, reg_intl_closed: false, sms_enabled: false,
     ph_pay_later_enabled: false,
     merch_preorder_closed: false, merch_downpayment_percent: 0,
+    merch_sms_enabled: false, merch_sms_template: '',
+    merch_complete_sms_enabled: false, merch_complete_sms_template: '',
+    merch_cancel_sms_enabled: false, merch_cancel_sms_template: '',
   };
   let settingsProviders = { sms_configured: false, resend_configured: false };
   let settingsSmsAccount = null;
   let settingsSenderNames = null;      // null = not fetched / SMS off
   let settingsSenderConfigured = null; // SEMAPHORE_SENDER_NAME value, if set
   let settingsMigrationPending = false;
+  // Manual expand/collapse state for the merch SMS message editors — independent
+  // of the enabled/disabled switch, so an admin can tuck the editor away without
+  // turning the SMS off. Both default open (matches the old always-shown behavior).
+  let merchSmsCollapsed = false;
+  let merchCompleteSmsCollapsed = false;
+  let merchCancelSmsCollapsed = false;
+  // TODO: wire to the real payment-provider config once one exists.
+  const merchPaymentConfigured = false;
   // Per-event SMS editors. The catalogue (labels, defaults, placeholder lists)
   // comes from the server so the page can never document tokens the sender
   // doesn't understand.
@@ -5456,7 +5765,7 @@
     // as literal "{paid}" and skews the credit count the header shows.
     const sample = {
       name: 'Juan', full_name: 'Juan Dela Cruz', amount: 'PHP 4,500', count: '2',
-      paid: 'PHP 2,000', balance: 'PHP 2,500',
+      paid: 'PHP 2,000', balance: 'PHP 2,500', order_id: 'RLY-00042',
       contact: notifyConfig.sms_reply_number || '09XXXXXXXXX',
       link: notifyConfig.sms_sample_link || (window.location.origin + '/upload-receipt?id=…'),
     };
@@ -5740,8 +6049,96 @@
     document.getElementById('settings-merch-status').textContent = currentSettings.merch_preorder_closed
       ? 'Preorders are closed — visitors are redirected to a closed notice page.'
       : 'Preorder page is open.';
+    // Required Down Payment — disabled (and forced back to 0) whenever there's
+    // no payment method configured yet, OR whenever the preorder page itself is
+    // closed: a down payment only makes sense while people can actually order.
+    const merchPreorderClosed = !!currentSettings.merch_preorder_closed;
     const dpInput = document.getElementById('settings-merch-dp');
-    if (dpInput && document.activeElement !== dpInput) dpInput.value = currentSettings.merch_downpayment_percent ?? 0;
+    const dpNote = document.getElementById('settings-merch-dp-note');
+    if (dpInput) {
+      const dpDisabled = merchPreorderClosed || !merchPaymentConfigured;
+      if (merchPreorderClosed) currentSettings.merch_downpayment_percent = 0;
+      if (document.activeElement !== dpInput) dpInput.value = currentSettings.merch_downpayment_percent ?? 0;
+      dpInput.disabled = dpDisabled;
+      dpInput.style.background = dpDisabled ? '#F0F4F7' : '#fff';
+      dpInput.style.color = dpDisabled ? 'var(--muted)' : 'var(--dark)';
+      dpInput.style.cursor = dpDisabled ? 'not-allowed' : 'text';
+      dpInput.title = merchPreorderClosed
+        ? 'Disabled — preorder page is closed'
+        : (!merchPaymentConfigured ? 'Disabled — no payment method configured yet' : '');
+    }
+    if (dpNote) {
+      dpNote.textContent = merchPreorderClosed
+        ? 'Disabled — the preorder page is closed, so no down payment is required at checkout.'
+        : (!merchPaymentConfigured ? "Disabled for now — there's no payment method configured yet, so no down payment is required at checkout." : 'Required at checkout.');
+    }
+
+    // Merch preorder SMS — its own switch, deliberately separate from the
+    // sms_enabled toggle and template list above (those live in Site
+    // Settings; this one is scoped to Merch Settings only). The message
+    // editor can also be manually collapsed/expanded independent of the
+    // switch, via merchSmsCollapsed.
+    paintToggle('merch_sms_enabled', currentSettings.merch_sms_enabled, '#2E7048');
+    document.getElementById('settings-merch-sms-status').textContent = currentSettings.merch_sms_enabled
+      ? 'Merch preorder invites also go out by SMS.'
+      : 'SMS is off — invites go out by email only.';
+    const editor = document.getElementById('merch-sms-editor');
+    if (editor) editor.style.display = (currentSettings.merch_sms_enabled && !merchSmsCollapsed) ? 'block' : 'none';
+    const smsCollapseIcon = document.getElementById('merch-sms-collapse-icon');
+    if (smsCollapseIcon) {
+      smsCollapseIcon.style.display = currentSettings.merch_sms_enabled ? 'inline-block' : 'none';
+      smsCollapseIcon.style.transform = merchSmsCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+    }
+    const smsHeader = document.getElementById('merch-sms-header');
+    if (smsHeader) smsHeader.style.cursor = currentSettings.merch_sms_enabled ? 'pointer' : 'default';
+    const smsTemplateInput = document.getElementById('merch-sms-template');
+    if (smsTemplateInput && document.activeElement !== smsTemplateInput) {
+      smsTemplateInput.value = currentSettings.merch_sms_template || '';
+      onMerchSmsTemplateInput();
+    }
+
+    // Order confirmation SMS — sent when an admin confirms a preorder
+    // (labelled "Confirm Order" in the UI). Same independent-switch pattern
+    // as the preorder invite SMS above, plus its own collapse state.
+    paintToggle('merch_complete_sms_enabled', currentSettings.merch_complete_sms_enabled, '#2E7048');
+    document.getElementById('settings-merch-complete-sms-status').textContent = currentSettings.merch_complete_sms_enabled
+      ? 'Confirming an order also offers to text the participant.'
+      : 'SMS is off — the Confirm Order modal only offers email.';
+    const completeEditor = document.getElementById('merch-complete-sms-editor');
+    if (completeEditor) completeEditor.style.display = (currentSettings.merch_complete_sms_enabled && !merchCompleteSmsCollapsed) ? 'block' : 'none';
+    const completeSmsCollapseIcon = document.getElementById('merch-complete-sms-collapse-icon');
+    if (completeSmsCollapseIcon) {
+      completeSmsCollapseIcon.style.display = currentSettings.merch_complete_sms_enabled ? 'inline-block' : 'none';
+      completeSmsCollapseIcon.style.transform = merchCompleteSmsCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+    }
+    const completeSmsHeader = document.getElementById('merch-complete-sms-header');
+    if (completeSmsHeader) completeSmsHeader.style.cursor = currentSettings.merch_complete_sms_enabled ? 'pointer' : 'default';
+    const completeSmsTemplateInput = document.getElementById('merch-complete-sms-template');
+    if (completeSmsTemplateInput && document.activeElement !== completeSmsTemplateInput) {
+      completeSmsTemplateInput.value = currentSettings.merch_complete_sms_template || '';
+      onMerchCompleteSmsTemplateInput();
+    }
+
+    // Order cancellation SMS — sent when an admin cancels a preorder. Same
+    // independent-switch-plus-collapse pattern as the two SMS editors above.
+    paintToggle('merch_cancel_sms_enabled', currentSettings.merch_cancel_sms_enabled, '#2E7048');
+    document.getElementById('settings-merch-cancel-sms-status').textContent = currentSettings.merch_cancel_sms_enabled
+      ? 'Cancelling an order also offers to text the participant.'
+      : 'SMS is off — the Cancel Order modal only offers email.';
+    const cancelEditor = document.getElementById('merch-cancel-sms-editor');
+    if (cancelEditor) cancelEditor.style.display = (currentSettings.merch_cancel_sms_enabled && !merchCancelSmsCollapsed) ? 'block' : 'none';
+    const cancelSmsCollapseIcon = document.getElementById('merch-cancel-sms-collapse-icon');
+    if (cancelSmsCollapseIcon) {
+      cancelSmsCollapseIcon.style.display = currentSettings.merch_cancel_sms_enabled ? 'inline-block' : 'none';
+      cancelSmsCollapseIcon.style.transform = merchCancelSmsCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+    }
+    const cancelSmsHeader = document.getElementById('merch-cancel-sms-header');
+    if (cancelSmsHeader) cancelSmsHeader.style.cursor = currentSettings.merch_cancel_sms_enabled ? 'pointer' : 'default';
+    const cancelSmsTemplateInput = document.getElementById('merch-cancel-sms-template');
+    if (cancelSmsTemplateInput && document.activeElement !== cancelSmsTemplateInput) {
+      cancelSmsTemplateInput.value = currentSettings.merch_cancel_sms_template || '';
+      onMerchCancelSmsTemplateInput();
+    }
 
     // SMS switches read the normal way: ON means enabled.
     paintToggle('sms', currentSettings.sms_enabled, '#2E7048');
@@ -5837,18 +6234,225 @@
 
     // Same immediate-save treatment for the merch preorder switch — an
     // admin closing preorders mid-event shouldn't have to remember to hit
-    // the page's main Save button afterward.
+    // the page's main Save button afterward. Also refresh the PH tab's
+    // Blast Merch Email button/disclaimer right away — that lives outside
+    // renderSettingsUI() and previously only picked up the new value after
+    // a full page reload.
     if (key === 'merch_preorder_closed') {
       const label = 'Merch preorder';
+      syncBulkUI();
       try {
         await saveSingleSetting(column);
         showToast(label + ' setting saved.');
       } catch (err) {
         currentSettings[column] = !currentSettings[column];
         renderSettingsUI();
+        syncBulkUI();
         showToast('Failed to save: ' + err.message, true);
       }
     }
+
+    if (key === 'merch_sms_enabled') {
+      try {
+        await saveSingleSetting(column);
+        notifyConfig.merch_sms_enabled = currentSettings.merch_sms_enabled;   // Blast Merch modal reads notifyConfig, not currentSettings
+        renderSettingsUI();
+        showToast('Merch SMS ' + (currentSettings.merch_sms_enabled ? 'enabled.' : 'disabled.'));
+      } catch (err) {
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save: ' + err.message, true);
+      }
+    }
+
+    if (key === 'merch_complete_sms_enabled') {
+      try {
+        await saveSingleSetting(column);
+        renderSettingsUI();
+        showToast('Order confirmation SMS ' + (currentSettings.merch_complete_sms_enabled ? 'enabled.' : 'disabled.'));
+      } catch (err) {
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save: ' + err.message, true);
+      }
+    }
+
+    if (key === 'merch_cancel_sms_enabled') {
+      try {
+        await saveSingleSetting(column);
+        renderSettingsUI();
+        showToast('Order cancellation SMS ' + (currentSettings.merch_cancel_sms_enabled ? 'enabled.' : 'disabled.'));
+      } catch (err) {
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save: ' + err.message, true);
+      }
+    }
+  }
+
+  // Manual expand/collapse for the two merch SMS message editors. Clicking the
+  // card header toggles this independent of the enabled/disabled switch above,
+  // so an admin can hide a long message editor without turning the SMS off.
+  function toggleMerchSmsCollapse() {
+    if (!currentSettings.merch_sms_enabled) return;
+    merchSmsCollapsed = !merchSmsCollapsed;
+    renderSettingsUI();
+  }
+  function toggleMerchCompleteSmsCollapse() {
+    if (!currentSettings.merch_complete_sms_enabled) return;
+    merchCompleteSmsCollapsed = !merchCompleteSmsCollapsed;
+    renderSettingsUI();
+  }
+  function toggleMerchCancelSmsCollapse() {
+    if (!currentSettings.merch_cancel_sms_enabled) return;
+    merchCancelSmsCollapsed = !merchCancelSmsCollapsed;
+    renderSettingsUI();
+  }
+
+  // Shared by both merch SMS editors (invite + order confirmation) — mirrors
+  // refreshSmsMetrics() used by the generic Site Settings SMS editor so the
+  // two look and behave the same.
+  function refreshMerchSmsMetrics(textareaId, previewId, counterId, fallbackText) {
+    const input = document.getElementById(textareaId);
+    const previewEl = document.getElementById(previewId);
+    const counterEl = document.getElementById(counterId);
+    if (!input) return;
+    const raw = input.value.trim() || fallbackText;
+    const rendered = renderSmsPreview(raw);
+    if (previewEl) previewEl.textContent = rendered;
+    if (!counterEl) return;
+    const info = analyzeSms(rendered);
+    const credits = info.segments;
+    const perCredit = info.encoding === 'UCS-2' ? 70 : 160;
+    const encodingWarning = info.encoding === 'UCS-2'
+      ? `<div style="color:#7A5A10;margin-top:4px;">⚠️ Contains ${info.nonGsm.slice(0, 4).map(c => `<code>${esc(c)}</code>`).join(' ')} — outside the standard SMS alphabet, so capacity drops to <strong>${perCredit}</strong> characters per credit. Replace curly quotes, em dashes and emoji to halve the cost.</div>`
+      : '';
+    counterEl.innerHTML = `<strong>${info.units}</strong> of ${perCredit} chars per credit · <strong style="color:${credits >= 3 ? '#C0392B' : credits === 2 ? '#7A5A10' : '#2E7048'};">${credits} credit${credits === 1 ? '' : 's'}</strong> per recipient${encodingWarning}`;
+  }
+
+  function onMerchSmsTemplateInput() {
+    refreshMerchSmsMetrics('merch-sms-template', 'merch-sms-preview', 'merch-sms-segments',
+      'Hi {name}, you can now preorder your RELAY 2026 merch! Check your email - including junk/spam - for the link. Questions? Text {contact}.');
+  }
+
+  function insertMerchPlaceholder(token) {
+    const el = document.getElementById('merch-sms-template');
+    if (!el) return;
+    const start = el.selectionStart ?? el.value.length;
+    const end   = el.selectionEnd   ?? el.value.length;
+    el.value = el.value.slice(0, start) + token + el.value.slice(end);
+    el.focus();
+    el.setSelectionRange(start + token.length, start + token.length);
+    onMerchSmsTemplateInput();
+  }
+
+  async function saveMerchSmsTemplate() {
+    const input = document.getElementById('merch-sms-template');
+    const btn = document.getElementById('merch-sms-save-btn');
+    if (!input) return;
+    const previous = currentSettings.merch_sms_template;
+    currentSettings.merch_sms_template = input.value.trim();
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await saveSingleSetting('merch_sms_template');
+      showToast('Merch SMS message saved.');
+    } catch (err) {
+      currentSettings.merch_sms_template = previous;
+      input.value = previous || '';
+      showToast('Failed to save: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Message';
+    }
+  }
+
+  function resetMerchSmsTemplate() {
+    const input = document.getElementById('merch-sms-template');
+    if (input) { input.value = ''; onMerchSmsTemplateInput(); }
+    saveMerchSmsTemplate();
+  }
+
+  async function saveMerchCompleteSmsTemplate() {
+    const input = document.getElementById('merch-complete-sms-template');
+    const btn = document.getElementById('merch-complete-sms-save-btn');
+    if (!input) return;
+    const previous = currentSettings.merch_complete_sms_template;
+    currentSettings.merch_complete_sms_template = input.value.trim();
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await saveSingleSetting('merch_complete_sms_template');
+      showToast('Order confirmation SMS message saved.');
+    } catch (err) {
+      currentSettings.merch_complete_sms_template = previous;
+      input.value = previous || '';
+      showToast('Failed to save: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Message';
+      onMerchCompleteSmsTemplateInput();
+    }
+  }
+
+  function resetMerchCompleteSmsTemplate() {
+    const input = document.getElementById('merch-complete-sms-template');
+    if (input) { input.value = ''; onMerchCompleteSmsTemplateInput(); }
+    saveMerchCompleteSmsTemplate();
+  }
+
+  function onMerchCompleteSmsTemplateInput() {
+    refreshMerchSmsMetrics('merch-complete-sms-template', 'merch-complete-sms-preview', 'merch-complete-sms-segments',
+      'Hi {name}, your RELAY 2026 merch order {order_id} ({amount}) is confirmed! Pick it up at the venue. Questions? Text {contact}.');
+  }
+
+  function insertMerchCompletePlaceholder(token) {
+    const el = document.getElementById('merch-complete-sms-template');
+    if (!el) return;
+    const start = el.selectionStart ?? el.value.length;
+    const end   = el.selectionEnd   ?? el.value.length;
+    el.value = el.value.slice(0, start) + token + el.value.slice(end);
+    el.focus();
+    el.setSelectionRange(start + token.length, start + token.length);
+    onMerchCompleteSmsTemplateInput();
+  }
+
+  async function saveMerchCancelSmsTemplate() {
+    const input = document.getElementById('merch-cancel-sms-template');
+    const btn = document.getElementById('merch-cancel-sms-save-btn');
+    if (!input) return;
+    const previous = currentSettings.merch_cancel_sms_template;
+    currentSettings.merch_cancel_sms_template = input.value.trim();
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await saveSingleSetting('merch_cancel_sms_template');
+      showToast('Order cancellation SMS message saved.');
+    } catch (err) {
+      currentSettings.merch_cancel_sms_template = previous;
+      input.value = previous || '';
+      showToast('Failed to save: ' + err.message, true);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Message';
+      onMerchCancelSmsTemplateInput();
+    }
+  }
+
+  function resetMerchCancelSmsTemplate() {
+    const input = document.getElementById('merch-cancel-sms-template');
+    if (input) { input.value = ''; onMerchCancelSmsTemplateInput(); }
+    saveMerchCancelSmsTemplate();
+  }
+
+  function onMerchCancelSmsTemplateInput() {
+    refreshMerchSmsMetrics('merch-cancel-sms-template', 'merch-cancel-sms-preview', 'merch-cancel-sms-segments',
+      'Hi {name}, your RELAY 2026 merch order {order_id} has been cancelled. Questions? Text {contact}.');
+  }
+
+  function insertMerchCancelPlaceholder(token) {
+    const el = document.getElementById('merch-cancel-sms-template');
+    if (!el) return;
+    const start = el.selectionStart ?? el.value.length;
+    const end   = el.selectionEnd   ?? el.value.length;
+    el.value = el.value.slice(0, start) + token + el.value.slice(end);
+    el.focus();
+    el.setSelectionRange(start + token.length, start + token.length);
+    onMerchCancelSmsTemplateInput();
   }
 
   async function onMerchDpChange() {
@@ -5901,6 +6505,17 @@
       }
       if ('merch_downpayment_percent' in data && data.merch_downpayment_percent !== null && data.merch_downpayment_percent !== undefined) {
         currentSettings.merch_downpayment_percent = Number(data.merch_downpayment_percent);
+      }
+      // Not part of the sms_events catalogue (deliberately kept out of the
+      // Site Settings SMS list), so it needs its own explicit copy here.
+      if ('merch_sms_template' in data) {
+        currentSettings.merch_sms_template = data.merch_sms_template || '';
+      }
+      if ('merch_complete_sms_template' in data) {
+        currentSettings.merch_complete_sms_template = data.merch_complete_sms_template || '';
+      }
+      if ('merch_cancel_sms_template' in data) {
+        currentSettings.merch_cancel_sms_template = data.merch_cancel_sms_template || '';
       }
       for (const c of (data.sms_events || [])) {
         currentSettings[c.column] = data[c.column] || '';
@@ -5967,7 +6582,11 @@
   window.login                = login;
   window.submitNewPassword    = submitNewPassword;
   window.switchTab            = switchTab;
+  window.toggleSettingsMenu   = toggleSettingsMenu;
+  window.closeSettingsMenu    = closeSettingsMenu;
+  window.openSettingsMenu     = openSettingsMenu;
   window.switchGroup          = switchGroup;
+  window.backToDashboard      = backToDashboard;
   window.tileFilter           = tileFilter;
   window.resetFilters         = resetFilters;
   window.exportCSV            = exportCSV;
@@ -6081,6 +6700,24 @@
       menu.style.display = 'none';
     }
   });
+
+  // Dismiss the grouped Settings menu on any click outside it
+  document.addEventListener('click', e => {
+    const wrap = document.getElementById('settingsMenuWrap');
+    if (!wrap || !wrap.classList.contains('open')) return;
+    if (wrap.contains(e.target)) return;
+    closeSettingsMenu();
+  });
+
+  // Open the Settings menu on hover (desktop) and give it a short grace
+  // period before closing, so moving the pointer into the dropdown to
+  // click an option doesn't dismiss it first.
+  (function initSettingsMenuHover() {
+    const wrap = document.getElementById('settingsMenuWrap');
+    if (!wrap) return;
+    wrap.addEventListener('mouseenter', openSettingsMenu);
+    wrap.addEventListener('mouseleave', scheduleCloseSettingsMenu);
+  })();
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });

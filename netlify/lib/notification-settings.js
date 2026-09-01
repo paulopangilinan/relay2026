@@ -11,6 +11,16 @@ export const NOTIFICATION_DEFAULTS = {
   sms_on_confirmed:    false,
   sms_on_registration: false,
   sms_on_attendance:   true,
+  // Merch preorder SMS has its own master switch — deliberately kept apart
+  // from `sms_enabled` above and configured under Merch Settings rather than
+  // alongside the other event toggles, per how the admin wants it organized.
+  merch_sms_enabled:   false,
+  // Same reasoning for the order-confirmation SMS (sent when an admin
+  // confirms a preorder) — its own switch, own template, own section.
+  merch_complete_sms_enabled: false,
+  // Same reasoning again for the order-cancellation SMS (sent when an admin
+  // cancels a preorder) — its own switch, own template, own section.
+  merch_cancel_sms_enabled: false,
 };
 
 // Free-text columns are kept apart from the boolean switches because the
@@ -23,6 +33,9 @@ export const NOTIFICATION_TEXT_DEFAULTS = {
   sms_confirmed_template:    null,
   sms_registration_template: null,
   sms_attendance_template:   null,
+  merch_sms_template:        null,
+  merch_complete_sms_template: null,
+  merch_cancel_sms_template: null,
 };
 
 /** Body an event should send with, or undefined to use the built-in default. */

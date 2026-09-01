@@ -119,6 +119,66 @@ Please let us know if you can join, using the link in your email. Check your inb
 
 export const SMS_EVENTS = Object.keys(SMS_EVENT_CONFIG);
 
+// ── Merch preorder invite SMS ─────────────────────────────────────────────
+// Deliberately NOT part of SMS_EVENT_CONFIG/SMS_EVENTS: those drive the
+// generic Site Settings SMS editor, and this one is configured on its own
+// under Merch Settings instead — see notification-settings.js.
+//
+// Kept GSM-7 only on purpose (plain hyphen, no em dash): one character
+// outside the GSM-7 alphabet flips the whole message to UCS-2 and cuts the
+// per-credit capacity from 160 to 70, roughly tripling the cost of every send.
+export const MERCH_INVITE_SMS_DEFAULT =
+`Hi {name},
+
+You can now preorder your RELAY 2026 merch! Check your email - including your junk or spam folder - for the link.
+
+Questions? Text {contact}.`;
+
+export const merchInviteSMS = ({ name, template }) =>
+  fillPlaceholders((typeof template === 'string' && template.trim()) ? template : MERCH_INVITE_SMS_DEFAULT, {
+    name:      firstName(name),
+    full_name: String(name || '').trim(),
+    amount: '', paid: '', balance: '', count: '1',
+    contact:   replyNumber(),
+    link:      '',
+  });
+
+// ── Merch order confirmation SMS ──────────────────────────────────────────
+// Sent when an admin confirms a preorder (was previously worded "Complete
+// Order" in the UI). Also its own switch/template, not part of
+// SMS_EVENT_CONFIG — see merch_complete_sms_enabled in notification-settings.js.
+export const MERCH_COMPLETE_SMS_DEFAULT =
+`Hi {name}, your RELAY 2026 merch order {order_id} ({amount}) is confirmed! Pick it up at the venue. Questions? Text {contact}.`;
+
+export const merchCompleteSMS = ({ name, amount, orderId, template }) =>
+  fillPlaceholders((typeof template === 'string' && template.trim()) ? template : MERCH_COMPLETE_SMS_DEFAULT, {
+    name:      firstName(name),
+    full_name: String(name || '').trim(),
+    amount:    String(amount || ''),
+    order_id:  String(orderId || ''),
+    paid: '', balance: '', count: '1',
+    contact:   replyNumber(),
+    link:      '',
+  });
+
+// ── Merch order cancellation SMS ──────────────────────────────────────────
+// Sent when an admin cancels a preorder. Also its own switch/template, not
+// part of SMS_EVENT_CONFIG — see merch_cancel_sms_enabled in
+// notification-settings.js.
+export const MERCH_CANCEL_SMS_DEFAULT =
+`Hi {name}, your RELAY 2026 merch order {order_id} has been cancelled. Questions? Text {contact}.`;
+
+export const merchCancelSMS = ({ name, amount, orderId, template }) =>
+  fillPlaceholders((typeof template === 'string' && template.trim()) ? template : MERCH_CANCEL_SMS_DEFAULT, {
+    name:      firstName(name),
+    full_name: String(name || '').trim(),
+    amount:    String(amount || ''),
+    order_id:  String(orderId || ''),
+    paid: '', balance: '', count: '1',
+    contact:   replyNumber(),
+    link:      '',
+  });
+
 /** Everything the Site Settings editor needs to render one event's panel. */
 export function smsEventCatalogue() {
   return SMS_EVENTS.map(event => ({

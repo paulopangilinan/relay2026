@@ -2,9 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import { sendEmail, normalizeProvider, resendConfigured } from '../lib/mailer.js';
-import { sendToDistinctMobiles, smsConfigured, smsReady, smsSenderName, estimateSegments, getSMSAccount } from '../lib/sms.js';
+import { sendToDistinctMobiles, sendAndLogSMS, smsConfigured, smsReady, smsSenderName, estimateSegments, getSMSAccount } from '../lib/sms.js';
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
-import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendanceSMS } from '../lib/sms-templates.js';
+import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendanceSMS, merchInviteSMS } from '../lib/sms-templates.js';
 import { attendanceLinks } from '../lib/attendance.js';
 import { merchLink } from '../lib/merch.js';
 
@@ -581,22 +581,16 @@ export const handler = async (event) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registration has been cancelled' }) };
         }
 
-        const siteUrl = linkBase(event);
-        // Mirror the registration flow exactly: the hero image always comes
-        // from SITE_URL, never the request's Host header, so it can't end up
-        // pointing at a preview/local domain the recipient can't reach.
-        const imgUrl  = (process.env.IMAGE_SITE_URL || process.env.SITE_URL || '').replace(/\/+$/, '');
-        const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
-        const mailResult = await sendEmail({
-          provider: normalizeProvider(body.email_provider),
-          to: reg.email,
-          subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
-          html: merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id) }),
+        const settings = await getNotificationSettings(supabase);
+        const sendSms  = body.send_sms !== false;
+        const { mailResult, smsResult } = await runMerchInvite(reg, {
+          provider: normalizeProvider(body.email_provider), sendSms, settings,
+          requesterEmail: requester.email, siteUrl: linkBase(event),
         });
 
         return {
           statusCode: 200, headers,
-          body: JSON.stringify({ success: true, provider: mailResult.provider, fell_back: !!mailResult.fellBack }),
+          body: JSON.stringify({ success: true, provider: mailResult.provider, fell_back: !!mailResult.fellBack, sms: smsSummary(smsResult) }),
         };
       }
 
@@ -631,19 +625,18 @@ export const handler = async (event) => {
 
         const provider = normalizeProvider(body.email_provider);
         const siteUrl  = linkBase(event);
+        const settings = await getNotificationSettings(supabase);
+        const sendSms  = body.send_sms !== false;
         const results = await mapWithConcurrency(regsResult || [], BULK_CONCURRENCY, async (reg) => {
           try {
-            // Same as the single-send path — SITE_URL only, so the blast
-            // never inherits whatever Host the admin happened to be on.
-            const imgUrl  = (process.env.IMAGE_SITE_URL || process.env.SITE_URL || '').replace(/\/+$/, '');
-            const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
-            const mailResult = await sendEmail({
-              provider,
-              to: reg.email,
-              subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
-              html: merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id) }),
+            const { mailResult, smsResult } = await runMerchInvite(reg, {
+              provider, sendSms, settings, requesterEmail: requester.email, siteUrl,
             });
-            return { id: reg.id, name: reg.name, email: reg.email, ok: true, provider: mailResult.provider, fell_back: !!mailResult.fellBack };
+            return {
+              id: reg.id, name: reg.name, email: reg.email, ok: true,
+              provider: mailResult.provider, fell_back: !!mailResult.fellBack,
+              sms: smsSummary(smsResult),
+            };
           } catch (err) {
             console.error(`[blast_merch_invite] ${reg.email} failed:`, err.message);
             return { id: reg.id, name: reg.name, email: reg.email, ok: false, error: err.message };
@@ -658,6 +651,9 @@ export const handler = async (event) => {
             success: true,
             sent: sent.length,
             failed: failed.length,
+            sms_sent:    sent.reduce((s, r) => s + (r.sms?.sent || 0), 0),
+            sms_failed:  sent.reduce((s, r) => s + (r.sms?.failed || 0), 0),
+            sms_credits: sent.reduce((s, r) => s + (r.sms?.segments || 0), 0),
             fell_back: sent.some(r => r.fell_back),
             provider,
             results,
@@ -849,6 +845,35 @@ async function runAttendanceInvite(reg, { provider, sendSms, settings, requester
   await supabase.from('registrations')
     .update({ attendance_invited_at: new Date().toISOString() })
     .eq('id', reg.id);
+
+  return { mailResult, smsResult };
+}
+
+// Merch preorder invite — email always, SMS only when merch_sms_enabled is
+// on (its own dedicated switch, independent of the shared sms_enabled gate
+// the other event types share) and the caller didn't opt out.
+async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl }) {
+  const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl || '').replace(/\/+$/, '');
+  const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+
+  const mailResult = await sendEmail({
+    provider,
+    to:      reg.email,
+    subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
+    html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id) }),
+  });
+
+  let smsResult = null;
+  if (sendSms && settings?.merch_sms_enabled) {
+    smsResult = await sendAndLogSMS(supabase, {
+      to:             reg.mobile,
+      message:        merchInviteSMS({ name: reg.name, template: settings.merch_sms_template }),
+      event:          'merch_invite',
+      registrationId: reg.id,
+      groupId:        reg.group_id || null,
+      triggeredBy:    requesterEmail,
+    });
+  }
 
   return { mailResult, smsResult };
 }

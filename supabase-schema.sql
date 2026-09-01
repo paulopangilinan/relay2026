@@ -163,6 +163,8 @@ CREATE TABLE public.site_settings (
   reg_intl_closed             BOOLEAN NOT NULL DEFAULT false,
   merch_preorder_closed       BOOLEAN NOT NULL DEFAULT false,
   merch_downpayment_percent   INTEGER NOT NULL DEFAULT 0,
+  merch_sms_enabled           BOOLEAN NOT NULL DEFAULT false,
+  merch_sms_template          TEXT,
   merch_order_email_notify    BOOLEAN NOT NULL DEFAULT true,
   updated_at                  TIMESTAMPTZ DEFAULT now()
 );
