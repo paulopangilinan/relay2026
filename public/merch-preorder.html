@@ -28,6 +28,7 @@
   body { font-family: "DM Sans", sans-serif; background: var(--page); color: var(--text); min-height: 100vh; margin: 0; padding: 0; overflow-x: hidden; }
 
   /* Hero header matching registration page */
+  .hero-wrap { max-width: 720px; margin: 0 auto; }
   .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
   .hero img { width: 100%; height: auto; display: block; margin: 0; padding: 0; }
   .confetti-bar {
@@ -181,6 +182,11 @@
   .pill-partial { background: #F3E8FB; color: #8E44AD; }
   .pill-paid { background: var(--green-bg); color: var(--green); }
   .empty-cart { padding: 32px 0; text-align: center; color: var(--muted); font-size: 14px; }
+  .prev-orders-badge {
+    background: #E05050; color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
+    min-width: 20px; height: 20px; padding: 0 6px; border-radius: 50px;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
 
   /* Full-featured Image Carousel Modal */
   #carouselOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 16px; }
@@ -228,11 +234,62 @@
     #carousel-main { max-height: 360px; }
     .carousel-footer .select-wrap, .carousel-footer .qty-input, .carousel-footer .btn-add { width: 100%; max-width: none; }
   }
+
+  /* Preorder Received state */
+  #done.state { padding: 26px 18px 60px; }
+  .done-wrap { text-align: center; padding: 12px 0 4px; }
+  .done-icon {
+    width: 88px; height: 88px; border-radius: 50%; background: var(--green-bg, #EAF5EE);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px; animation: doneIconPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes doneIconPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+  .success-checkmark { width: 56px; height: 56px; overflow: visible; }
+  .success-checkmark-circle {
+    fill: none; stroke: var(--green-bright); stroke-width: 4.5; stroke-linecap: round;
+    stroke-dasharray: 227; stroke-dashoffset: 227; animation: scCircle 0.6s ease-out forwards;
+  }
+  .success-checkmark-check {
+    fill: none; stroke: var(--green); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 48; stroke-dashoffset: 48; animation: scCheck 0.35s ease-out 0.55s forwards;
+  }
+  @keyframes scCircle { to { stroke-dashoffset: 0; } }
+  @keyframes scCheck { to { stroke-dashoffset: 0; } }
+  .done-wrap h2 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.05em;
+    color: var(--dark); margin-bottom: 6px;
+  }
+  .done-sub { font-size: 14px; color: var(--muted); margin-bottom: 4px; line-height: 1.6; }
+  .done-order-code {
+    display: inline-block; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.06em; color: var(--green); background: var(--green-bg, #EAF5EE);
+    border: 1px solid var(--green-bright); border-radius: 50px; padding: 5px 14px; text-transform: uppercase;
+  }
+  .btn-back-to-po {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+    padding: 13px 26px; background: var(--dark); color: #fff; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .btn-back-to-po:hover { background: var(--sky); transform: translateY(-1px); }
+
+  /* Order item rows (submitted-page breakdown, with thumbnails) */
+  .order-item-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #EDF2F5; }
+  .order-item-row:last-child { border-bottom: none; }
+  .order-item-thumb, .order-item-thumb-ph {
+    width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border);
+    display: block; background: #EBF5FB; flex-shrink: 0;
+  }
+  .order-item-thumb-ph { display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--muted); opacity: .55; }
+  .order-item-info { flex: 1; min-width: 0; }
+  .order-item-name { font-weight: 700; font-size: 14px; color: var(--dark); }
+  .order-item-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .order-item-price { font-weight: 700; font-size: 14px; color: var(--dark); white-space: nowrap; font-family: "DM Mono", monospace; }
 </style>
 </head>
 <body>
-<div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div>
-<div class="confetti-bar"></div>
+<div class="hero-wrap"><div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div>
+<div class="confetti-bar"></div></div>
 
 <main class="wrap">
   <div id="loading" class="state"><h2>Loading</h2><p>Opening your confirmed participant merch preorder&#8230;</p></div>
@@ -258,7 +315,10 @@
     </div>
     <div class="card" id="prev-orders-card" style="display:none">
       <div class="prev-orders-header" onclick="togglePrevOrders()">
-        <div class="section-label" style="margin-bottom:0;">Your Previous Order<span id="prev-orders-count-label"></span></div>
+        <div class="section-label" style="margin-bottom:0;">
+          <span>Your Previous Order<span id="prev-orders-plural"></span></span>
+          <span class="prev-orders-badge" id="prev-orders-badge">0</span>
+        </div>
         <button class="prev-orders-toggle" id="prev-orders-toggle" aria-label="Expand previous orders" onclick="event.stopPropagation();togglePrevOrders()">&#9662;</button>
       </div>
       <div class="prev-orders-body" id="prev-orders-body" style="display:none"></div>
@@ -287,7 +347,7 @@
     </div>
   </section>
 
-  <div id="done" class="state" style="display:none"><h2>Preorder Received</h2><p id="doneText">Thank you. Your merch preorder has been recorded.</p></div>
+  <div id="done" class="state" style="display:none"></div>
 </main>
 
 <!-- Image Carousel Overlay -->
@@ -314,7 +374,7 @@
 </div>
 
 <script>
-let token = '', products = [], cart = [], downpaymentPercent = 50, purchasedQty = {};
+let token = '', products = [], cart = [], downpaymentPercent = 50, purchasedQty = {}, registrationFirstName = '';
 
 window.addEventListener('DOMContentLoaded', loadShop);
 
@@ -335,6 +395,7 @@ async function loadShop() {
     downpaymentPercent = (json.downpayment_percent !== undefined && json.downpayment_percent !== null) ? Number(json.downpayment_percent) : 50;
     document.getElementById('pname').textContent = json.registration?.name || 'Preview Attendee';
     document.getElementById('church').textContent = json.registration?.church || 'Sample Church';
+    registrationFirstName = String(json.registration?.name || '').trim().split(/\s+/)[0] || 'there';
     renderProducts();
     loadCart();
     renderPrevOrders(json.orders || []);
@@ -419,7 +480,8 @@ function renderPrevOrders(orders) {
   const card = document.getElementById('prev-orders-card');
   if (!orders || !orders.length) { card.style.display = 'none'; return; }
   card.style.display = 'block';
-  document.getElementById('prev-orders-count-label').textContent = orders.length > 1 ? 's (' + orders.length + ')' : '';
+  document.getElementById('prev-orders-plural').textContent = orders.length > 1 ? 's' : '';
+  document.getElementById('prev-orders-badge').textContent = orders.length;
   const body = document.getElementById('prev-orders-body');
   body.innerHTML = orders.map(o => {
     const status = o.status || 'pending';
@@ -661,6 +723,13 @@ async function submitOrder() {
     const items = cart.map(it => ({ product_id: it.product_id, quantity: it.quantity, size: it.size }));
     const total = items.reduce((s, it) => { const p = products.find(x => x.id === it.product_id); return s + (p ? p.price * it.quantity : 0); }, 0);
     const deposit_amount = downpaymentPercent > 0 ? Math.ceil(total * (downpaymentPercent / 100)) : 0;
+    // Snapshot names/prices for the receipt breakdown before the cart is
+    // cleared below — the server response doesn't echo the items back.
+    const orderItemsSnapshot = items.map(it => {
+      const p = products.find(x => x.id === it.product_id);
+      const image = (p && Array.isArray(p.images) && p.images.find(Boolean)) || null;
+      return { name: p?.name || 'Item', size: it.size || '', quantity: it.quantity, price: p?.price || 0, image };
+    });
     const res = await fetch('/.netlify/functions/merch-preorder', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ token, items, notes: document.getElementById('notes').value, deposit_amount }),
@@ -671,11 +740,16 @@ async function submitOrder() {
     cart = []; try { localStorage.removeItem('relay_cart_v2'); } catch(e) {}
     document.getElementById('view-cart').style.display = 'none';
     if (deposit_amount > 0) {
-      document.getElementById('doneText').textContent = 'Thank you! Your preorder total is PHP ' + json.total_amount.toLocaleString() + '. Please upload your proof of payment to complete checkout.';
       document.getElementById('done').style.display = 'block';
-      if (json.id) renderReceiptUpload(json.id, json.total_amount, json.order_code);
+      if (json.id) {
+        renderReceiptUpload(json.id, json.total_amount, json.order_code, orderItemsSnapshot);
+      } else {
+        // Shouldn't happen — the server always returns an id on success —
+        // but avoid leaving the page blank if it ever does.
+        renderNoPaymentDone(json.total_amount, json.order_code, orderItemsSnapshot);
+      }
     } else {
-      renderNoPaymentDone(json.total_amount, json.order_code);
+      renderNoPaymentDone(json.total_amount, json.order_code, orderItemsSnapshot);
       document.getElementById('done').style.display = 'block';
     }
   } catch(e) {
@@ -684,24 +758,60 @@ async function submitOrder() {
   }
 }
 
-function orderCodeBadge(orderCode) {
-  return orderCode
-    ? '<div style="display:inline-block;margin-top:6px;padding:4px 10px;background:var(--sky-light,#EBF5FB);color:var(--sky,#3A8BBF);border-radius:50px;font-size:12px;font-weight:700;letter-spacing:0.03em;">Order ' + orderCode + '</div>'
-    : '';
-}
-
-function renderNoPaymentDone(totalAmount, orderCode) {
-  const done = document.getElementById('done');
-  done.innerHTML = '<h2>Preorder Received</h2>' + orderCodeBadge(orderCode) + '<p>Your preorder total is <strong>PHP ' + totalAmount.toLocaleString() + '</strong>.</p>'
-    + '<div style="margin-top:18px;text-align:left;background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)">'
-    + '<div style="font-size:13px;color:var(--muted);">No deposit is required for this order — please pay the full amount in person at the venue. No receipt upload is needed right now.</div>'
+function doneHeaderHtml(orderCode, totalAmount) {
+  return '<div class="done-wrap" style="margin-bottom:18px;">'
+    + '<div class="done-icon">'
+    + '<svg class="success-checkmark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">'
+    + '<circle class="success-checkmark-circle" cx="40" cy="40" r="34"></circle>'
+    + '<path class="success-checkmark-check" d="M23 41l11 11 22-22"></path>'
+    + '</svg>'
+    + '</div>'
+    + '<h2>Thank You, ' + esc(registrationFirstName) + '!</h2>'
+    + '<div class="done-sub">You\u2019ll receive a confirmation email soon. See you at the conference!</div>'
+    + (orderCode ? '<div class="done-order-code" style="margin-top:14px;">Order ' + esc(orderCode) + '</div>' : '')
     + '</div>';
 }
 
-function renderReceiptUpload(preorderId, totalAmount, orderCode) {
+function orderBreakdownHtml(items, totalAmount, pickupNote) {
+  const itemsHtml = (items || []).map(it => {
+    const thumb = it.image
+      ? '<img class="order-item-thumb" src="' + esc(it.image) + '" alt="">'
+      : '<div class="order-item-thumb-ph">🛍️</div>';
+    return '<div class="order-item-row">'
+      + thumb
+      + '<div class="order-item-info">'
+      + '<div class="order-item-name">' + esc(it.name) + '</div>'
+      + '<div class="order-item-meta">' + (it.size ? esc(it.size) + ' \xb7 ' : '') + 'Qty ' + it.quantity + '</div>'
+      + '</div>'
+      + '<div class="order-item-price">PHP ' + (Number(it.price || 0) * Number(it.quantity || 0)).toLocaleString() + '</div>'
+      + '</div>';
+  }).join('');
+  return '<div style="margin-top:4px;text-align:left;background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)">'
+    + '<label style="display:block;font-weight:700;margin-bottom:4px;font-size:14px">Your Order</label>'
+    + itemsHtml
+    + '<div class="prev-order-total"><span>Total</span><span>PHP ' + Number(totalAmount || 0).toLocaleString() + '</span></div>'
+    + '</div>'
+    + '<div style="margin-top:14px;background:var(--sky-light);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--dark);line-height:1.5;text-align:left;">'
+    + pickupNote
+    + '</div>';
+}
+
+function backToPreorderButtonHtml() {
+  return '<div style="text-align:center;"><button class="btn-back-to-po" onclick="location.reload()">🛍️ Back to Preorder Page</button></div>';
+}
+
+function renderNoPaymentDone(totalAmount, orderCode, items) {
   const done = document.getElementById('done');
-  done.innerHTML = '<h2>Preorder Received</h2>' + orderCodeBadge(orderCode) + '<p>Your preorder total is <strong>PHP ' + totalAmount.toLocaleString() + '</strong>.</p>'
-    + '<div style="margin-top:18px;text-align:left;background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)">'
+  done.innerHTML = doneHeaderHtml(orderCode, totalAmount)
+    + orderBreakdownHtml(items, totalAmount, '🏬 Your order will be ready for pickup and payment at the <strong>merch booth</strong> during the conference \u2014 just look for us there!')
+    + backToPreorderButtonHtml();
+}
+
+function renderReceiptUpload(preorderId, totalAmount, orderCode, items) {
+  const done = document.getElementById('done');
+  done.innerHTML = doneHeaderHtml(orderCode, totalAmount)
+    + orderBreakdownHtml(items, totalAmount, '🏬 Your order will be ready for pickup at the <strong>merch booth</strong> during the conference \u2014 just look for us there!')
+    + '<div style="margin-top:14px;text-align:left;background:#fff;border-radius:12px;border:1px solid var(--border);padding:20px;box-shadow:var(--shadow)">'
     + '<label style="display:block;font-weight:700;margin-bottom:4px;font-size:14px">Upload transaction receipt</label>'
     + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload a clear photo of your GCash or bank transfer receipt. Admins will verify it.</div>'
     + '<div class="upload-area" id="receipt-upload-zone" style="border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:var(--input-bg);position:relative;transition:all 0.2s;">'
@@ -711,7 +821,8 @@ function renderReceiptUpload(preorderId, totalAmount, orderCode) {
     + '</div>'
     + '<div id="receipt-preview" style="margin-top:12px;"></div>'
     + '<div id="receiptMsg" style="font-size:13px;color:var(--muted);margin-top:10px"></div>'
-    + '</div>';
+    + '</div>'
+    + '<div id="receipt-done-cta" style="display:none;">' + backToPreorderButtonHtml() + '</div>';
   document.getElementById('receiptUpload').addEventListener('change', (ev) => {
     const f = ev.target.files?.[0];
     if (f) uploadReceipt(preorderId, f);
@@ -744,6 +855,8 @@ async function uploadReceipt(preorderId, file) {
       const aj = await attach.json();
       if (!attach.ok || aj.error) throw new Error(aj.error || 'Attach failed');
       msg.style.color = '#2E7048'; msg.textContent = '\u2713 Receipt uploaded \u2014 awaiting admin verification.';
+      const cta = document.getElementById('receipt-done-cta');
+      if (cta) cta.style.display = 'block';
     } catch(e) {
       msg.style.color = '#C0392B'; msg.textContent = e.message;
     } finally {
@@ -904,6 +1017,20 @@ function resetCarouselZoom() {
     img.style.transformOrigin = originX + '% ' + originY + '%';
   });
 })();
+</script>
+<!-- FOOTER -->
+<div style="max-width:560px;margin:0 auto;padding:32px 20px 48px;text-align:center;">
+  <div style="font-size:13px;font-weight:700;color:#2A3D4A;margin-bottom:6px;">Got questions? We're here for you.</div>
+  <div style="font-size:12px;color:#6B8A9A;line-height:1.6;">Reach out to us at <a id="footerEmail" href="mailto:ccsgmprojects@gmail.com" style="color:#3A8BBF;font-weight:600;">ccsgmprojects@gmail.com</a> and we'll get back to you as soon as we can.</div>
+</div>
+<script>
+  fetch('/.netlify/functions/contact-info')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.email) return;
+      var el = document.getElementById('footerEmail');
+      if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
+    }).catch(function(){});
 </script>
 </body>
 </html>
