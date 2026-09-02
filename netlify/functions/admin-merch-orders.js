@@ -26,9 +26,23 @@ export const handler = async (event) => {
 
   try {
     if (event.httpMethod === 'GET') {
-      const { data, error } = await supabase.from('merch_preorders').select('*').order('created_at', { ascending: false });
+      // Join registrations for registrant_type/country instead of storing a
+      // copy on every order — this always reflects the registration's
+      // current data (e.g. if an admin later corrects someone's country)
+      // rather than freezing whatever it was at checkout time.
+      const { data, error } = await supabase
+        .from('merch_preorders')
+        .select('*, registrations(registrant_type, country)')
+        .order('created_at', { ascending: false });
       if (error) throw error;
-      return { statusCode: 200, headers, body: JSON.stringify({ orders: data || [] }) };
+      // Flatten the joined fields onto each order so the rest of the app
+      // (admin UI, CSV export) can keep reading o.registrant_type/o.country
+      // directly instead of reaching into a nested object everywhere.
+      const orders = (data || []).map(o => {
+        const { registrations, ...rest } = o;
+        return { ...rest, registrant_type: registrations?.registrant_type || null, country: registrations?.country || null };
+      });
+      return { statusCode: 200, headers, body: JSON.stringify({ orders }) };
     }
 
     if (event.httpMethod === 'POST') {

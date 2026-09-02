@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { readMerchToken, formatOrderCode } from '../lib/merch.js';
+import { readMerchToken, formatOrderCode, fetchLiveMerchFx, convertFromPHP, MERCH_FX_FROM_PHP } from '../lib/merch.js';
 import { sendEmail } from '../lib/mailer.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -26,7 +26,6 @@ export const handler = async (event) => {
           closed: settings.closed
         });
       }
-
       if (settings.closed) {
         return json(403, { closed: true, error: 'Merch preorder is currently closed' });
       }
@@ -38,12 +37,22 @@ export const handler = async (event) => {
 
       const { data: reg, error } = await supabase
         .from('registrations')
-        .select('id, name, email, church, registrant_type, status, payment_verified')
+        .select('id, name, email, church, registrant_type, country, status, payment_verified')
         .eq('id', registrationId)
         .maybeSingle();
 
       if (error) throw error;
       if (!allowedForMerch(reg)) return json(403, { error: 'This merch preorder link is not available for cancelled registrations' });
+
+      // Live approximate PHP conversion for the participant's country, if we
+      // have one mapped. Never blocks the page — falls back to static rates
+      // (see fetchLiveMerchFx) and to no conversion at all if unmapped.
+      // Live FX only matters when this participant's country is actually
+      // mapped (see MERCH_FX_FROM_PHP) — skip the external call entirely for
+      // everyone else (all PH/local registrants, plus unmapped countries)
+      // rather than paying its latency for a result that'd be discarded.
+      const fxRates = reg.country && reg.country in MERCH_FX_FROM_PHP ? await fetchLiveMerchFx() : null;
+      const products = await activeProducts({ country: reg.country, fxRates });
 
       // Every previous order this participant has placed, matched by email +
       // name — the same key the admin dashboard groups orders by — so the
@@ -60,7 +69,7 @@ export const handler = async (event) => {
 
       return json(200, {
         registration: reg,
-        products: await activeProducts(),
+        products,
         orders: (pastOrders || []).map(o => ({ ...o, order_code: formatOrderCode(o.order_number) })),
         purchased: purchasedQtyByKey(pastOrders),
         downpayment_percent: settings.downpaymentPercent,
@@ -182,7 +191,7 @@ function allowedForMerch(reg) {
   return !!reg && String(reg.status || '').toLowerCase() !== 'cancelled';
 }
 
-async function activeProducts() {
+async function activeProducts({ country = null, fxRates = null } = {}) {
   const { data, error } = await supabase
     .from('merch_products')
     .select('id, name, price, sizes, purchase_limit, images, availability, description, sold_out, is_active, sort_order, stock')
@@ -194,6 +203,10 @@ async function activeProducts() {
     id: p.id,
     name: p.name,
     price: p.price,
+    // Approximate live conversion of `price` into the participant's country
+    // currency, or null when there's no country/mapping (e.g. PH local
+    // registrants, or an "Others" free-text country on the intl form).
+    priceConverted: country && fxRates ? convertFromPHP(p.price, country, fxRates) : null,
     sizes: Array.isArray(p.sizes) ? p.sizes : [],
     // A blank/unset purchase_limit means unlimited — don't default it to 1.
     purchaseLimit: (p.purchase_limit === null || p.purchase_limit === undefined || p.purchase_limit === '') ? null : Number(p.purchase_limit),

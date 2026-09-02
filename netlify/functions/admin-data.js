@@ -6,9 +6,10 @@ import { sendToDistinctMobiles, sendAndLogSMS, smsConfigured, smsReady, smsSende
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
 import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendanceSMS, merchInviteSMS } from '../lib/sms-templates.js';
 import { attendanceLinks } from '../lib/attendance.js';
-import { merchLink } from '../lib/merch.js';
+import { merchLink, fetchLiveMerchFx, approxConversion } from '../lib/merch.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || 'relay2026secret';
 
@@ -583,9 +584,10 @@ export const handler = async (event) => {
 
         const settings = await getNotificationSettings(supabase);
         const sendSms  = body.send_sms !== false;
+        const fxRates  = await fetchLiveMerchFx();
         const { mailResult, smsResult } = await runMerchInvite(reg, {
           provider: normalizeProvider(body.email_provider), sendSms, settings,
-          requesterEmail: requester.email, siteUrl: linkBase(event),
+          requesterEmail: requester.email, siteUrl: linkBase(event), fxRates,
         });
 
         return {
@@ -627,10 +629,11 @@ export const handler = async (event) => {
         const siteUrl  = linkBase(event);
         const settings = await getNotificationSettings(supabase);
         const sendSms  = body.send_sms !== false;
+        const fxRates  = await fetchLiveMerchFx(); // fetched once per batch, not per recipient
         const results = await mapWithConcurrency(regsResult || [], BULK_CONCURRENCY, async (reg) => {
           try {
             const { mailResult, smsResult } = await runMerchInvite(reg, {
-              provider, sendSms, settings, requesterEmail: requester.email, siteUrl,
+              provider, sendSms, settings, requesterEmail: requester.email, siteUrl, fxRates,
             });
             return {
               id: reg.id, name: reg.name, email: reg.email, ok: true,
@@ -853,7 +856,7 @@ async function runAttendanceInvite(reg, { provider, sendSms, settings, requester
 // member already received it), SMS only when merch_sms_enabled is on (its
 // own dedicated switch, independent of the shared sms_enabled gate the
 // other event types share) and the caller didn't opt out.
-async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl }, { skipEmail = false } = {}) {
+async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl, fxRates }, { skipEmail = false } = {}) {
   const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl || '').replace(/\/+$/, '');
   const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
 
@@ -869,7 +872,7 @@ async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail
       provider,
       to:      reg.email,
       subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
-      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [] }),
+      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [], country: reg.country || null, fxRates }),
     });
   }
 
@@ -1143,7 +1146,7 @@ function attendanceEmail({ name, heroUrl, links }) {
   </div></body></html>`;
 }
 
-function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
+function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = null, fxRates }) {
   const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
 
   const escapeHtml = (s) => String(s ?? '')
@@ -1155,7 +1158,9 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
 
   const formatPrice = (price) => {
     const n = Number(price);
-    return `PHP ${Number.isFinite(n) ? n.toLocaleString() : escapeHtml(price)}`;
+    const base = `PHP ${Number.isFinite(n) ? n.toLocaleString() : escapeHtml(price)}`;
+    const approx = approxConversion(price, country, fxRates);
+    return approx ? `${base} <span style="opacity:0.85;">(${approx})</span>` : base;
   };
 
   const productRows = products.map((p, i) => {

@@ -74,6 +74,7 @@
   .product-name.clickable { cursor: pointer; }
   .product-name.clickable:hover { color: var(--sky); text-decoration: underline; }
   .product-price { font-size: 15px; font-weight: 700; color: var(--sky); margin-bottom: 12px; }
+  .price-fx { font-weight: 600; opacity: 0.7; font-size: 13px; }
   .sold-out-stamp {
     display: inline-flex; align-items: center; justify-content: center;
     border: 3px solid #E05050; border-radius: 4px; color: #E05050;
@@ -399,6 +400,18 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Renders "PHP 350 (~$6.20 USD)" when the backend attached a live
+// conversion for this participant's country (see priceConverted in
+// merch-preorder.js); otherwise just "PHP 350".
+function formatPrice(p) {
+  const base = 'PHP ' + Number(p.price || 0).toLocaleString();
+  const fx = p.priceConverted;
+  if (!fx || !Number.isFinite(fx.amount)) return base;
+  const decimals = fx.code === 'KRW' ? 0 : 2;
+  const converted = fx.amount.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return base + ' <span class="price-fx">(~' + esc(fx.symbol) + converted + ' ' + esc(fx.code) + ')</span>';
+}
+
 const STATUS_LABELS = { pending: 'Pending', completed: 'Completed', cancelled: 'Cancelled' };
 const PAYMENT_LABELS = { unpaid: 'Unpaid', partial: 'Partially Paid', paid: 'Paid' };
 
@@ -527,7 +540,7 @@ function renderProducts() {
       + '<div class="product-thumb">' + imgHtml + '</div>'
       + '<div class="product-info">'
       + '<div class="product-name clickable" onclick="openCarousel(\'' + p.id + '\')">' + esc(p.name) + '</div>'
-      + '<div class="product-price">PHP ' + p.price.toLocaleString() + (p.availability ? ' \xb7 ' + esc(p.availability) : '') + '</div>'
+      + '<div class="product-price">' + formatPrice(p) + (p.availability ? ' <span style="font-weight:400;">\xb7 ' + esc(p.availability) + '</span>' : '') + '</div>'
       + (p.description ? '<div class="product-description">' + esc(p.description) + '</div>' : '')
       + controlsHtml
       + '</div></div>';
@@ -759,7 +772,7 @@ function openCarousel(productId) {
   carouselPhotos = photos;
   carouselIndex = 0;
   document.getElementById('carousel-title').textContent = p.name;
-  document.getElementById('carousel-desc').textContent = 'PHP ' + p.price.toLocaleString() + (p.availability ? ' \xb7 ' + p.availability : '');
+  document.getElementById('carousel-desc').innerHTML = '<strong>' + formatPrice(p) + '</strong>' + (p.availability ? ' \xb7 ' + esc(p.availability) : '');
   const descEl = document.getElementById('carousel-description');
   if (p.description) { descEl.textContent = p.description; descEl.style.display = 'block'; }
   else { descEl.textContent = ''; descEl.style.display = 'none'; }
