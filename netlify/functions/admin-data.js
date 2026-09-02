@@ -1149,6 +1149,10 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
   const escapeHtml = (s) => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+  // Preserve line breaks in product descriptions (escape first, then convert
+  // newlines to <br> so raw HTML can't sneak in through the replacement).
+  const escapeHtmlMultiline = (s) => escapeHtml(s).replace(/\r\n|\r|\n/g, '<br>');
+
   const formatPrice = (price) => {
     const n = Number(price);
     return `PHP ${Number.isFinite(n) ? n.toLocaleString() : escapeHtml(price)}`;
@@ -1164,7 +1168,7 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
     </td></tr>
     <tr><td class="product-info" align="center">
       <p class="product-name">${escapeHtml(p.name)}</p>
-      ${p.description ? `<p class="product-desc">${escapeHtml(p.description)}</p>` : ''}
+      ${p.description ? `<p class="product-desc">${escapeHtmlMultiline(p.description)}</p>` : ''}
       <span class="product-price">${formatPrice(p.price)}</span>
       <a href="${orderLink}" style="display:inline-block;margin-left:8px;padding:4px 16px;border-radius:20px;font-size:13px;font-weight:700;text-decoration:none;color:#ffffff;background-color:#2E7048;background-image:linear-gradient(135deg,#2E7048,#4BAE6A);vertical-align:middle;">Pre-Order</a>
     </td></tr>
@@ -1187,7 +1191,6 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
   .header h1 { color: #fff; font-size: 26px; margin: 0; letter-spacing: -.01em; }
   .header p { color: rgba(255,255,255,0.65); font-size: 13px; margin: 8px 0 0; }
   .intro { padding: 28px 32px 6px; }
-  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #6B8A9A; text-align: center; margin: 28px 0 4px; }
   .section-title { font-size: 19px; font-weight: 800; color: #1C2B38; text-align: center; margin: 0 0 20px; }
   .product-block { padding: 0 24px; margin-bottom: 22px; }
   .product-photo { width: 100%; display: block; border-radius: 12px; }
@@ -1209,18 +1212,30 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
   <div class="header">
     <h1>Merch Preorders Are Open 🛍️</h1>
     <p>RELAY Conference Asia Pacific 2026</p>
+    <p style="display:inline-block;margin-top:12px;padding:6px 16px;border-radius:20px;background:rgba(232,184,48,0.18);border:1px solid #E8B830;color:#F5D77A;font-size:13px;font-weight:700;">⏰ Pre-order window: September 1&ndash;8, 2026</p>
   </div>
 
   <div class="intro">
-    <p style="font-size:15px;color:#2A3D4A;margin-bottom:8px;">Hi <strong>${escapeHtml(firstName)}</strong>,</p>
-    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:0;text-align:center;">
-      Your conference payment is confirmed — reserve your RELAY 2026 gear before it's gone.
+    <p style="font-size:15px;color:#2A3D4A;margin-bottom:12px;">Hi <strong>${escapeHtml(firstName)}</strong>,</p>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      Your RELAY 2026 conference payment is confirmed! 🎉 
+    </p>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      Now, it's time to get your official RELAY 2026 gear. 🛍️
+    </p>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      Secure your favorite RELAY 2026 gear by placing your pre-order through our <a href="${orderLink}" style="color:#2E7048;text-decoration:underline;">website</a> from <b>September 1&ndash;8, 2026</b>.
+    </p>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      Missed the pre-order deadline or weren’t able to submit your order through the website? No worries — you'll still be able to purchase RELAY 2026 gear on the day of the event, subject to availability.
+    </p>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      ⏰ Don't wait until event day! Pre-order now to secure the items and sizes you want — once pre-orders close, your preferred gear may no longer be available.
     </p>
   </div>
 
   <!-- Product showcase -->
-  <p class="section-label">This year's drop</p>
-  <p class="section-title">Get your RELAY 2026 gear</p>
+  <!-- p class="section-title">Get your RELAY 2026 gear</!-->
   ${productRows}
 
   <div class="note">This preorder page is only available through your confirmed-participant link.</div>
