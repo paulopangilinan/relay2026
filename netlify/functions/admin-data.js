@@ -1233,7 +1233,7 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [] }) {
       ⏰ Don't wait until event day! Pre-order now to secure the items and sizes you want — once pre-orders close, your preferred gear may no longer be available.
     </p>
   </div>
-
+  <hr class="divider">
   <!-- Product showcase -->
   <!-- p class="section-title">Get your RELAY 2026 gear</!-->
   ${productRows}
