@@ -120,17 +120,17 @@
   .filters-bar{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;box-shadow:var(--shadow);}
   .filter-group{display:flex;flex-direction:column;gap:4px;}
   .filter-group label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
-  .filter-group select,.filter-group input{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#f7fafb;outline:none;min-width:130px;}
-  .filter-group select:focus,.filter-group input:focus{border-color:var(--sky);}
+  .filter-group select,.filter-group input{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;outline:none;min-width:170px;}
+  .filter-group select:focus,.filter-group input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(58,139,191,0.12);}
   .filter-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-end;}
   .hide-cancelled-wrap{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;}
   .toggle-track{width:36px;height:20px;border-radius:50px;background:#D4E2EA;position:relative;transition:background 0.2s;flex-shrink:0;}
   .toggle-track.on{background:var(--sky);}
   .toggle-thumb{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
   .toggle-track.on .toggle-thumb{left:18px;}
-  .btn-export{padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+  .btn-export{padding:8px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
   .btn-export:hover{background:#2E7AAD;}
-  .btn-reset{padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer;}
+  .btn-reset{padding:8px 14px;background:transparent;border:1.5px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;}
   .btn-reset:hover{border-color:var(--text);color:var(--text);}
 
   /* TABLE */
@@ -1371,8 +1371,7 @@
         </div>
       </div>
       <div class="filters-bar">
-        <div class="filter-group"><label>Name</label><input type="text" id="orders-filter-name" placeholder="Search name…" oninput="applyMerchOrderFilters()"></div>
-        <div class="filter-group"><label>Email</label><input type="text" id="orders-filter-email" placeholder="Search email…" oninput="applyMerchOrderFilters()"></div>
+        <div class="filter-group"><label>Search</label><input type="text" id="orders-filter-search" placeholder="Name, email…" oninput="applyMerchOrderFilters()"></div>
         <div class="filter-group" style="position:relative;">
           <label>Item</label>
           <div id="orders-item-trigger" onclick="toggleOMSDropdown('item')" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:180px;user-select:none;">
@@ -4892,16 +4891,14 @@
   }
 
   function applyMerchOrderFilters() {
-    const name = (document.getElementById('orders-filter-name')?.value || '').trim().toLowerCase();
-    const email = (document.getElementById('orders-filter-email')?.value || '').trim().toLowerCase();
+    const s = (document.getElementById('orders-filter-search')?.value || '').trim().toLowerCase();
     const items = merchOrderMultiSelect.item;
     const churches = merchOrderMultiSelect.church;
     const regtypes = merchOrderMultiSelect.regtype;
     const countries = merchOrderMultiSelect.country;
     filteredMerchOrders = merchOrders.filter(o => {
       if (hideCancelled.merch && o.status === 'cancelled') return false;
-      if (name && !(o.participant_name || '').toLowerCase().includes(name)) return false;
-      if (email && !(o.email || '').toLowerCase().includes(email)) return false;
+      if (s && !`${o.participant_name || ''} ${o.email || ''}`.toLowerCase().includes(s)) return false;
       if (churches.size > 0 && !churches.has((o.church || '').trim())) return false;
       if (regtypes.size > 0 && !regtypes.has(isIntlOrder(o) ? 'international' : 'local')) return false;
       if (countries.size > 0 && !countries.has((effectiveCountry(o) || '').trim() || '__unknown')) return false;
@@ -4918,7 +4915,7 @@
   }
 
   function resetMerchOrderFilters() {
-    ['orders-filter-name', 'orders-filter-email'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const el = document.getElementById('orders-filter-search'); if (el) el.value = '';
     merchOrderMultiSelect.item.clear();
     merchOrderMultiSelect.church.clear();
     merchOrderMultiSelect.regtype.clear();
