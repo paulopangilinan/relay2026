@@ -15,7 +15,7 @@
     --green: #2E7048;
     --green-bg: #EAF5EE;
     --green-bright: #4BAE6A;
-    --page: #F2F5F8;
+    --page: #E4EAEE;
     --card: #fff;
     --dark: #1C2B38;
     --text: #2A3D4A;
@@ -28,6 +28,7 @@
   body { font-family: "DM Sans", sans-serif; background: var(--page); color: var(--text); min-height: 100vh; margin: 0; padding: 0; overflow-x: hidden; }
 
   /* Hero header matching registration page */
+  .page-panel { max-width: 720px; margin: 0 auto; background: #F9FBFC; min-height: 100vh; box-shadow: 0 0 32px rgba(26,58,82,0.06); }
   .hero-wrap { max-width: 720px; margin: 0 auto; }
   .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
   .hero img { width: 100%; height: auto; display: block; margin: 0; padding: 0; }
@@ -74,7 +75,7 @@
   .product-name { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
   .product-name.clickable { cursor: pointer; }
   .product-name.clickable:hover { color: var(--sky); text-decoration: underline; }
-  .product-price { font-size: 15px; font-weight: 700; color: var(--sky); margin-bottom: 12px; }
+  .product-price { font-size: 15px; font-weight: 700; color: var(--green); margin-bottom: 12px; }
   .price-fx { font-weight: 600; opacity: 0.7; font-size: 13px; }
   .sold-out-stamp {
     display: inline-flex; align-items: center; justify-content: center;
@@ -84,7 +85,10 @@
     padding: 7px 20px; margin-top: 4px; transform: rotate(-6deg);
     opacity: 0.85; -webkit-user-select: none; user-select: none;
   }
-  .product-description { font-size: 13px; color: var(--text); line-height: 1.5; margin: -6px 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+  .product-description { font-size: 13px; color: var(--text); line-height: 1.5; margin: -6px 0 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+  .product-description.expanded { display: block; -webkit-line-clamp: unset; overflow: visible; }
+  .desc-toggle { background: none; border: none; color: var(--sky); font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; margin: 0 0 12px; display: none; }
+  .desc-toggle:hover { text-decoration: underline; }
   .product-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
   /* Select dropdown matching registration form */
@@ -122,13 +126,22 @@
   .btn-add:disabled { background: #C9D6DE; cursor: default; }
 
   /* Header Cart Button */
-  .btn-cart-header {
-    display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px;
-    border: 0; background: var(--green); color: #fff; cursor: pointer; font-weight: 700; font-size: 14px;
-    transition: all 0.15s; box-shadow: 0 2px 8px rgba(46,112,72,0.25);
+  .header-actions { display: inline-flex; align-items: center; gap: 10px; }
+  .btn-icon-header {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    width: 46px; height: 46px; border-radius: 10px; border: 0; cursor: pointer;
+    font-size: 19px; position: relative; transition: all 0.15s; flex-shrink: 0;
   }
-  .btn-cart-header:hover { background: #3b9060; transform: translateY(-1px); }
-  .badge-count { background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 50px; font-size: 12px; font-weight: 700; min-width: 20px; text-align: center; }
+  .btn-icon-header:hover { transform: translateY(-1px); }
+  .btn-cart-header { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(46,112,72,0.25); }
+  .btn-cart-header:hover { background: #3b9060; }
+  .btn-orders-header { background: #8E44AD; color: #fff; box-shadow: 0 2px 8px rgba(142,68,173,0.25); }
+  .btn-orders-header:hover { background: #7a3a95; }
+  .badge-count {
+    position: absolute; top: -6px; right: -6px; background: #E05050; color: #fff;
+    padding: 1px 6px; border-radius: 50px; font-size: 11px; font-weight: 800; line-height: 1.5;
+    min-width: 18px; text-align: center; border: 2px solid var(--page);
+  }
 
   /* Cart View */
   .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #EDF2F5; gap: 12px; }
@@ -163,16 +176,20 @@
   .state p { font-size: 14px; color: var(--muted); line-height: 1.6; }
   .note-box { background: var(--gold-bg); border-left: 3px solid #E8B830; border-radius: 0 8px 8px 0; padding: 12px 14px; font-size: 12px; color: #7A5A10; line-height: 1.6; margin-top: 14px; }
 
-  /* Previous Orders (expandable) */
-  .prev-orders-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; gap: 12px; }
-  .prev-orders-toggle { background: none; border: none; font-size: 13px; color: var(--muted); cursor: pointer; transition: transform .15s ease; flex-shrink: 0; padding: 4px; }
-  .prev-orders-toggle.open { transform: rotate(180deg); }
-  .prev-orders-body { margin-top: 4px; }
+  /* Previous Orders modal */
   .prev-order { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+  .prev-order:first-child { margin-top: 0; }
   .prev-order-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
   .prev-order-date { font-size: 12px; color: var(--muted); font-weight: 600; }
   .prev-order-badges { display: flex; gap: 6px; flex-wrap: wrap; }
-  .prev-order-item { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 4px 0; color: var(--text); }
+  .prev-order-item { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 6px 0; color: var(--text); }
+  .prev-order-item-thumb, .prev-order-item-thumb-ph {
+    width: 36px; height: 36px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border);
+    display: block; background: #EBF5FB; flex-shrink: 0;
+  }
+  .prev-order-item-thumb-ph { display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--muted); opacity: .55; }
+  .prev-order-item-label { flex: 1; min-width: 0; }
+  .prev-order-item-price { white-space: nowrap; font-family: "DM Mono", monospace; }
   .prev-order-total { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--dark); margin-top: 8px; padding-top: 8px; border-top: 1px solid #EDF2F5; }
   .pill { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
   .pill-pending { background: #EEF3F6; color: var(--muted); }
@@ -182,11 +199,15 @@
   .pill-partial { background: #F3E8FB; color: #8E44AD; }
   .pill-paid { background: var(--green-bg); color: var(--green); }
   .empty-cart { padding: 32px 0; text-align: center; color: var(--muted); font-size: 14px; }
-  .prev-orders-badge {
-    background: #E05050; color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
-    min-width: 20px; height: 20px; padding: 0 6px; border-radius: 50px;
-    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
+
+  /* Previous Orders modal overlay */
+  #ordersOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000; align-items: center; justify-content: center; padding: 16px; }
+  #ordersOverlay.open { display: flex; }
+  #ordersBox { background: #fff; border-radius: 16px; padding: 22px; max-width: 520px; width: 100%; max-height: 86vh; overflow-y: auto; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+  .orders-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .orders-modal-header h2 { margin: 0; font-family: "Bebas Neue", sans-serif; font-size: 24px; letter-spacing: 0.03em; color: var(--dark); }
+  .orders-modal-close { background: none; border: none; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px; }
+  .orders-modal-close:hover { color: var(--dark); }
 
   /* Full-featured Image Carousel Modal */
   #carouselOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 16px; }
@@ -288,6 +309,7 @@
 </style>
 </head>
 <body>
+<div class="page-panel">
 <div class="hero-wrap"><div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div>
 <div class="confetti-bar"></div></div>
 
@@ -299,9 +321,16 @@
   <section id="view-shop" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;">
       <h1 style="margin:0;">Merch Preorder</h1>
-      <button class="btn-cart-header" onclick="showCartView()">
-        <span>🛒</span> <span>Cart</span> <span class="badge-count" id="cartBadge">0</span>
-      </button>
+      <div class="header-actions">
+        <button class="btn-icon-header btn-orders-header" onclick="openOrdersModal()" aria-label="Your previous orders" title="Your previous orders">
+          <span>📦</span>
+          <span class="badge-count" id="prev-orders-badge" style="display:none;">0</span>
+        </button>
+        <button class="btn-icon-header btn-cart-header" onclick="showCartView()" aria-label="Cart" title="Cart">
+          <span>🛒</span>
+          <span class="badge-count" id="cartBadge" style="display:none;">0</span>
+        </button>
+      </div>
     </div>
     <p class="lead">Reserve your RELAY 2026 merch before the conference. Pick up items at the venue.</p>
     <div class="preorder-window">
@@ -313,21 +342,22 @@
       <div class="section-label">Confirmed Participant</div>
       <div class="who"><div><span>Name</span><strong id="pname">Attendee</strong></div><div><span>Church</span><strong id="church">Church</strong></div></div>
     </div>
-    <div class="card" id="prev-orders-card" style="display:none">
-      <div class="prev-orders-header" onclick="togglePrevOrders()">
-        <div class="section-label" style="margin-bottom:0;">
-          <span>Your Previous Order<span id="prev-orders-plural"></span></span>
-          <span class="prev-orders-badge" id="prev-orders-badge">0</span>
-        </div>
-        <button class="prev-orders-toggle" id="prev-orders-toggle" aria-label="Expand previous orders" onclick="event.stopPropagation();togglePrevOrders()">&#9662;</button>
-      </div>
-      <div class="prev-orders-body" id="prev-orders-body" style="display:none"></div>
-    </div>
     <div class="card">
       <div class="section-label">Available Items</div>
       <div id="products"></div>
     </div>
   </section>
+
+  <!-- PREVIOUS ORDERS MODAL -->
+  <div id="ordersOverlay" onclick="if(event.target===this) closeOrdersModal()">
+    <div id="ordersBox">
+      <div class="orders-modal-header">
+        <h2>Your Previous Order<span id="prev-orders-plural"></span></h2>
+        <button class="orders-modal-close" onclick="closeOrdersModal()" aria-label="Close">&times;</button>
+      </div>
+      <div id="prev-orders-body"></div>
+    </div>
+  </div>
 
   <!-- CART VIEW -->
   <section id="view-cart" style="display:none">
@@ -349,6 +379,7 @@
 
   <div id="done" class="state" style="display:none"></div>
 </main>
+</div>
 
 <!-- Image Carousel Overlay -->
 <div id="carouselOverlay" onclick="maybeCloseCarousel(event)">
@@ -363,12 +394,12 @@
       </div>
       <button class="carousel-nav next" onclick="carouselStep(1)" aria-label="Next image">&#x203A;</button>
     </div>
+    <div id="carousel-thumbs"></div>
     <div style="margin-top:14px">
       <div style="font-weight:700;font-size:16px;color:var(--dark)" id="carousel-title"></div>
       <div style="font-size:13px;color:var(--muted);margin-top:3px" id="carousel-desc"></div>
       <div style="font-size:13px;color:var(--text);margin-top:8px;line-height:1.6;display:none;white-space:pre-line" id="carousel-description"></div>
     </div>
-    <div id="carousel-thumbs"></div>
     <div class="carousel-footer" id="carousel-footer"></div>
   </div>
 </div>
@@ -454,7 +485,9 @@ function loadCart() {
 function updateCartBadge() {
   const total = cart.reduce((s, it) => s + Number(it.quantity || 0), 0);
   const badge = document.getElementById('cartBadge');
-  if (badge) badge.textContent = total;
+  if (!badge) return;
+  badge.textContent = total;
+  badge.style.display = total > 0 ? 'block' : 'none';
 }
 
 function esc(str) {
@@ -477,11 +510,15 @@ const STATUS_LABELS = { pending: 'Pending', completed: 'Completed', cancelled: '
 const PAYMENT_LABELS = { unpaid: 'Unpaid', partial: 'Partially Paid', paid: 'Paid' };
 
 function renderPrevOrders(orders) {
-  const card = document.getElementById('prev-orders-card');
-  if (!orders || !orders.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
+  const badge = document.getElementById('prev-orders-badge');
+  if (!orders || !orders.length) {
+    badge.style.display = 'none';
+    document.getElementById('prev-orders-body').innerHTML = '<div class="empty-cart">No previous orders yet.</div>';
+    return;
+  }
+  badge.style.display = 'block';
+  badge.textContent = orders.length;
   document.getElementById('prev-orders-plural').textContent = orders.length > 1 ? 's' : '';
-  document.getElementById('prev-orders-badge').textContent = orders.length;
   const body = document.getElementById('prev-orders-body');
   body.innerHTML = orders.map(o => {
     const status = o.status || 'pending';
@@ -494,9 +531,14 @@ function renderPrevOrders(orders) {
       : '<span class="pill pill-' + esc(payment) + '">' + esc(PAYMENT_LABELS[payment] || payment) + '</span>';
     const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
     const items = Array.isArray(o.items) ? o.items : [];
-    const itemsHtml = items.map(it =>
-      '<div class="prev-order-item"><span>' + esc(it.name) + (it.size ? ' \xb7 ' + esc(it.size) : '') + ' \xd7 ' + it.quantity + '</span><span>PHP ' + (Number(it.price || 0) * Number(it.quantity || 0)).toLocaleString() + '</span></div>'
-    ).join('') || '<div class="prev-order-item" style="color:var(--muted)">No items on this order.</div>';
+    const itemsHtml = items.map(it => {
+      const thumb = it.image
+        ? '<img class="prev-order-item-thumb" src="' + esc(it.image) + '" alt="" loading="lazy" onerror="this.onerror=null;this.outerHTML=\'<div class=\\\'prev-order-item-thumb-ph\\\' title=\\\'No image\\\'>\\ud83d\\uddbc\\ufe0f<\\/div>\';">'
+        : '<div class="prev-order-item-thumb-ph" title="No image">\ud83d\uddbc\ufe0f</div>';
+      return '<div class="prev-order-item">' + thumb
+        + '<span class="prev-order-item-label">' + esc(it.name) + (it.size ? ' \xb7 ' + esc(it.size) : '') + ' \xd7 ' + it.quantity + '</span>'
+        + '<span class="prev-order-item-price">PHP ' + (Number(it.price || 0) * Number(it.quantity || 0)).toLocaleString() + '</span></div>';
+    }).join('') || '<div class="prev-order-item" style="color:var(--muted)">No items on this order.</div>';
     return '<div class="prev-order">'
       + '<div class="prev-order-head">'
       + '<span class="prev-order-date">' + (o.order_code ? esc(o.order_code) + ' \xb7 ' : '') + esc(date) + '</span>'
@@ -509,12 +551,11 @@ function renderPrevOrders(orders) {
   }).join('');
 }
 
-function togglePrevOrders() {
-  const body = document.getElementById('prev-orders-body');
-  const btn = document.getElementById('prev-orders-toggle');
-  const open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : 'block';
-  btn.classList.toggle('open', !open);
+function openOrdersModal() {
+  document.getElementById('ordersOverlay').classList.add('open');
+}
+function closeOrdersModal() {
+  document.getElementById('ordersOverlay').classList.remove('open');
 }
 
 // Purchase limits are per product+size, and count what's already been
@@ -602,8 +643,8 @@ function renderProducts() {
       + '<div class="product-thumb">' + imgHtml + '</div>'
       + '<div class="product-info">'
       + '<div class="product-name clickable" onclick="openCarousel(\'' + p.id + '\')">' + esc(p.name) + '</div>'
-      + '<div class="product-price">' + formatPrice(p) + (p.availability ? ' <span style="font-weight:400;">\xb7 ' + esc(p.availability) + '</span>' : '') + '</div>'
-      + (p.description ? '<div class="product-description">' + esc(p.description) + '</div>' : '')
+      + '<div class="product-price">' + formatPrice(p) + (p.availability ? ' <span style="font-weight:400;color:var(--dark);">\xb7 ' + esc(p.availability) + '</span>' : '') + '</div>'
+      + (p.description ? '<div class="product-description" id="desc-' + p.id + '">' + esc(p.description) + '</div><button class="desc-toggle" id="desc-toggle-' + p.id + '" onclick="toggleDescription(\'' + p.id + '\')">Show more</button>' : '')
       + controlsHtml
       + '</div></div>';
   }).join('');
@@ -613,7 +654,49 @@ function renderProducts() {
     const qtyEl = document.getElementById('qty-' + p.id);
     const sizeEl = document.querySelector('select.size-select[data-pid="' + p.id + '"]');
     applyQtyLimit(qtyEl, p, sizeEl ? sizeEl.value : null);
+
+    // Only show "Show more" when the description is actually being clamped —
+    // a short description that already fits in 2 lines gets no toggle.
+    const descEl = document.getElementById('desc-' + p.id);
+    const toggleEl = document.getElementById('desc-toggle-' + p.id);
+    if (descEl && toggleEl && isDescriptionTruncated(descEl)) {
+      toggleEl.style.display = 'inline-block';
+    }
   });
+}
+
+// scrollHeight on a `-webkit-line-clamp` element is unreliable for
+// detecting truncation — some browsers (notably Firefox) report it equal
+// to clientHeight even when the text is genuinely being cut off, since the
+// clamp box never lays out the full unclamped content in the first place.
+// To get an accurate reading, measure an off-screen clone with the clamp
+// removed (same width, natural height) and compare that real height
+// against the clamped element's visible height.
+function isDescriptionTruncated(descEl) {
+  const width = descEl.getBoundingClientRect().width;
+  const clone = descEl.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.classList.remove('expanded');
+  clone.style.position = 'absolute';
+  clone.style.visibility = 'hidden';
+  clone.style.pointerEvents = 'none';
+  clone.style.display = 'block';
+  clone.style.webkitLineClamp = 'unset';
+  clone.style.overflow = 'visible';
+  clone.style.height = 'auto';
+  clone.style.width = width + 'px';
+  document.body.appendChild(clone);
+  const fullHeight = clone.scrollHeight;
+  document.body.removeChild(clone);
+  return fullHeight > descEl.clientHeight + 1;
+}
+
+function toggleDescription(productId) {
+  const descEl = document.getElementById('desc-' + productId);
+  const toggleEl = document.getElementById('desc-toggle-' + productId);
+  if (!descEl || !toggleEl) return;
+  const expanded = descEl.classList.toggle('expanded');
+  toggleEl.textContent = expanded ? 'Show less' : 'Show more';
 }
 
 function addItemToCart(productId, size, rawQuantity, btn) {
@@ -710,8 +793,11 @@ function updateTotals(total) {
     if (label) label.textContent = `Deposit required (${downpaymentPercent}%)`;
     document.getElementById('depositAmount').textContent = 'PHP ' + Math.ceil(total * (downpaymentPercent / 100)).toLocaleString();
   } else {
+    // Nothing is collected online in this case, so pairing this label with
+    // "PHP 0" reads as if the venue payment itself is zero. Show the full
+    // amount that's actually due at the venue instead.
     if (label) label.textContent = 'Pay in full at the venue';
-    document.getElementById('depositAmount').textContent = 'PHP 0';
+    document.getElementById('depositAmount').textContent = 'PHP ' + total.toLocaleString();
   }
 }
 
