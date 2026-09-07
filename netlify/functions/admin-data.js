@@ -585,9 +585,10 @@ export const handler = async (event) => {
         const settings = await getNotificationSettings(supabase);
         const sendSms  = body.send_sms !== false;
         const fxRates  = await fetchLiveMerchFx();
+        const variant  = body.email_variant === 'followup' ? 'followup' : 'invite';
         const { mailResult, smsResult } = await runMerchInvite(reg, {
           provider: normalizeProvider(body.email_provider), sendSms, settings,
-          requesterEmail: requester.email, siteUrl: linkBase(event), fxRates,
+          requesterEmail: requester.email, siteUrl: linkBase(event), fxRates, variant,
         });
 
         return {
@@ -600,6 +601,11 @@ export const handler = async (event) => {
         if (!requester.permissions?.verify_payment || requester.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
         }
+
+        // 'invite' = the standard "preorders are open" email. 'followup' =
+        // the last-day reminder, which only makes sense for people who
+        // haven't ordered yet — filtered out below.
+        const variant = body.email_variant === 'followup' ? 'followup' : 'invite';
 
         // Allow an admin to target a specific selection of registrations by
         // passing `ids`. When absent, fall back to the previous behaviour of
@@ -625,6 +631,23 @@ export const handler = async (event) => {
           regsResult = data || [];
         }
 
+        // Follow-up reminder: drop anyone who already has a non-cancelled
+        // preorder on file — reminding someone who already ordered reads as
+        // a bug, not encouragement.
+        let skippedAlreadyOrdered = 0;
+        if (variant === 'followup' && regsResult.length) {
+          const { data: existingOrders, error: ordersErr } = await supabase
+            .from('merch_preorders')
+            .select('registration_id')
+            .neq('status', 'cancelled')
+            .in('registration_id', regsResult.map(r => r.id));
+          if (ordersErr) throw ordersErr;
+          const alreadyOrdered = new Set((existingOrders || []).map(o => o.registration_id));
+          const before = regsResult.length;
+          regsResult = regsResult.filter(r => !alreadyOrdered.has(r.id));
+          skippedAlreadyOrdered = before - regsResult.length;
+        }
+
         const provider = normalizeProvider(body.email_provider);
         const siteUrl  = linkBase(event);
         const settings = await getNotificationSettings(supabase);
@@ -633,7 +656,7 @@ export const handler = async (event) => {
         const results = await mapWithConcurrency(regsResult || [], BULK_CONCURRENCY, async (reg) => {
           try {
             const { mailResult, smsResult } = await runMerchInvite(reg, {
-              provider, sendSms, settings, requesterEmail: requester.email, siteUrl, fxRates,
+              provider, sendSms, settings, requesterEmail: requester.email, siteUrl, fxRates, variant,
             });
             return {
               id: reg.id, name: reg.name, email: reg.email, ok: true,
@@ -659,6 +682,7 @@ export const handler = async (event) => {
             sms_credits: sent.reduce((s, r) => s + (r.sms?.segments || 0), 0),
             fell_back: sent.some(r => r.fell_back),
             provider,
+            skipped_already_ordered: skippedAlreadyOrdered,
             results,
           }),
         };
@@ -856,9 +880,10 @@ async function runAttendanceInvite(reg, { provider, sendSms, settings, requester
 // member already received it), SMS only when merch_sms_enabled is on (its
 // own dedicated switch, independent of the shared sms_enabled gate the
 // other event types share) and the caller didn't opt out.
-async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl, fxRates }, { skipEmail = false } = {}) {
+async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail, siteUrl, fxRates, variant = 'invite' }, { skipEmail = false } = {}) {
   const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl || '').replace(/\/+$/, '');
   const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+  const firstName = String(reg.name || '').trim().split(/\s+/)[0];
 
   let mailResult = null;
   if (!skipEmail) {
@@ -871,8 +896,10 @@ async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail
     mailResult = await sendEmail({
       provider,
       to:      reg.email,
-      subject: `${String(reg.name || '').trim().split(/\s+/)[0]}, preorder your RELAY 2026 merch`,
-      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [], country: reg.country || null, fxRates }),
+      subject: variant === 'followup'
+        ? `${firstName}, last call — RELAY 2026 pre-orders close tomorrow!`
+        : `${firstName}, preorder your RELAY 2026 merch`,
+      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [], country: reg.country || null, fxRates, variant }),
     });
   }
 
@@ -1146,8 +1173,9 @@ function attendanceEmail({ name, heroUrl, links }) {
   </div></body></html>`;
 }
 
-function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = null, fxRates }) {
+function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = null, fxRates, variant = 'invite' }) {
   const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
+  const isFollowup = variant === 'followup';
 
   const escapeHtml = (s) => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1208,6 +1236,8 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = n
   .cta-wrap { text-align: center; margin: 4px 0 16px; }
   .link-fallback { font-size: 11px; color: #6B8A9A; text-align: center; line-height: 1.6; padding: 0 32px 28px; }
   .footer { background: #f7fafb; padding: 16px 32px; text-align: center; font-size: 11px; color: #6B8A9A; border-top: 1px solid #D4E2EA; }
+  .hourglass-spin { display: inline-block; animation: hourglass-spin 1.8s linear infinite; }
+  @keyframes hourglass-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -1215,19 +1245,32 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = n
   <div class="bar"></div>
   <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
   <div class="header">
-    <h1>Merch Preorders Are Open 🛍️</h1>
+    <h1>${isFollowup ? 'Last Call for Merch Pre-Orders ⏳' : 'Merch Preorders Are Open 🛍️'}</h1>
     <p>RELAY Conference Asia Pacific 2026</p>
     <p style="display:inline-block;margin-top:12px;padding:6px 16px;border-radius:20px;background:rgba(232,184,48,0.18);border:1px solid #E8B830;color:#F5D77A;font-size:13px;font-weight:700;">⏰ Pre-order window: September 1&ndash;8, 2026</p>
   </div>
 
   <div class="intro">
     <p style="font-size:15px;color:#2A3D4A;margin-bottom:12px;">Hi <strong>${escapeHtml(firstName)}</strong>,</p>
+    ${isFollowup ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 16px;">
+      <tr><td style="background:#FDF6E0;border:1.5px solid #E8B830;border-radius:10px;padding:14px 18px;text-align:center;">
+        <span class="hourglass-spin" style="font-size:20px;">⏳</span>
+        <span style="font-size:15px;font-weight:800;color:#7A5A10;display:block;margin-top:6px;">Last day for pre-orders is tomorrow!</span>
+        <span style="font-size:13px;color:#7A5A10;display:block;margin-top:4px;">Don't miss out — lock in your size and favorite RELAY 2026 gear before the window closes.</span>
+      </td></tr>
+    </table>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      Just a friendly reminder — you haven't placed your RELAY 2026 merch pre-order yet, and this is your last chance to grab it before everyone else picks the good sizes! 🏃
+    </p>
+    ` : `
     <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
       Your RELAY 2026 conference payment is confirmed! 🎉 
     </p>
     <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
       Now, it's time to get your official RELAY 2026 gear. 🛍️
     </p>
+    `}
     <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
       Secure your favorite RELAY 2026 gear by placing your pre-order through our <a href="${orderLink}" style="color:#2E7048;text-decoration:underline;">website</a> from <b>September 1&ndash;8, 2026</b>.
     </p>

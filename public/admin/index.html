@@ -969,9 +969,22 @@
                 </button>
               </div>
             </div>
-            <button id="ph-blast-merch" onclick="blastMerchInvite()" style="display:none;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2E7048;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
-              <span>🛍️</span><span id="ph-merch-label">Blast Merch Email</span>
-            </button>
+            <div id="ph-merch-split" style="display:none;align-items:stretch;position:relative;">
+              <button id="ph-blast-merch" onclick="blastMerchInvite('invite')" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2E7048;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
+                <span>🛍️</span><span id="ph-merch-label">Blast Merch Email</span>
+              </button>
+              <button id="ph-merch-caret" onclick="toggleMerchVariantMenu(event,'ph')" title="Choose email type" style="display:inline-flex;align-items:center;justify-content:center;padding:0 11px;height:34px;background:#2E7048;color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.35);border-radius:0 8px 8px 0;font-size:11px;font-weight:700;line-height:1;cursor:pointer;">▾</button>
+              <div id="ph-merch-variant-menu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:250px;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:20;">
+                <button onclick="blastMerchInvite('invite')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🛍️ New Invite</span>
+                  <span class="preset-sub">Standard "preorders are open" email</span>
+                </button>
+                <button onclick="blastMerchInvite('followup')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">⏳ Pre-Order Reminder</span>
+                  <span class="preset-sub">Last-day nudge — only sent to those who haven't ordered yet</span>
+                </button>
+              </div>
+            </div>
             <div id="ph-merch-closed-note" style="display:none;font-size:11px;color:#C0392B;font-weight:600;max-width:220px;line-height:1.4;">Merch preorder page is closed — turn it on in Merch → Preorder Page to send this.</div>
             <!-- Split button: main action sends, caret offers selection presets -->
             <div id="ph-attendance-split" style="display:none;align-items:stretch;position:relative;">
@@ -1092,9 +1105,22 @@
         <div class="table-header">
           <h2>International Registrations</h2>
           <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-            <button id="intl-blast-merch" onclick="blastMerchInvite()" style="display:none;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2E7048;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
-              <span>🛍️</span><span id="intl-merch-label">Blast Merch Email</span>
-            </button>
+            <div id="intl-merch-split" style="display:none;align-items:stretch;position:relative;">
+              <button id="intl-blast-merch" onclick="blastMerchInvite('invite')" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2E7048;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
+                <span>🛍️</span><span id="intl-merch-label">Blast Merch Email</span>
+              </button>
+              <button id="intl-merch-caret" onclick="toggleMerchVariantMenu(event,'intl')" title="Choose email type" style="display:inline-flex;align-items:center;justify-content:center;padding:0 11px;height:34px;background:#2E7048;color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.35);border-radius:0 8px 8px 0;font-size:11px;font-weight:700;line-height:1;cursor:pointer;">▾</button>
+              <div id="intl-merch-variant-menu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:250px;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:20;">
+                <button onclick="blastMerchInvite('invite')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🛍️ New Invite</span>
+                  <span class="preset-sub">Standard "preorders are open" email</span>
+                </button>
+                <button onclick="blastMerchInvite('followup')" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">⏳ Pre-Order Reminder</span>
+                  <span class="preset-sub">Last-day nudge — only sent to those who haven't ordered yet</span>
+                </button>
+              </div>
+            </div>
             <div id="intl-merch-closed-note" style="display:none;font-size:11px;color:#C0392B;font-weight:600;max-width:220px;line-height:1.4;">Merch preorder page is closed — turn it on in Merch → Preorder Page to send this.</div>
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
               <span class="hc-text">Hide Cancelled</span>
@@ -3153,32 +3179,48 @@
       document.getElementById(labelId).textContent = count ? `${label} (${count})` : label;
     }
 
+    const merchSplit = document.getElementById('ph-merch-split');
     const merchBlast = document.getElementById('ph-blast-merch');
+    const merchCaret = document.getElementById('ph-merch-caret');
     const merchClosedNote = document.getElementById('ph-merch-closed-note');
     if (merchBlast) {
-      merchBlast.style.display = canVerify ? 'inline-flex' : 'none';
+      if (merchSplit) merchSplit.style.display = canVerify ? 'inline-flex' : 'none';
       const merchEligible = selectedRows('ph').filter(r => r && r.status !== 'cancelled').length;
       const preorderClosed = !!currentSettings.merch_preorder_closed;
-      merchBlast.disabled = merchEligible === 0 || preorderClosed;
-      merchBlast.style.background = (merchEligible === 0 || preorderClosed) ? '#9FB6C6' : '#2E7048';
-      merchBlast.style.cursor = (merchEligible === 0 || preorderClosed) ? 'not-allowed' : 'pointer';
+      const merchDisabled = merchEligible === 0 || preorderClosed;
+      merchBlast.disabled = merchDisabled;
+      merchBlast.style.background = merchDisabled ? '#9FB6C6' : '#2E7048';
+      merchBlast.style.cursor = merchDisabled ? 'not-allowed' : 'pointer';
       merchBlast.title = preorderClosed ? 'Merch preorder page is closed — turn it on in Merch → Preorder Page first.' : '';
+      if (merchCaret) {
+        merchCaret.disabled = merchDisabled;
+        merchCaret.style.background = merchDisabled ? '#9FB6C6' : '#2E7048';
+        merchCaret.style.cursor = merchDisabled ? 'not-allowed' : 'pointer';
+      }
       const mLabel = document.getElementById('ph-merch-label');
       if (mLabel) mLabel.textContent = merchEligible ? `Blast Merch Email (${merchEligible})` : 'Blast Merch Email';
       if (merchClosedNote) merchClosedNote.style.display = (canVerify && preorderClosed) ? 'block' : 'none';
     }
 
     // Same button, same rules, for the International tab.
+    const merchSplitIntl = document.getElementById('intl-merch-split');
     const merchBlastIntl = document.getElementById('intl-blast-merch');
+    const merchCaretIntl = document.getElementById('intl-merch-caret');
     const merchClosedNoteIntl = document.getElementById('intl-merch-closed-note');
     if (merchBlastIntl) {
-      merchBlastIntl.style.display = canVerify ? 'inline-flex' : 'none';
+      if (merchSplitIntl) merchSplitIntl.style.display = canVerify ? 'inline-flex' : 'none';
       const merchEligibleIntl = selectedRows('intl').filter(r => r && r.status !== 'cancelled').length;
       const preorderClosed = !!currentSettings.merch_preorder_closed;
-      merchBlastIntl.disabled = merchEligibleIntl === 0 || preorderClosed;
-      merchBlastIntl.style.background = (merchEligibleIntl === 0 || preorderClosed) ? '#9FB6C6' : '#2E7048';
-      merchBlastIntl.style.cursor = (merchEligibleIntl === 0 || preorderClosed) ? 'not-allowed' : 'pointer';
+      const merchDisabledIntl = merchEligibleIntl === 0 || preorderClosed;
+      merchBlastIntl.disabled = merchDisabledIntl;
+      merchBlastIntl.style.background = merchDisabledIntl ? '#9FB6C6' : '#2E7048';
+      merchBlastIntl.style.cursor = merchDisabledIntl ? 'not-allowed' : 'pointer';
       merchBlastIntl.title = preorderClosed ? 'Merch preorder page is closed — turn it on in Merch → Preorder Page first.' : '';
+      if (merchCaretIntl) {
+        merchCaretIntl.disabled = merchDisabledIntl;
+        merchCaretIntl.style.background = merchDisabledIntl ? '#9FB6C6' : '#2E7048';
+        merchCaretIntl.style.cursor = merchDisabledIntl ? 'not-allowed' : 'pointer';
+      }
       const mLabelIntl = document.getElementById('intl-merch-label');
       if (mLabelIntl) mLabelIntl.textContent = merchEligibleIntl ? `Blast Merch Email (${merchEligibleIntl})` : 'Blast Merch Email';
       if (merchClosedNoteIntl) merchClosedNoteIntl.style.display = (canVerify && preorderClosed) ? 'block' : 'none';
@@ -3847,13 +3889,22 @@
     } catch (e) { showToast('Error: ' + e.message); }
   }
 
-  async function sendMerchInvite(id, name) {
-    if (!id) return;
-    openSingleMerchModal(id, name);
+  function toggleMerchVariantMenu(e, tab) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById(`${tab}-merch-variant-menu`);
+    if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   }
 
-  async function blastMerchInvite() {
-    openBulkMerchModalForSelection();
+  async function sendMerchInvite(id, name) {
+    if (!id) return;
+    openSingleMerchModal(id, name, 'invite');
+  }
+
+  async function blastMerchInvite(variant = 'invite') {
+    const menuId = activeTab === 'intl' ? 'intl-merch-variant-menu' : 'ph-merch-variant-menu';
+    const menu = document.getElementById(menuId);
+    if (menu) menu.style.display = 'none';
+    openBulkMerchModalForSelection(variant);
   }
 
   // --- Merch bulk/single modal handlers ---------------------------------
@@ -3861,6 +3912,7 @@
   let merchTargetIds = [];
   let bulkMerchProvider = 'gmail';
   let merchSmsOn = true, merchSmsAvailable = false;
+  let merchEmailVariant = 'invite';
 
   // Kept in step with MERCH_INVITE_SMS_DEFAULT in netlify/lib/sms-templates.js —
   // used only for the client-side credit estimate shown in this modal.
@@ -3930,15 +3982,17 @@
     renderBulkMerchProvider();
   }
 
-  function openSingleMerchModal(id, name) {
+  function openSingleMerchModal(id, name, variant = 'invite') {
     const reg = findRegistration(id);
     merchTargetIds = [id];
+    merchEmailVariant = variant;
     const eligible = reg && reg.status !== 'cancelled';
     if (!eligible) {
       showToast('This registrant cannot receive a merch preorder link (cancelled).');
       return;
     }
-    document.getElementById('bulkMerchSummary').innerHTML = `Send a merch preorder link to <strong>${esc(name)}</strong>`;
+    const variantNote = variant === 'followup' ? ' <span style="color:#7A5A10;font-weight:700;">(⏳ Pre-Order Reminder)</span>' : '';
+    document.getElementById('bulkMerchSummary').innerHTML = `Send a merch preorder link to <strong>${esc(name)}</strong>${variantNote}`;
     document.getElementById('bulkMerchWarning').style.display = 'none';
     document.getElementById('bulkMerchResults').innerHTML = '';
     document.getElementById('bulkMerchProgressWrap').style.display = 'none';
@@ -3951,15 +4005,19 @@
     document.getElementById('bulkMerchModal').style.display = 'flex';
   }
 
-  function openBulkMerchModalForSelection() {
+  function openBulkMerchModalForSelection(variant = 'invite') {
     const selected = selectedRows(activeTab);
     if (!selected.length) { showToast('No rows selected.'); return; }
     const eligible = selected.filter(r => r && r.status !== 'cancelled');
     if (!eligible.length) { showToast('No eligible participants in this selection (all cancelled).'); return; }
 
     merchTargetIds = eligible.map(r => r.id);
+    merchEmailVariant = variant;
     const skipped = selected.length - eligible.length;
-    document.getElementById('bulkMerchSummary').innerHTML = `<strong>${eligible.length}</strong> merch preorder email${eligible.length===1? '':'s'} will be sent from your selection of <strong>${selected.length}</strong>.` + (skipped ? `<br><span style="font-size:12px;color:#6B8A9A;">${skipped} skipped — cancelled.</span>` : '');
+    const variantNote = variant === 'followup'
+      ? `<br><span style="font-size:12px;color:#7A5A10;font-weight:700;">⏳ Pre-Order Reminder — sent only to those who haven't ordered yet; the rest are skipped automatically.</span>`
+      : '';
+    document.getElementById('bulkMerchSummary').innerHTML = `<strong>${eligible.length}</strong> merch preorder email${eligible.length===1? '':'s'} will be sent from your selection of <strong>${selected.length}</strong>.` + (skipped ? `<br><span style="font-size:12px;color:#6B8A9A;">${skipped} skipped — cancelled.</span>` : '') + variantNote;
     document.getElementById('bulkMerchWarning').style.display = 'none';
     document.getElementById('bulkMerchResults').innerHTML = '';
     document.getElementById('bulkMerchProgressWrap').style.display = 'none';
@@ -3995,13 +4053,14 @@
     const totals = { sent: 0, failed: 0, sms_sent: 0, sms_failed: 0, sms_credits: 0 };
     const failures = [];
     let done = 0;
+    let skippedAlreadyOrdered = 0;
     try {
       for (let i = 0; i < merchTargetIds.length; i += BULK_CHUNK) {
         const chunk = merchTargetIds.slice(i, i + BULK_CHUNK);
         const res = await fetch('/.netlify/functions/admin-data', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'gmail', send_sms: sendSms }),
+          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'gmail', send_sms: sendSms, email_variant: merchEmailVariant }),
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'Bulk merch send failed');
@@ -4011,6 +4070,7 @@
         totals.sms_sent += json.sms_sent || 0;
         totals.sms_failed += json.sms_failed || 0;
         totals.sms_credits += json.sms_credits || 0;
+        skippedAlreadyOrdered += json.skipped_already_ordered || 0;
         failures.push(...(json.results || []).filter(r => !r.ok));
 
         done = i + chunk.length;
@@ -4025,7 +4085,10 @@
       const smsSuffix = sendSms
         ? `<br>📱 <strong>${totals.sms_sent}</strong> SMS sent (${totals.sms_credits} credit${totals.sms_credits === 1 ? '' : 's'})` + (totals.sms_failed ? ` · <strong>${totals.sms_failed}</strong> failed` : '')
         : '';
-      document.getElementById('bulkMerchResults').innerHTML = `✅ <strong>${totals.sent}</strong> sent via ${via}` + (totals.failed ? `<br>❌ <strong>${totals.failed}</strong> failed` : '') + smsSuffix;
+      const skippedSuffix = skippedAlreadyOrdered
+        ? `<br>⏭️ <strong>${skippedAlreadyOrdered}</strong> skipped — already placed a pre-order`
+        : '';
+      document.getElementById('bulkMerchResults').innerHTML = `✅ <strong>${totals.sent}</strong> sent via ${via}` + (totals.failed ? `<br>❌ <strong>${totals.failed}</strong> failed` : '') + smsSuffix + skippedSuffix;
       merchTargetIds = [];
       showToast(`Merch blast sent to ${totals.sent} participant${totals.sent===1?'':'s'} via ${via}` + (sendSms ? ` · 📱 ${totals.sms_sent} SMS sent` : ''));
       loadData();
@@ -6810,7 +6873,9 @@
       ['attendanceProviderMenu', 'attendanceProviderBtn'],
       ['bulkMerchProviderMenu', 'bulkMerchProviderBtn'],
       ['ph-attendance-presets', 'ph-attendance-caret'],
-      ['ph-followup-presets', 'ph-followup-caret']
+      ['ph-followup-presets', 'ph-followup-caret'],
+      ['ph-merch-variant-menu', 'ph-merch-caret'],
+      ['intl-merch-variant-menu', 'intl-merch-caret']
     ]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
