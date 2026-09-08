@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RELAY 2026 — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
     --sky:#3A8BBF;--sky-light:#EBF5FB;
@@ -82,6 +83,8 @@
   .group-tab-bar .tab-btn .tab-badge{background:rgba(28,43,56,0.08);color:var(--muted);}
   .group-tab-bar .tab-btn:hover{background:#E3EBF0;color:var(--dark);}
   .group-tab-bar .tab-btn.active{background:linear-gradient(135deg,#1C2B38,#2E7048);color:#fff;box-shadow:0 2px 10px rgba(28,43,56,0.3);}
+  .tab-icon{display:inline-flex;align-items:center;justify-content:center;line-height:1;}
+  .tab-label{display:inline;}
   .btn-back-dashboard{
     display:inline-flex;align-items:center;gap:8px;padding:11px 20px;min-height:44px;box-sizing:border-box;
     background:#fff;color:var(--sky);border:1.5px solid var(--sky);border-radius:10px;
@@ -331,10 +334,14 @@
     .tiles-row{grid-template-columns:repeat(2,1fr);gap:10px;}
     .tiles-row.intl-tiles{grid-template-columns:repeat(2,1fr);}
     .tab-btn{padding:10px 16px;font-size:13px;}
-    .group-tab-bar{flex-wrap:wrap;gap:8px;}
-    .group-tab-bar .tab-btn{font-size:13px;padding:10px 14px;flex:1;justify-content:center;}
+    .group-tab-bar{flex-wrap:nowrap;gap:8px;}
+    .group-tab-bar .tab-btn{font-size:13px;padding:10px 8px;flex:1;justify-content:center;min-width:0;}
+    .group-tab-bar .tab-btn .tab-label,
+    #registrations-subtabs .tab-btn .tab-label{display:none;}
+    .group-tab-bar .tab-btn .tab-icon,
+    #registrations-subtabs .tab-btn .tab-icon{font-size:20px;}
     #registrations-subtabs{padding-left:6px;}
-    #registrations-subtabs .tab-btn{font-size:11px;padding:8px 14px;}
+    #registrations-subtabs .tab-btn{font-size:11px;padding:8px 12px;}
     .filters-bar{flex-direction:column;padding:14px;gap:10px;}
     .filter-group{width:100%;}
     .filter-group select,.filter-group input{width:100%;min-width:unset;}
@@ -387,6 +394,60 @@
     .stat-pill .pill-text{display:none;}
     .stat-pill{padding:5px 9px;gap:0;font-size:13px;}
   }
+
+  /* ── BREAKOUT RESPONSES BOARD ───────────────────────────────────────────── */
+  .breakout-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-items:start;}
+  .breakout-col{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+  .breakout-col-header{padding:12px 14px;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:1.35;}
+  .breakout-col-header .bcol-count{font-family:'DM Mono';font-size:12px;opacity:0.85;white-space:nowrap;}
+  .breakout-col-body{padding:8px;min-height:80px;display:flex;flex-direction:column;gap:6px;transition:background 0.15s;}
+  .breakout-col-body.drag-over{background:rgba(58,139,191,0.08);outline:2px dashed var(--sky);outline-offset:-4px;border-radius:0 0 10px 10px;}
+  .breakout-participant{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px 30px;cursor:default;position:relative;transition:box-shadow 0.15s,border-color 0.15s;}
+  .breakout-participant.draggable{cursor:grab;}
+  .breakout-participant.draggable:active{cursor:grabbing;}
+  .breakout-participant.dragging{opacity:0.35;}
+  .breakout-participant.selected{border-color:var(--sky);background:var(--sky-light);}
+  .breakout-participant .mail-btn{position:absolute;right:8px;bottom:8px;z-index:2;padding:4px 8px;background:var(--green-bright);border:1px solid var(--green-bright);border-radius:4px;cursor:pointer;font-size:12px;color:#fff;transition:all 0.15s;}
+  .breakout-participant .mail-btn:hover{background:var(--green);border-color:var(--green);color:#fff;}
+  .breakout-participant .mail-btn:disabled{opacity:0.6;cursor:wait;}
+  .bp-name{font-size:13px;font-weight:700;color:var(--dark);line-height:1.3;padding-right:64px;}
+  .bp-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-right:64px;}
+  .bp-age-tag{background:#F0F4F7;color:var(--text);font-weight:600;font-size:10px;padding:1px 5px;border-radius:3px;}
+  .bp-badge{position:absolute;top:8px;right:8px;z-index:1;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;border-radius:4px;white-space:nowrap;}
+  .bp-badge.self{background:var(--green-light);color:var(--green);border:1px solid rgba(46,112,72,0.2);}
+  .bp-badge.admin{background:var(--sky-light);color:var(--sky);border:1px solid rgba(58,139,191,0.2);}
+  .bp-badge.none{background:var(--amber-light);color:var(--amber);border:1px solid rgba(217,119,6,0.2);}
+  .breakout-col.unassigned .breakout-col-header{background:linear-gradient(135deg,#546E7A,#37474F);flex-direction:column;align-items:stretch;gap:8px;}
+  .breakout-col.unassigned .breakout-participant.draggable:hover{border-color:var(--sky);box-shadow:0 2px 8px rgba(58,139,191,0.15);}
+  .breakout-church-group{margin-bottom:0;background:#F7FAFB;border:1px solid var(--border);border-radius:8px;padding:10px;}
+  .breakout-church-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 0 6px;border-bottom:1px solid #EEF3F6;display:flex;justify-content:space-between;align-items:center;}
+  .breakout-empty{font-size:12px;color:var(--muted);text-align:center;padding:16px 8px;font-style:italic;}
+  .breakout-unassigned-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;}
+  .breakout-select-pill{font-size:11px;cursor:pointer;color:rgba(255,255,255,0.85);display:flex;align-items:center;gap:4px;}
+  .breakout-select-pill:hover{color:#fff;}
+  /* The Unassigned list can run into the hundreds — instead of one very
+     tall single-file column, it spans the full board width and lays its
+     church groups out as a wide grid of cards, same footprint as N topic
+     columns side by side. */
+  /* CSS grid lines up church-cards into strict rows, so one tall card (lots
+     of participants) forces every shorter card in that same row to leave a
+     big empty gap beneath it. Multi-column ("masonry-style") layout packs
+     each column top-to-bottom independently instead, so short cards don't
+     wait around for their tall row-mate — eliminating that dead space. */
+  .breakout-col.unassigned{grid-column:1 / -1;}
+  .breakout-col.unassigned .breakout-col-body{
+    display:block;columns:220px 4;column-gap:10px;padding:10px;
+  }
+  .breakout-col.unassigned .breakout-church-group{break-inside:avoid;margin-bottom:10px;}
+  @media(max-width:900px){.breakout-board{grid-template-columns:1fr 1fr;}.breakout-col.unassigned .breakout-col-body{columns:1;}}
+  @media(max-width:540px){.breakout-board{grid-template-columns:1fr;}}
+  /* Compact header strip — legend + live counts in one slim bar, sized to
+     match the topic column headers below rather than towering over them. */
+  .breakout-summary-bar{display:flex;align-items:stretch;gap:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden;flex-wrap:wrap;}
+  .breakout-summary-stat{padding:8px 16px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border);min-width:104px;}
+  .breakout-summary-stat:last-child{border-right:none;}
+  .breakout-summary-stat .n{font-family:'DM Mono';font-size:16px;font-weight:700;color:var(--dark);line-height:1.1;}
+  .breakout-summary-stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -803,19 +864,22 @@
     <div id="dashboard-tabs">
       <div class="tab-bar group-tab-bar">
         <button class="tab-btn active" onclick="switchGroup('registrations')" id="group-registrations">
-          📋 Registrations <span class="tab-badge" id="badge-registrations">0</span>
+          <span class="tab-icon">📋</span><span class="tab-label">Registrations</span> <span class="tab-badge" id="badge-registrations">0</span>
         </button>
         <button class="tab-btn" onclick="switchGroup('orders')" id="group-orders">
-          🧾 Merch Orders <span class="tab-badge" id="badge-orders">0</span>
+          <span class="tab-icon">🧾</span><span class="tab-label">Merch Orders</span> <span class="tab-badge" id="badge-orders">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchGroup('breakout')" id="group-breakout">
+          <span class="tab-icon">🎯</span><span class="tab-label">Breakout Responses</span> <span class="tab-badge" id="badge-breakout">0</span>
         </button>
       </div>
       <div style="height:4px;border-radius:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);margin:-14px 0 18px;"></div>
       <div class="tab-bar sub-tab-bar" id="registrations-subtabs">
         <button class="tab-btn active" onclick="switchTab('ph')" id="tab-ph">
-          🇵🇭 Philippines <span class="tab-badge" id="badge-ph">0</span>
+          <span class="tab-icon">🇵🇭</span><span class="tab-label">Philippines</span> <span class="tab-badge" id="badge-ph">0</span>
         </button>
         <button class="tab-btn" onclick="switchTab('intl')" id="tab-intl">
-          🌏 International <span class="tab-badge" id="badge-intl">0</span>
+          <span class="tab-icon">🌏</span><span class="tab-label">International</span> <span class="tab-badge" id="badge-intl">0</span>
         </button>
       </div>
     </div>
@@ -1462,6 +1526,62 @@
       </div>
     </div>
 
+    <!-- BREAKOUT RESPONSES TAB -->
+    <div class="tab-content" id="content-breakout">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--dark);">🎯 Breakout Session Responses</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">Participant selections per session. Drag <strong>unresponded</strong> participants to assign them after the selection deadline.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <button onclick="exportBreakoutExcel()" style="padding:9px 15px;background:#2E7048;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="font-size:14px;">📊</span> Export Excel</button>
+          <button onclick="loadBreakoutResponses()" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;flex-shrink:0;">Refresh</button>
+        </div>
+      </div>
+
+      <!-- Compact legend + live counts — one slim bar, roughly the same
+           height as the topic column headers below, instead of a legend row
+           plus four separate stat boxes stacked above the board. -->
+      <div class="breakout-summary-bar" style="margin-bottom:16px;">
+        <div class="breakout-summary-stat">
+          <span class="n" id="br-total">–</span>
+          <span class="l">Total Registrants</span>
+        </div>
+        <div class="breakout-summary-stat">
+          <span class="n" id="br-self" style="color:var(--green);">–</span>
+          <span class="l">Self-Selected</span>
+        </div>
+        <div class="breakout-summary-stat">
+          <span class="n" id="br-admin" style="color:var(--sky);">–</span>
+          <span class="l">Admin-Assigned</span>
+        </div>
+        <div class="breakout-summary-stat">
+          <span class="n" id="br-none" style="color:var(--amber);">–</span>
+          <span class="l">No Response</span>
+        </div>
+        <div style="flex:1;min-width:12px;"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:0 16px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="bp-badge self" style="position:static;">SELF</span>
+            <span style="font-size:11px;color:var(--text);font-weight:600;">Chose own <span style="color:var(--muted);font-weight:400;">(Locked)</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="bp-badge admin" style="position:static;">ADMIN</span>
+            <span style="font-size:11px;color:var(--text);font-weight:600;">Assigned <span style="color:var(--muted);font-weight:400;">(Reassignable)</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span class="bp-badge none" style="position:static;">NONE</span>
+            <span style="font-size:11px;color:var(--text);font-weight:600;">No response <span style="color:var(--muted);font-weight:400;">(Draggable)</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Board (rendered by JS) -->
+      <div id="breakout-board-wrap">
+        <div class="breakout-empty" style="padding:40px 16px;">Loading breakout responses…</div>
+      </div>
+    </div>
+
     <!-- ADMINS TAB -->
     <div class="tab-content" id="content-admins">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -1577,9 +1697,69 @@
 
         <button onclick="saveSettings()" id="settings-save-btn" style="padding:12px 24px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s;" onmouseover="this.style.background='#4BAE6A'" onmouseout="this.style.background='var(--green)'">Save Settings</button>
         <div id="settings-err" style="display:none;color:var(--red);font-size:12px;text-align:center;"></div>
+
+        <!-- Breakout Sessions -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);">🎤 Breakout Sessions</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">Title, speaker, position, and seat capacity — shown on the breakout-selection page and invite email.</div>
+            </div>
+            <button onclick="openBreakoutSessionModal()" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Add Session</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px;">
+              <thead><tr style="text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;">
+                <th style="padding:6px 8px;">Title</th><th style="padding:6px 8px;">Speaker</th><th style="padding:6px 8px;">Post</th>
+                <th style="padding:6px 8px;">Seats</th><th style="padding:6px 8px;">Picked</th><th style="padding:6px 8px;">Status</th><th style="padding:6px 8px;"></th>
+              </tr></thead>
+              <tbody id="breakoutSessionsBody"><tr><td colspan="7" style="padding:14px 8px;color:var(--muted);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ADD/EDIT BREAKOUT SESSION MODAL -->
+<div id="breakoutSessionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:460px;width:90%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h3 style="margin:0;font-size:17px;color:var(--dark);" id="breakoutSessionModalTitle">Add Session</h3>
+      <button onclick="closeBreakoutSessionModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;">&times;</button>
+    </div>
+    <input type="hidden" id="bs-id">
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Session Title</label>
+      <input type="text" id="bs-title" placeholder="e.g. Thinking About Love: A Biblical View On Relationships" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Speaker Name</label>
+      <input type="text" id="bs-speaker" placeholder="e.g. Jeffrey Jo" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Plain name — "Pastor" is added automatically wherever this is shown.</div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Speaker Position (optional)</label>
+      <textarea id="bs-post" rows="2" placeholder="e.g. Senior Pastor&#10;Grace Church Manila" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;resize:vertical;"></textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Shown under the speaker's name — press Enter for a second line (e.g. title, then church). Left blank shows a "Position — TBA" placeholder.</div>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:14px;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Seat Capacity</label>
+        <input type="number" id="bs-capacity" min="1" value="45" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Sort Order</label>
+        <input type="number" id="bs-sort" value="0" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dark);margin-bottom:18px;cursor:pointer;">
+      <input type="checkbox" id="bs-active" checked> Active (visible to participants)
+    </label>
+    <div id="bs-err" style="display:none;color:var(--red);font-size:12px;margin-bottom:12px;"></div>
+    <button onclick="saveBreakoutSession()" id="bs-save-btn" style="width:100%;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Save Session</button>
   </div>
 </div>
 
@@ -1721,6 +1901,45 @@
         </div>
       </div>
       <button onclick="closeBulkMerchModal()" id="bulkMerchCancelBtn" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="bulkBreakoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin:0;">Breakout Session Email</h3>
+      <button onclick="closeBulkBreakoutModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6B8A9A;line-height:1;padding:0 0 0 12px;">&times;</button>
+    </div>
+    <div id="bulkBreakoutSummary" style="background:#EBF5FB;border-radius:10px;padding:12px 16px;font-size:13px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;"></div>
+    <div id="bulkBreakoutWarning" style="display:none;background:#FDF6E0;border-left:3px solid #E8B830;border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:#7A5A10;line-height:1.5;margin-bottom:14px;"></div>
+
+    <div id="bulkBreakoutProgressWrap" style="display:none;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B8A9A;margin-bottom:6px;">
+        <span id="bulkBreakoutProgressLabel">Sending…</span><span id="bulkBreakoutProgressPct">0%</span>
+      </div>
+      <div style="background:#EDF2F5;border-radius:50px;height:8px;overflow:hidden;">
+        <div id="bulkBreakoutProgressBar" style="width:0%;height:8px;background:linear-gradient(90deg,#3A8BBF,#4BAE6A);border-radius:50px;transition:width 0.25s;"></div>
+      </div>
+      <div id="bulkBreakoutResults" style="margin-top:12px;font-size:12px;color:#2A3D4A;line-height:1.7;"></div>
+    </div>
+
+    <div id="bulkBreakoutActionRow" style="display:flex;gap:10px;">
+      <div style="flex:1;position:relative;display:flex;">
+        <button onclick="doBulkBreakout()" id="bulkBreakoutConfirmBtn" style="flex:1;padding:12px;background:#3A8BBF;color:#fff;border:none;border-radius:8px 0 0 8px;font-weight:700;cursor:pointer;font-size:13px;">💬 Send via Gmail</button>
+        <button onclick="toggleBulkBreakoutProviderMenu(event)" id="bulkBreakoutProviderBtn" title="Choose email provider" style="padding:12px 11px;background:#3A8BBF;color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;">▾</button>
+        <div id="bulkBreakoutProviderMenu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectBulkBreakoutProvider('gmail')" id="bulkBreakoutOpt-gmail" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✉️ Gmail <span id="bulkBreakoutCheck-gmail" style="color:#2E7048;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;">Sends from the RELAY inbox.</span>
+          </button>
+          <button onclick="selectBulkBreakoutProvider('resend')" id="bulkBreakoutOpt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="bulkBreakoutCheck-resend" style="color:#2E7048;display:none;">✓</span></span>
+            <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;" id="bulkBreakoutResendHint">Better deliverability for bulk reminders.</span>
+          </button>
+        </div>
+      </div>
+      <button onclick="closeBulkBreakoutModal()" id="bulkBreakoutCancelBtn" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
     </div>
   </div>
 </div>
@@ -1924,11 +2143,13 @@
     const merchTab    = document.getElementById('tab-merch');
     const settingsTab = document.getElementById('tab-settings');
     const ordersTab   = document.getElementById('group-orders');
+    const breakoutTab = document.getElementById('group-breakout');
     if (adminTab)    adminTab.style.display    = adminSession?.permissions?.manage_admins   ? 'flex' : 'none';
     if (churchesTab) churchesTab.style.display = adminSession?.permissions?.manage_churches ? 'flex' : 'none';
     if (merchTab)    merchTab.style.display    = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
     if (settingsTab) settingsTab.style.display = adminSession?.is_super_admin               ? 'flex' : 'none';
     if (ordersTab)   ordersTab.style.display   = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
+    if (breakoutTab) breakoutTab.style.display = (adminSession?.permissions?.verify_payment || adminSession?.is_super_admin) ? 'flex' : 'none';
     // Note: the Settings menu button itself stays visible for every admin —
     // Refresh Data and Sign Out live inside it regardless of permissions.
   }
@@ -2560,11 +2781,13 @@
   function switchGroup(group) {
     activeGroup = group;
     lastDashboardGroup = group;
-    document.getElementById('group-registrations').classList.toggle('active', group === 'registrations');
-    document.getElementById('group-orders').classList.toggle('active', group === 'orders');
+    document.getElementById('group-registrations')?.classList.toggle('active', group === 'registrations');
+    document.getElementById('group-orders')?.classList.toggle('active', group === 'orders');
+    document.getElementById('group-breakout')?.classList.toggle('active', group === 'breakout');
     document.getElementById('registrations-subtabs').style.display = group === 'registrations' ? 'flex' : 'none';
     if (group === 'registrations') switchTab(lastRegistrationsTab || 'ph');
-    else switchTab('orders');
+    else if (group === 'orders') switchTab('orders');
+    else if (group === 'breakout') switchTab('breakout');
   }
 
   function backToDashboard() {
@@ -2578,14 +2801,17 @@
     document.getElementById('back-to-dashboard-bar').style.display = isSettingsTab ? 'block' : 'none';
     if (tab === 'ph' || tab === 'intl') { activeGroup = 'registrations'; lastRegistrationsTab = tab; }
     else if (tab === 'orders') { activeGroup = 'orders'; }
-    // Keep the two top-level group buttons in sync with whichever tab is active.
+    else if (tab === 'breakout') { activeGroup = 'breakout'; }
+    // Keep the top-level group buttons in sync with whichever tab is active.
     const groupReg = document.getElementById('group-registrations');
     const groupOrders = document.getElementById('group-orders');
+    const groupBreakout = document.getElementById('group-breakout');
     const subtabs = document.getElementById('registrations-subtabs');
     if (!isSettingsTab) {
-      if (groupReg)    groupReg.classList.toggle('active', activeGroup === 'registrations');
-      if (groupOrders) groupOrders.classList.toggle('active', activeGroup === 'orders');
-      if (subtabs)     subtabs.style.display = activeGroup === 'registrations' ? 'flex' : 'none';
+      if (groupReg)      groupReg.classList.toggle('active', activeGroup === 'registrations');
+      if (groupOrders)   groupOrders.classList.toggle('active', activeGroup === 'orders');
+      if (groupBreakout) groupBreakout.classList.toggle('active', activeGroup === 'breakout');
+      if (subtabs)       subtabs.style.display = activeGroup === 'registrations' ? 'flex' : 'none';
     }
     // Clear all tab buttons and topbar icon buttons
     document.querySelectorAll('.sub-tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
@@ -2597,12 +2823,13 @@
     // Keep the Settings menu button itself highlighted whenever one of its
     // grouped sub-items (Churches / Merch Settings / Admins / Site Settings) is active.
     document.getElementById('tab-settings-menu')?.classList.toggle('active', isSettingsTab);
-    document.getElementById(`content-${tab}`).classList.add('active');
+    document.getElementById(`content-${tab}`)?.classList.add('active');
     if (tab === 'admins')   loadAdmins();
     if (tab === 'churches') loadChurches();
     if (tab === 'merch')    { loadMerchProducts(); loadSettings(); }
     if (tab === 'orders')   { loadMerchOrders(); if (!merchProducts.length) loadMerchProducts(); }
-    if (tab === 'settings') loadSettings();
+    if (tab === 'breakout') { loadBreakoutResponses(); }
+    if (tab === 'settings') { loadSettings(); loadBreakoutSessions(); }
   }
 
   function openModal(id, name, groupId) {
@@ -3224,6 +3451,36 @@
       const mLabelIntl = document.getElementById('intl-merch-label');
       if (mLabelIntl) mLabelIntl.textContent = merchEligibleIntl ? `Blast Merch Email (${merchEligibleIntl})` : 'Blast Merch Email';
       if (merchClosedNoteIntl) merchClosedNoteIntl.style.display = (canVerify && preorderClosed) ? 'block' : 'none';
+    }
+
+    // Same idea for the breakout-session invite button — this was wired up
+    // to send but never actually shown/enabled, so it just sat hidden.
+    const breakoutSplit = document.getElementById('ph-breakout-split');
+    const breakoutBlast = document.getElementById('ph-blast-breakout');
+    if (breakoutBlast) {
+      if (breakoutSplit) breakoutSplit.style.display = canVerify ? 'inline-flex' : 'none';
+      const breakoutEligible = selectedRows('ph').filter(r => r && r.status !== 'cancelled').length;
+      const breakoutDisabled = breakoutEligible === 0;
+      breakoutBlast.disabled = breakoutDisabled;
+      breakoutBlast.style.background = breakoutDisabled ? '#9FB6C6' : '#3A8BBF';
+      breakoutBlast.style.cursor = breakoutDisabled ? 'not-allowed' : 'pointer';
+      breakoutBlast.title = breakoutDisabled ? 'Select one or more registrants first' : '';
+      const bLabel = document.getElementById('ph-breakout-label');
+      if (bLabel) bLabel.textContent = breakoutEligible ? `Breakout Email (${breakoutEligible})` : 'Breakout Email';
+    }
+
+    const breakoutSplitIntl = document.getElementById('intl-breakout-split');
+    const breakoutBlastIntl = document.getElementById('intl-blast-breakout');
+    if (breakoutBlastIntl) {
+      if (breakoutSplitIntl) breakoutSplitIntl.style.display = canVerify ? 'inline-flex' : 'none';
+      const breakoutEligibleIntl = selectedRows('intl').filter(r => r && r.status !== 'cancelled').length;
+      const breakoutDisabledIntl = breakoutEligibleIntl === 0;
+      breakoutBlastIntl.disabled = breakoutDisabledIntl;
+      breakoutBlastIntl.style.background = breakoutDisabledIntl ? '#9FB6C6' : '#3A8BBF';
+      breakoutBlastIntl.style.cursor = breakoutDisabledIntl ? 'not-allowed' : 'pointer';
+      breakoutBlastIntl.title = breakoutDisabledIntl ? 'Select one or more registrants first' : '';
+      const bLabelIntl = document.getElementById('intl-breakout-label');
+      if (bLabelIntl) bLabelIntl.textContent = breakoutEligibleIntl ? `Blast Breakout Email (${breakoutEligibleIntl})` : 'Blast Breakout Email';
     }
 
     const all = document.getElementById('ph-select-all');
@@ -4105,6 +4362,176 @@
     }
   }
 
+  // Breakout session invite blast — mirrors the merch blast modal above,
+  // minus SMS (breakout invites are email-only) and minus fxRates (not
+  // relevant here). No New/Reminder choice here on purpose: the backend
+  // auto-detects per person (never invited -> New Invite, invited but still
+  // hasn't picked -> Reminder, already picked -> skipped), so there's no
+  // button a human could click to accidentally re-send the initial invite.
+  let breakoutSending = false;
+  let breakoutTargetIds = [];
+  let bulkBreakoutProvider = 'gmail';
+
+  async function blastBreakoutInvite() {
+    openBulkBreakoutModalForSelection();
+  }
+
+  function renderBulkBreakoutProvider() {
+    const btn = document.getElementById('bulkBreakoutConfirmBtn');
+    const countStr = breakoutTargetIds.length > 1 ? ` (${breakoutTargetIds.length})` : '';
+    btn.textContent = bulkBreakoutProvider === 'resend' ? `🚀 Send via Resend${countStr}` : `💬 Send via Gmail${countStr}`;
+    const checkG = document.getElementById('bulkBreakoutCheck-gmail');
+    const checkR = document.getElementById('bulkBreakoutCheck-resend');
+    if (checkG) checkG.style.display = bulkBreakoutProvider === 'gmail' ? 'inline' : 'none';
+    if (checkR) checkR.style.display = bulkBreakoutProvider === 'resend' ? 'inline' : 'none';
+
+    const opt  = document.getElementById('bulkBreakoutOpt-resend');
+    const hint = document.getElementById('bulkBreakoutResendHint');
+    if (opt) {
+      opt.disabled      = !notifyConfig.resend_configured;
+      opt.style.opacity = notifyConfig.resend_configured ? '1' : '0.55';
+      opt.style.cursor  = notifyConfig.resend_configured ? 'pointer' : 'not-allowed';
+    }
+    if (hint) {
+      hint.textContent  = notifyConfig.resend_configured
+        ? 'Alternative sender — better deliverability for bulk reminders.'
+        : 'Not configured — set RESEND_API_KEY and RESEND_FROM to enable.';
+    }
+  }
+
+  function toggleBulkBreakoutProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('bulkBreakoutProviderMenu');
+    if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function selectBulkBreakoutProvider(provider) {
+    if (provider === 'resend' && !notifyConfig.resend_configured) return;
+    bulkBreakoutProvider = provider;
+    const menu = document.getElementById('bulkBreakoutProviderMenu');
+    if (menu) menu.style.display = 'none';
+    renderBulkBreakoutProvider();
+  }
+
+  async function openBulkBreakoutModalForSelection() {
+    const selected = selectedRows(activeTab);
+    if (!selected.length) { showToast('No rows selected.'); return; }
+    const eligible = selected.filter(r => r && r.status !== 'cancelled');
+    if (!eligible.length) { showToast('No eligible participants in this selection (all cancelled).'); return; }
+
+    breakoutTargetIds = eligible.map(r => r.id);
+    const skippedCancelled = selected.length - eligible.length;
+
+    document.getElementById('bulkBreakoutSummary').innerHTML = `Checking who's already been invited…`;
+    document.getElementById('bulkBreakoutWarning').style.display = 'none';
+    document.getElementById('bulkBreakoutResults').innerHTML = '';
+    document.getElementById('bulkBreakoutProgressWrap').style.display = 'none';
+    document.getElementById('bulkBreakoutConfirmBtn').disabled = true;
+    document.getElementById('bulkBreakoutCancelBtn').textContent = 'Cancel';
+    const menu = document.getElementById('bulkBreakoutProviderMenu');
+    if (menu) menu.style.display = 'none';
+    renderBulkBreakoutProvider();
+    document.getElementById('bulkBreakoutModal').style.display = 'flex';
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'breakout_invite_preview', ids: breakoutTargetIds }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Could not check invite status');
+
+      const parts = [];
+      if (json.new_count) parts.push(`<span>🎤 <strong>${json.new_count}</strong> New Invite${json.new_count === 1 ? '' : 's'}</span>`);
+      if (json.followup_count) parts.push(`<span>⏳ <strong>${json.followup_count}</strong> Reminder${json.followup_count === 1 ? '' : 's'}</span>`);
+      const totalToSend = json.new_count + json.followup_count;
+
+      const skippedLines = [];
+      if (json.already_selected) skippedLines.push(`${json.already_selected} skipped — already picked a session`);
+      if (skippedCancelled) skippedLines.push(`${skippedCancelled} skipped — cancelled`);
+
+      document.getElementById('bulkBreakoutSummary').innerHTML = totalToSend
+        ? `${parts.join(' + ')} will be sent, auto-detected from your selection of <strong>${selected.length}</strong>.`
+          + (skippedLines.length ? `<br><span style="font-size:12px;color:#6B8A9A;">${skippedLines.join(' · ')}</span>` : '')
+        : `Nobody in this selection needs an email — everyone's already picked a session.`
+          + (skippedCancelled ? `<br><span style="font-size:12px;color:#6B8A9A;">${skippedCancelled} skipped — cancelled</span>` : '');
+      document.getElementById('bulkBreakoutConfirmBtn').disabled = !totalToSend;
+    } catch (e) {
+      document.getElementById('bulkBreakoutSummary').innerHTML = `❌ Error checking invite status: ${esc(e.message)}`;
+      document.getElementById('bulkBreakoutConfirmBtn').disabled = true;
+    }
+  }
+
+  function closeBulkBreakoutModal() {
+    if (breakoutSending) return;
+    document.getElementById('bulkBreakoutModal').style.display = 'none';
+    document.getElementById('bulkBreakoutSummary').innerHTML = '';
+    document.getElementById('bulkBreakoutResults').innerHTML = '';
+    const menu = document.getElementById('bulkBreakoutProviderMenu');
+    if (menu) menu.style.display = 'none';
+    breakoutTargetIds = [];
+  }
+
+  async function doBulkBreakout() {
+    if (!breakoutTargetIds.length) return;
+    const btn = document.getElementById('bulkBreakoutConfirmBtn');
+    const cancelBtn = document.getElementById('bulkBreakoutCancelBtn');
+    breakoutSending = true;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    cancelBtn.style.opacity = '0.5';
+    document.getElementById('bulkBreakoutProgressWrap').style.display = 'block';
+
+    const totals = { sent: 0, failed: 0, newSent: 0, followupSent: 0 };
+    const failures = [];
+    let done = 0;
+    let skippedAlreadySelected = 0;
+    try {
+      for (let i = 0; i < breakoutTargetIds.length; i += BULK_CHUNK) {
+        const chunk = breakoutTargetIds.slice(i, i + BULK_CHUNK);
+        const res = await fetch('/.netlify/functions/admin-data', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'blast_breakout_invite', ids: chunk, email_provider: bulkBreakoutProvider || 'gmail' }),
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Bulk breakout send failed');
+
+        totals.sent += json.sent || 0;
+        totals.failed += json.failed || 0;
+        totals.newSent += json.new_sent || 0;
+        totals.followupSent += json.followup_sent || 0;
+        skippedAlreadySelected += json.skipped_already_selected || 0;
+        failures.push(...(json.results || []).filter(r => !r.ok));
+
+        done = i + chunk.length;
+        const pct = Math.round(Math.min(100, (done / breakoutTargetIds.length) * 100));
+        document.getElementById('bulkBreakoutProgressBar').style.width = pct + '%';
+        document.getElementById('bulkBreakoutProgressPct').textContent = pct + '%';
+        document.getElementById('bulkBreakoutProgressLabel').textContent = `Sent ${totals.sent} of ${breakoutTargetIds.length} emails…`;
+      }
+
+      document.getElementById('bulkBreakoutProgressLabel').textContent = 'Done';
+      const via = (bulkBreakoutProvider === 'resend') ? 'Resend' : 'Gmail';
+      const breakdown = `🎤 <strong>${totals.newSent}</strong> New Invite${totals.newSent === 1 ? '' : 's'} · ⏳ <strong>${totals.followupSent}</strong> Reminder${totals.followupSent === 1 ? '' : 's'}`;
+      const skippedSuffix = skippedAlreadySelected
+        ? `<br>⏭️ <strong>${skippedAlreadySelected}</strong> skipped — already selected a session`
+        : '';
+      document.getElementById('bulkBreakoutResults').innerHTML = `✅ <strong>${totals.sent}</strong> sent via ${via}<br>${breakdown}` + (totals.failed ? `<br>❌ <strong>${totals.failed}</strong> failed` : '') + skippedSuffix;
+      breakoutTargetIds = [];
+      showToast(`Breakout blast sent to ${totals.sent} participant${totals.sent===1?'':'s'} via ${via}`);
+    } catch (e) {
+      document.getElementById('bulkBreakoutProgressLabel').textContent = 'Stopped early';
+      document.getElementById('bulkBreakoutResults').innerHTML = `❌ Error: ${esc(e.message)}${failures.length ? `<br>Failed: ${failures.slice(0,5).map(f=>esc(f.email)).join(', ')}` : ''}`;
+      showToast('Error: ' + e.message);
+    } finally {
+      breakoutSending = false;
+      cancelBtn.style.opacity = '1';
+      cancelBtn.textContent = 'Close';
+      btn.disabled = false; btn.textContent = '📧 Send Emails';
+    }
+  }
+
   // Appends the SMS outcome to a toast. Returns '' when no SMS was attempted.
   function smsToastSuffix(sms) {
     if (!sms) return '';
@@ -4656,6 +5083,621 @@
       renderMerchProducts();
     } catch (e) { showToast('Error loading merch: ' + e.message); }
   }
+
+  // Breakout Sessions (admin) — title/speaker/position/capacity, shown on
+  // the breakout-selection page and invite email.
+  let breakoutSessions = [];
+
+  async function loadBreakoutSessions() {
+    const tbody = document.getElementById('breakoutSessionsBody');
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-sessions', {
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      breakoutSessions = json.sessions || [];
+      renderBreakoutSessions();
+    } catch (e) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding:14px 8px;color:var(--red);">Error: ${esc(e.message)}</td></tr>`;
+    }
+  }
+
+  function renderBreakoutSessions() {
+    const tbody = document.getElementById('breakoutSessionsBody');
+    if (!tbody) return;
+    if (!breakoutSessions.length) { tbody.innerHTML = '<tr><td colspan="7" style="padding:14px 8px;color:var(--muted);">No breakout sessions yet.</td></tr>'; return; }
+    tbody.innerHTML = breakoutSessions.map(s => `
+      <tr style="border-top:1px solid var(--border);">
+        <td style="padding:8px;font-weight:600;color:var(--dark);">${esc(s.title)}</td>
+        <td style="padding:8px;">${esc(s.speaker)}</td>
+        <td style="padding:8px;color:var(--muted);white-space:pre-line;">${esc(s.speakerPost) || '<span style="color:#ccc;">—</span>'}</td>
+        <td style="padding:8px;" class="mono">${s.capacity}</td>
+        <td style="padding:8px;" class="mono">${s.selectedCount}</td>
+        <td style="padding:8px;"><span class="badge ${s.isActive ? 'badge-green' : 'badge-gray'}">${s.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td style="padding:8px;white-space:nowrap;">
+          <button onclick="openBreakoutSessionModal('${s.id}')" style="padding:5px 10px;background:var(--sky-light);color:var(--sky);border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;margin-right:4px;">Edit</button>
+          <button onclick="deleteBreakoutSession('${s.id}')" style="padding:5px 10px;background:#FDECEA;color:#E05050;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">${s.selectedCount > 0 ? 'Deactivate' : 'Delete'}</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function openBreakoutSessionModal(id) {
+    const s = id ? breakoutSessions.find(x => x.id === id) : null;
+    document.getElementById('breakoutSessionModalTitle').textContent = s ? 'Edit Session' : 'Add Session';
+    document.getElementById('bs-id').value = s ? s.id : '';
+    document.getElementById('bs-title').value = s ? s.title : '';
+    document.getElementById('bs-speaker').value = s ? s.speaker : '';
+    document.getElementById('bs-post').value = s ? s.speakerPost : '';
+    document.getElementById('bs-capacity').value = s ? s.capacity : 45;
+    document.getElementById('bs-sort').value = s ? s.sortOrder : 0;
+    document.getElementById('bs-active').checked = s ? s.isActive : true;
+    document.getElementById('bs-err').style.display = 'none';
+    document.getElementById('breakoutSessionModal').style.display = 'flex';
+  }
+  function closeBreakoutSessionModal() {
+    document.getElementById('breakoutSessionModal').style.display = 'none';
+  }
+
+  async function saveBreakoutSession() {
+    const id = document.getElementById('bs-id').value || null;
+    const errEl = document.getElementById('bs-err');
+    const btn = document.getElementById('bs-save-btn');
+    errEl.style.display = 'none';
+    const session = {
+      title: document.getElementById('bs-title').value.trim(),
+      speaker: document.getElementById('bs-speaker').value.trim(),
+      speakerPost: document.getElementById('bs-post').value.trim(),
+      capacity: parseInt(document.getElementById('bs-capacity').value, 10) || 45,
+      sortOrder: parseInt(document.getElementById('bs-sort').value, 10) || 0,
+      isActive: document.getElementById('bs-active').checked,
+    };
+    if (!session.title || !session.speaker) {
+      errEl.textContent = 'Title and speaker are required.'; errEl.style.display = 'block'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-sessions', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, session }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to save');
+      closeBreakoutSessionModal();
+      showToast('Breakout session saved.');
+      loadBreakoutSessions();
+    } catch (e) {
+      errEl.textContent = e.message; errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Session';
+    }
+  }
+
+  async function deleteBreakoutSession(id) {
+    const s = breakoutSessions.find(x => x.id === id);
+    const willDeactivate = s && s.selectedCount > 0;
+    if (!confirm(willDeactivate
+      ? 'This session already has participant selections, so it will be deactivated (hidden from new pickers) rather than deleted. Continue?'
+      : 'Delete this breakout session? This cannot be undone.')) return;
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-sessions?id=' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast(json.deactivated ? 'Session deactivated.' : 'Session deleted.');
+      loadBreakoutSessions();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  // ── Breakout Session Responses & Drag-and-Drop Assignment ──────────────────
+  let breakoutData = { sessions: [], unassigned: [], totalConfirmed: 0, totalSelected: 0 };
+  let draggedRegistrationId = null;
+  let draggedRegistrationIds = []; // supports dragging multiple selected cards together
+  let breakoutSelectedUnassigned = new Set(); // Set of registrationIds selected for email blast
+
+  async function loadBreakoutResponses() {
+    const wrap = document.getElementById('breakout-board-wrap');
+    if (wrap) wrap.innerHTML = '<div class="breakout-empty" style="padding:40px 16px;">Loading breakout responses…</div>';
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to load responses');
+      breakoutData = json;
+      // Sync selectedUnassigned with current unassigned list
+      const validIds = new Set((breakoutData.unassigned || []).map(u => u.registrationId));
+      breakoutSelectedUnassigned = new Set([...breakoutSelectedUnassigned].filter(id => validIds.has(id)));
+      renderBreakoutResponses();
+    } catch (e) {
+      if (wrap) wrap.innerHTML = `<div class="breakout-empty" style="color:var(--red);padding:40px 16px;">Error loading breakout responses: ${esc(e.message)}</div>`;
+      showToast('Error loading breakout responses: ' + e.message);
+    }
+  }
+
+  function renderBreakoutResponses() {
+    // 1. Update summary tiles
+    const totalReg = breakoutData.totalConfirmed || 0;
+    let selfCount = 0;
+    let adminCount = 0;
+    for (const sess of breakoutData.sessions || []) {
+      for (const p of sess.participants || []) {
+        if (p.selfSelected === true) selfCount++;
+        else if (p.selfSelected === false) adminCount++;
+      }
+    }
+    const unassignedCount = (breakoutData.unassigned || []).length;
+
+    const elTotal = document.getElementById('br-total');
+    const elTotalSub = document.getElementById('br-total-sub');
+    const elSelf = document.getElementById('br-self');
+    const elAdmin = document.getElementById('br-admin');
+    const elNone = document.getElementById('br-none');
+    const badgeBreakout = document.getElementById('badge-breakout');
+
+    if (elTotal) elTotal.textContent = totalReg;
+    if (elTotalSub) elTotalSub.textContent = `${selfCount + adminCount} placed in sessions`;
+    if (elSelf) elSelf.textContent = selfCount;
+    if (elAdmin) elAdmin.textContent = adminCount;
+    if (elNone) elNone.textContent = unassignedCount;
+    if (badgeBreakout) badgeBreakout.textContent = totalReg;
+
+    // 2. Render Board Columns
+    const wrap = document.getElementById('breakout-board-wrap');
+    if (!wrap) return;
+
+    // Header gradient colors for topics
+    const sessionColors = [
+      'linear-gradient(135deg, #1C2B38, #2E7048)',
+      'linear-gradient(135deg, #1C2B38, #3A8BBF)',
+      'linear-gradient(135deg, #1C2B38, #6D28D9)',
+      'linear-gradient(135deg, #1C2B38, #C49A1A)',
+      'linear-gradient(135deg, #1C2B38, #C0392B)',
+    ];
+
+    let sessionsHtml = '';
+
+    // 4 (or however many) Session Lists
+    (breakoutData.sessions || []).forEach((sess, idx) => {
+      const pCount = (sess.participants || []).length;
+      const isFull = pCount >= sess.capacity;
+      const color = sessionColors[idx % sessionColors.length];
+
+      sessionsHtml += `
+        <div class="breakout-col" id="col-session-${sess.id}">
+          <div class="breakout-col-header" style="background:${color};align-items:flex-start;">
+            <div style="min-width:0;">
+              <div style="line-height:1.3;" title="${esc(sess.title)}">${esc(sess.title)}</div>
+              <div style="font-size:11px;opacity:0.85;font-weight:400;margin-top:3px;">${esc(sess.speaker)}</div>
+            </div>
+            <span class="bcol-count" style="flex-shrink:0;${isFull ? 'color:#FFB4B4;font-weight:700;' : ''}">${pCount}/${sess.capacity}</span>
+          </div>
+          <div class="breakout-col-body"
+               ondragover="onBreakoutDragOver(event, '${sess.id}')"
+               ondragleave="onBreakoutDragLeave(event, '${sess.id}')"
+               ondrop="onBreakoutDrop(event, '${sess.id}')">`;
+
+      if (!sess.participants || !sess.participants.length) {
+        sessionsHtml += `<div class="breakout-empty">No participants yet.</div>`;
+      } else {
+        sess.participants.forEach(p => {
+          const isSelf = p.selfSelected === true;
+          const isDraggable = !isSelf; // Admin-assigned participants can be moved/reassigned
+          const badgeClass = isSelf ? 'self' : 'admin';
+          const badgeLabel = isSelf ? 'Self' : 'Admin';
+          const titleHint = isSelf ? 'Chose their own session (Locked)' : 'Assigned by admin (Drag to reassign)';
+
+          sessionsHtml += `
+            <div class="breakout-participant ${isDraggable ? 'draggable' : ''}"
+                 id="bp-${p.registrationId}"
+                 ${isDraggable ? `draggable="true" ondragstart="onBreakoutDragStart(event, '${p.registrationId}')" ondragend="onBreakoutDragEnd(event)"` : ''}
+                 style="display:flex;align-items:flex-start;gap:6px;position:relative;">
+              <div style="flex:1;min-width:0;">
+                <div class="bp-name" title="${esc(p.name)}">${esc(p.name)}</div>
+                <div class="bp-meta">
+                  ${p.age ? `<span class="bp-age-tag">Age ${p.age}</span>` : ''}
+                  <span title="${esc(p.church || '')}">${esc(p.church || 'Unknown church')}</span>
+                </div>
+              </div>
+              <span class="bp-badge ${badgeClass}" title="${titleHint}">${badgeLabel}</span>
+            </div>`;
+        });
+      }
+
+      sessionsHtml += `</div></div>`;
+    });
+
+    // Unassigned List (grouped by church, laid out as a wide masonry-style
+    // grid of church cards spanning the full board width) — rendered after
+    // the topic columns, per the original layout.
+    const unassignedTotal = (breakoutData.unassigned || []).length;
+    const selectedCount = breakoutSelectedUnassigned.size;
+    const allSelected = unassignedTotal > 0 && selectedCount === unassignedTotal;
+
+    // Group unassigned by church
+    const unassignedByChurch = {};
+    (breakoutData.unassigned || []).forEach(p => {
+      const churchName = (p.church && p.church.trim()) ? p.church.trim() : 'Other Churches';
+      if (!unassignedByChurch[churchName]) unassignedByChurch[churchName] = [];
+      unassignedByChurch[churchName].push(p);
+    });
+
+    // Sorted church names
+    const churchNames = Object.keys(unassignedByChurch).sort((a, b) => {
+      if (a === 'Other Churches') return 1;
+      if (b === 'Other Churches') return -1;
+      return a.localeCompare(b);
+    });
+
+    let unassignedHtml = `
+      <div class="breakout-col unassigned" id="col-unassigned">
+        <div class="breakout-col-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:14px;font-weight:700;">Unassigned</div>
+              <div style="font-size:11px;opacity:0.85;font-weight:400;margin-top:1px;">Drag to assign (select several to move them together) or select to blast email</div>
+            </div>
+            <span class="bcol-count">${unassignedCount}</span>
+          </div>
+          <input type="text" id="breakout-filter-input" placeholder="Filter by name or email…" style="width:100%;padding:8px 10px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;margin:8px 0;color:#2A3D4A;" oninput="filterBreakoutUnassigned(this.value)">
+          <!-- Toolbar with Blast Email button & Selection Controls -->
+          <div class="breakout-unassigned-toolbar">
+            <label class="breakout-select-pill" title="Select or deselect all unassigned participants">
+              <input type="checkbox" ${allSelected ? 'checked' : ''} ${unassignedTotal === 0 ? 'disabled' : ''} onchange="toggleBreakoutSelectAllUnassigned(this.checked)" style="accent-color:var(--sky);cursor:pointer;">
+              <span>Select All (${selectedCount})</span>
+            </label>
+            <button onclick="blastBreakoutFromUnassigned()"
+                    ${selectedCount === 0 ? 'disabled' : ''}
+                    style="padding:6px 12px;background:${selectedCount > 0 ? 'var(--sky)' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${selectedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+              <span>✉️</span> Blast Email ${selectedCount > 0 ? `(${selectedCount})` : ''}
+            </button>
+          </div>
+        </div>
+        <div class="breakout-col-body">`;
+
+    if (!unassignedTotal) {
+      unassignedHtml += `<div class="breakout-empty">All participants have a session! 🎉</div>`;
+    } else {
+      churchNames.forEach(cName => {
+        const pList = unassignedByChurch[cName];
+        unassignedHtml += `
+          <div class="breakout-church-group">
+            <div class="breakout-church-title">
+              <span>⛪ ${esc(cName)}</span>
+              <span style="font-family:'DM Mono';opacity:0.75;">${pList.length}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">`;
+
+        pList.forEach(p => {
+          const isChecked = breakoutSelectedUnassigned.has(p.registrationId);
+          unassignedHtml += `
+            <div class="breakout-participant draggable ${isChecked ? 'selected' : ''}"
+                 id="bp-${p.registrationId}"
+                 draggable="true"
+                 ondragstart="onBreakoutDragStart(event, '${p.registrationId}')"
+                 ondragend="onBreakoutDragEnd(event)"
+                 style="display:flex;align-items:flex-start;gap:8px;">
+              <input type="checkbox"
+                     ${isChecked ? 'checked' : ''}
+                     onchange="toggleBreakoutParticipantSelect('${p.registrationId}', this.checked)"
+                     onclick="event.stopPropagation()"
+                     style="margin-top:3px;accent-color:var(--sky);cursor:pointer;flex-shrink:0;">
+              <div style="flex:1;min-width:0;">
+                <div class="bp-name" title="${esc(p.name)}">${esc(p.name)}</div>
+                <div class="bp-meta">
+                  ${p.age ? `<span class="bp-age-tag">Age ${p.age}</span>` : ''}
+                  <span style="color:var(--muted);">${esc(p.email || '')}</span>
+                </div>
+              </div>
+              <button type="button" class="mail-btn" onclick="sendSingleBreakoutEmail('${p.registrationId}')" title="Send breakout email to ${esc(p.name)}">✉️</button>
+              <span class="bp-badge none" title="Did not respond — drag to a topic to assign">None</span>
+            </div>`;
+        });
+
+        unassignedHtml += `</div></div>`;
+      });
+    }
+
+    unassignedHtml += `</div></div>`;
+
+    wrap.innerHTML = `<div class="breakout-board">${sessionsHtml}${unassignedHtml}</div>`;
+  }
+
+  function toggleBreakoutParticipantSelect(regId, checked) {
+    if (checked) breakoutSelectedUnassigned.add(regId);
+    else breakoutSelectedUnassigned.delete(regId);
+    renderBreakoutResponses();
+  }
+
+  function toggleBreakoutSelectAllUnassigned(checked) {
+    if (checked) {
+      (breakoutData.unassigned || []).forEach(p => breakoutSelectedUnassigned.add(p.registrationId));
+    } else {
+      breakoutSelectedUnassigned.clear();
+    }
+    renderBreakoutResponses();
+  }
+
+  function filterBreakoutUnassigned(query) {
+    const q = query.toLowerCase().trim();
+    const cards = document.querySelectorAll('#col-unassigned .breakout-participant');
+    cards.forEach(card => {
+      const nameEl = card.querySelector('.bp-name');
+      const metaEl = card.querySelector('.bp-meta');
+      const name = (nameEl?.textContent || '').toLowerCase();
+      const email = (metaEl?.textContent || '').toLowerCase();
+      const matches = !q || name.includes(q) || email.includes(q);
+      card.style.display = matches ? '' : 'none';
+    });
+
+    document.querySelectorAll('#col-unassigned .breakout-church-group').forEach(group => {
+      const visibleChildren = group.querySelectorAll('.breakout-participant:not([style*="display: none"])').length;
+      group.style.display = visibleChildren > 0 ? '' : 'none';
+    });
+  }
+
+  async function sendSingleBreakoutEmail(registrationId) {
+    let participant = (breakoutData.unassigned || []).find(p => p.registrationId === registrationId);
+    if (!participant) {
+      for (const sess of (breakoutData.sessions || [])) {
+        participant = (sess.participants || []).find(p => p.registrationId === registrationId);
+        if (participant) break;
+      }
+    }
+    if (!participant) return;
+
+    openBulkBreakoutModalForIds([registrationId]);
+  }
+
+  function blastBreakoutFromUnassigned() {
+    const selectedIds = Array.from(breakoutSelectedUnassigned);
+    if (!selectedIds.length) {
+      showToast('Select one or more unassigned participants first.');
+      return;
+    }
+    openBulkBreakoutModalForIds(selectedIds);
+  }
+
+  async function openBulkBreakoutModalForIds(ids) {
+    if (!ids || !ids.length) { showToast('No participants selected.'); return; }
+    breakoutTargetIds = ids;
+
+    document.getElementById('bulkBreakoutSummary').innerHTML = `Checking who's already been invited…`;
+    document.getElementById('bulkBreakoutWarning').style.display = 'none';
+    document.getElementById('bulkBreakoutResults').innerHTML = '';
+    document.getElementById('bulkBreakoutProgressWrap').style.display = 'none';
+    document.getElementById('bulkBreakoutConfirmBtn').disabled = true;
+    document.getElementById('bulkBreakoutCancelBtn').textContent = 'Cancel';
+    const menu = document.getElementById('bulkBreakoutProviderMenu');
+    if (menu) menu.style.display = 'none';
+    renderBulkBreakoutProvider();
+    document.getElementById('bulkBreakoutModal').style.display = 'flex';
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-data', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'breakout_invite_preview', ids: breakoutTargetIds }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Could not check invite status');
+
+      const parts = [];
+      if (json.new_count) parts.push(`<span>🎤 <strong>${json.new_count}</strong> New Invite${json.new_count === 1 ? '' : 's'}</span>`);
+      if (json.followup_count) parts.push(`<span>⏳ <strong>${json.followup_count}</strong> Reminder${json.followup_count === 1 ? '' : 's'}</span>`);
+      const totalToSend = json.new_count + json.followup_count;
+
+      const skippedLines = [];
+      if (json.already_selected) skippedLines.push(`${json.already_selected} skipped — already picked a session`);
+
+      document.getElementById('bulkBreakoutSummary').innerHTML = totalToSend
+        ? `${parts.join(' + ')} will be sent to the <strong>${ids.length}</strong> selected participant${ids.length === 1 ? '' : 's'}.`
+          + (skippedLines.length ? `<br><span style="font-size:12px;color:#6B8A9A;">${skippedLines.join(' · ')}</span>` : '')
+        : `Nobody in this selection needs an email — everyone's already picked a session.`;
+      document.getElementById('bulkBreakoutConfirmBtn').disabled = !totalToSend;
+    } catch (e) {
+      document.getElementById('bulkBreakoutSummary').innerHTML = `❌ Error checking invite status: ${esc(e.message)}`;
+      document.getElementById('bulkBreakoutConfirmBtn').disabled = true;
+    }
+  }
+
+  function onBreakoutDragStart(e, registrationId) {
+    // If the dragged card is part of the current multi-select, drag the
+    // whole selection together; otherwise just this one card, as before.
+    const isMultiSelectDrag = breakoutSelectedUnassigned.has(registrationId) && breakoutSelectedUnassigned.size > 1;
+    draggedRegistrationIds = isMultiSelectDrag ? Array.from(breakoutSelectedUnassigned) : [registrationId];
+    draggedRegistrationId = registrationId;
+    e.dataTransfer.setData('text/plain', registrationId);
+    e.dataTransfer.effectAllowed = 'move';
+    draggedRegistrationIds.forEach(id => {
+      const el = document.getElementById(`bp-${id}`);
+      if (el) setTimeout(() => el.classList.add('dragging'), 0);
+    });
+  }
+
+  function onBreakoutDragEnd(e) {
+    draggedRegistrationId = null;
+    draggedRegistrationIds = [];
+    document.querySelectorAll('.breakout-participant.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.breakout-col-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+  }
+
+  function onBreakoutDragOver(e, sessionId) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const col = document.querySelector(`#col-session-${sessionId} .breakout-col-body`);
+    if (col && !col.classList.contains('drag-over')) col.classList.add('drag-over');
+  }
+
+  function onBreakoutDragLeave(e, sessionId) {
+    const col = document.querySelector(`#col-session-${sessionId} .breakout-col-body`);
+    if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+  }
+
+  async function onBreakoutDrop(e, sessionId) {
+    e.preventDefault();
+    document.querySelectorAll('.breakout-col-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+    const ids = (draggedRegistrationIds && draggedRegistrationIds.length)
+      ? draggedRegistrationIds.slice()
+      : [draggedRegistrationId || e.dataTransfer.getData('text/plain')].filter(Boolean);
+    draggedRegistrationIds = [];
+    if (!ids.length || !sessionId) return;
+
+    const targetSession = (breakoutData.sessions || []).find(s => s.id === sessionId);
+
+    // Resolve each id to its participant + current location, and filter out
+    // anything that can't actually move (locked, already there, not found).
+    const moves = [];
+    for (const regId of ids) {
+      let participant = (breakoutData.unassigned || []).find(x => x.registrationId === regId);
+      let fromSession = null;
+      if (!participant) {
+        for (const sess of breakoutData.sessions || []) {
+          const found = (sess.participants || []).find(x => x.registrationId === regId);
+          if (found) { participant = found; fromSession = sess; break; }
+        }
+      }
+      if (!participant) continue;
+      if (participant.selfSelected === true) continue; // locked — skip silently in a batch
+      if (fromSession && fromSession.id === sessionId) continue; // already there
+      moves.push({ participant, fromSession });
+    }
+
+    if (!moves.length) {
+      if (ids.length > 1) showToast('Nothing to move — everyone selected is already placed there, or locked.');
+      return;
+    }
+
+    if (targetSession) {
+      const currentCount = (targetSession.participants || []).length;
+      const availableSeats = Math.max(0, targetSession.capacity - currentCount);
+      if (moves.length > availableSeats) {
+        const msg = moves.length > 1
+          ? `"${targetSession.title}" has ${availableSeats} seat(s) left, but you're assigning ${moves.length} participants. Assign anyway (over capacity)?`
+          : `"${targetSession.title}" is already at full capacity (${targetSession.capacity}). Assign anyway?`;
+        if (!confirm(msg)) return;
+      }
+    }
+
+    // Optimistic UI update for every move in the batch.
+    for (const { participant, fromSession } of moves) {
+      if (fromSession) {
+        fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== participant.registrationId);
+      } else {
+        breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => x.registrationId !== participant.registrationId);
+        breakoutSelectedUnassigned.delete(participant.registrationId);
+      }
+      participant.sessionId = sessionId;
+      participant.selfSelected = false; // assigned by admin
+      if (targetSession) {
+        targetSession.participants = targetSession.participants || [];
+        targetSession.participants.push(participant);
+      }
+    }
+    renderBreakoutResponses();
+
+    let succeeded = 0;
+    const failedNames = [];
+    for (const { participant } of moves) {
+      try {
+        const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+          method: 'PATCH',
+          headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ registrationId: participant.registrationId, sessionId }),
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Failed to assign session');
+        succeeded++;
+      } catch (err) {
+        failedNames.push(participant.name);
+      }
+    }
+
+    if (failedNames.length) {
+      showToast(`Assigned ${succeeded} of ${moves.length}. Failed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? '…' : ''}`);
+      loadBreakoutResponses(); // resync — a partial failure can leave local state slightly off
+    } else {
+      showToast(moves.length > 1
+        ? `Assigned ${succeeded} participants to ${targetSession ? targetSession.speaker : 'session'}.`
+        : `Assigned ${moves[0].participant.name} to ${targetSession ? targetSession.speaker : 'session'}.`);
+    }
+  }
+
+  // ── Multi-sheet Excel Export (1 sheet per breakout session + 1 for unassigned) ──
+  function exportBreakoutExcel() {
+    if (typeof XLSX === 'undefined') {
+      showToast('Export library is still loading, please try again in a second.');
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    // 1. Add sheets for each session
+    (breakoutData.sessions || []).forEach((sess, idx) => {
+      // Safe sheet name (max 31 characters, remove special characters: \ / ? * [ ])
+      const cleanTitle = (sess.speaker || sess.title || `Session ${idx + 1}`)
+        .replace(/[:\\/?*\[\]]/g, '')
+        .slice(0, 30);
+      const sheetName = cleanTitle || `Session ${idx + 1}`;
+
+      const rows = [
+        ['Topic', sess.title || ''],
+        ['Speaker', sess.speaker || ''],
+        ['Capacity', sess.capacity || 45],
+        ['Total Placed', (sess.participants || []).length],
+        [], // blank separator line
+        ['#', 'Participant Name', 'Age', 'Church', 'Email', 'Type', 'Assignment Mode']
+      ];
+
+      (sess.participants || []).forEach((p, pIdx) => {
+        rows.push([
+          pIdx + 1,
+          p.name || '',
+          p.age ?? '',
+          p.church || '',
+          p.email || '',
+          p.registrantType || 'local',
+          p.selfSelected === true ? 'Self-Selected' : 'Admin-Assigned'
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 5 }, { wch: 28 }, { wch: 8 }, { wch: 30 }, { wch: 30 }, { wch: 12 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    // 2. Add sheet for unassigned participants
+    const unassignedRows = [
+      ['Status', 'Unassigned Participants (No Breakout Session)'],
+      ['Total Unassigned', (breakoutData.unassigned || []).length],
+      [],
+      ['#', 'Participant Name', 'Age', 'Church', 'Email', 'Type']
+    ];
+
+    (breakoutData.unassigned || []).forEach((p, pIdx) => {
+      unassignedRows.push([
+        pIdx + 1,
+        p.name || '',
+        p.age ?? '',
+        p.church || '',
+        p.email || '',
+        p.registrantType || 'local'
+      ]);
+    });
+
+    const unassignedWs = XLSX.utils.aoa_to_sheet(unassignedRows);
+    unassignedWs['!cols'] = [{ wch: 5 }, { wch: 28 }, { wch: 8 }, { wch: 30 }, { wch: 30 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, unassignedWs, 'Unassigned');
+
+    const filename = `relay2026-breakout-responses-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showToast('Breakout responses exported to Excel!');
+  }
+
+
 
   // Merch orders (admin)
   // Note on stock: stock is currently decremented at the moment an order is
@@ -6864,6 +7906,16 @@
   window.selectAttendanceProvider   = selectAttendanceProvider;
   window.closeGroupScopePicker = closeGroupScopePicker;
   window.chooseGroupScope     = chooseGroupScope;
+  window.loadBreakoutResponses = loadBreakoutResponses;
+  window.onBreakoutDragStart   = onBreakoutDragStart;
+  window.onBreakoutDragEnd     = onBreakoutDragEnd;
+  window.onBreakoutDragOver    = onBreakoutDragOver;
+  window.onBreakoutDragLeave   = onBreakoutDragLeave;
+  window.onBreakoutDrop        = onBreakoutDrop;
+  window.exportBreakoutExcel   = exportBreakoutExcel;
+  window.blastBreakoutFromUnassigned = blastBreakoutFromUnassigned;
+  window.toggleBreakoutParticipantSelect = toggleBreakoutParticipantSelect;
+  window.toggleBreakoutSelectAllUnassigned = toggleBreakoutSelectAllUnassigned;
 
   // Dismiss provider or preset dropdown on any click outside it
   document.addEventListener('click', e => {

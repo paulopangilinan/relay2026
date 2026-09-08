@@ -7,6 +7,7 @@ import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notific
 import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendanceSMS, merchInviteSMS } from '../lib/sms-templates.js';
 import { attendanceLinks } from '../lib/attendance.js';
 import { merchLink, fetchLiveMerchFx, approxConversion } from '../lib/merch.js';
+import { breakoutLink, breakoutFollowupUrgency, BREAKOUT_DUE_DATE } from '../lib/breakout.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -128,7 +129,7 @@ export const handler = async (event) => {
       // bulk_follow_up carries `ids` instead of a single `id` — it validates
       // its own payload below rather than being forced to send a dummy id.
       if (!action) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing action' }) };
-      if (!id && !['bulk_follow_up', 'bulk_attendance_invite', 'blast_merch_invite'].includes(action)) {
+      if (!id && !['bulk_follow_up', 'bulk_attendance_invite', 'blast_merch_invite', 'blast_breakout_invite', 'breakout_invite_preview'].includes(action)) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing id' }) };
       }
 
@@ -688,6 +689,152 @@ export const handler = async (event) => {
         };
       }
 
+      if (action === 'breakout_invite') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        const { data: reg } = await supabase.from('registrations').select('*').eq('id', id).maybeSingle();
+        if (!reg) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Registration not found' }) };
+        if (reg.status === 'cancelled') {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This registration has been cancelled' }) };
+        }
+
+        // Auto-detected, same as the bulk blast below — never trust a
+        // caller-supplied variant, or a stale client can re-send "New
+        // Invite" to someone who's already got one (or already picked).
+        const { data: existingSel } = await supabase
+          .from('breakout_selections').select('registration_id').eq('registration_id', id).maybeSingle();
+        if (existingSel) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'This participant already picked a session' }) };
+        }
+        const variant = reg.breakout_invited_at ? 'followup' : 'invite';
+        const mailResult = await runBreakoutInvite(reg, {
+          provider: normalizeProvider(body.email_provider), siteUrl: linkBase(event), variant,
+        });
+        if (variant === 'invite') {
+          await supabase.from('registrations').update({ breakout_invited_at: new Date().toISOString() }).eq('id', id);
+        }
+
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, variant, provider: mailResult.provider, fell_back: !!mailResult.fellBack }),
+        };
+      }
+
+      // Shared by the preview and the actual blast below — fetches the
+      // candidate registrations for a set of ids (or everyone active when no
+      // ids are given), dropping cancelled ones.
+      async function fetchBreakoutCandidates(ids) {
+        if (ids && ids.length) {
+          const { data, error: fetchErr } = await supabase.from('registrations').select('*').in('id', ids);
+          if (fetchErr) throw fetchErr;
+          return (data || []).filter(r => r && r.status !== 'cancelled');
+        }
+        const { data, error: fetchErr } = await supabase.from('registrations').select('*').neq('status', 'cancelled');
+        if (fetchErr) throw fetchErr;
+        return data || [];
+      }
+
+      // Auto-detection, so nobody has to remember which button to click:
+      // anyone who's already picked a session is dropped entirely (a
+      // "reminder" would be nagging, an "invite" would be redundant); of the
+      // rest, whoever has never gotten a breakout email yet gets the New
+      // Invite, and whoever has (but still hasn't picked) gets the reminder.
+      async function splitBreakoutCandidates(regsResult) {
+        if (!regsResult.length) return { newGroup: [], followupGroup: [], alreadySelected: 0 };
+        const { data: existingSelections, error: selErr } = await supabase
+          .from('breakout_selections')
+          .select('registration_id')
+          .in('registration_id', regsResult.map(r => r.id));
+        if (selErr) throw selErr;
+        const alreadySelectedSet = new Set((existingSelections || []).map(s => s.registration_id));
+        const remaining = regsResult.filter(r => !alreadySelectedSet.has(r.id));
+        const newGroup = remaining.filter(r => !r.breakout_invited_at);
+        const followupGroup = remaining.filter(r => !!r.breakout_invited_at);
+        return { newGroup, followupGroup, alreadySelected: regsResult.length - remaining.length };
+      }
+
+      if (action === 'breakout_invite_preview') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+        const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : null;
+        let regsResult;
+        try {
+          regsResult = await fetchBreakoutCandidates(ids);
+        } catch (err) {
+          return { statusCode: err.statusCode || 500, headers, body: JSON.stringify({ error: err.message }) };
+        }
+        const { newGroup, followupGroup, alreadySelected } = await splitBreakoutCandidates(regsResult);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success: true,
+            new_count: newGroup.length,
+            followup_count: followupGroup.length,
+            already_selected: alreadySelected,
+          }),
+        };
+      }
+
+      if (action === 'blast_breakout_invite') {
+        if (!requester.permissions?.verify_payment || requester.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission' }) };
+        }
+
+        const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : null;
+        let regsResult;
+        try {
+          regsResult = await fetchBreakoutCandidates(ids);
+        } catch (err) {
+          return { statusCode: err.statusCode || 500, headers, body: JSON.stringify({ error: err.message }) };
+        }
+
+        const { newGroup, followupGroup, alreadySelected } = await splitBreakoutCandidates(regsResult);
+        const provider = normalizeProvider(body.email_provider);
+        const siteUrl  = linkBase(event);
+
+        const sendOne = (variant) => async (reg) => {
+          try {
+            const mailResult = await runBreakoutInvite(reg, { provider, siteUrl, variant });
+            if (variant === 'invite') {
+              await supabase.from('registrations').update({ breakout_invited_at: new Date().toISOString() }).eq('id', reg.id);
+            }
+            return {
+              id: reg.id, name: reg.name, email: reg.email, ok: true, variant,
+              provider: mailResult.provider, fell_back: !!mailResult.fellBack,
+            };
+          } catch (err) {
+            console.error(`[blast_breakout_invite] ${reg.email} failed:`, err.message);
+            return { id: reg.id, name: reg.name, email: reg.email, ok: false, variant, error: err.message };
+          }
+        };
+
+        const [newResults, followupResults] = await Promise.all([
+          mapWithConcurrency(newGroup, BULK_CONCURRENCY, sendOne('invite')),
+          mapWithConcurrency(followupGroup, BULK_CONCURRENCY, sendOne('followup')),
+        ]);
+
+        const results = [...newResults, ...followupResults];
+        const sent   = results.filter(r => r.ok);
+        const failed = results.filter(r => !r.ok);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({
+            success: true,
+            sent: sent.length,
+            failed: failed.length,
+            new_sent: newResults.filter(r => r.ok).length,
+            followup_sent: followupResults.filter(r => r.ok).length,
+            fell_back: sent.some(r => r.fell_back),
+            provider,
+            skipped_already_selected: alreadySelected,
+            results,
+          }),
+        };
+      }
+
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown action' }) };
     } catch (err) {
       console.error(err);
@@ -876,6 +1023,51 @@ async function runAttendanceInvite(reg, { provider, sendSms, settings, requester
   return { mailResult, smsResult };
 }
 
+// The pre-order window's last day, in Asia/Manila local time (inclusive).
+// Reads from MERCH_PREORDER_END_DATE (format: YYYY-MM-DD) so it can be
+// updated per event cycle without a code change — everything else (subject
+// line, banner copy, CTA label) recomputes itself from it automatically.
+// Falls back to the hardcoded default if the env var is unset or malformed.
+const MERCH_PREORDER_END_DATE = /^\d{4}-\d{2}-\d{2}$/.test(process.env.MERCH_PREORDER_END_DATE || '')
+  ? process.env.MERCH_PREORDER_END_DATE
+  : '2026-09-08';
+
+// Computes how the follow-up reminder should read *today*, so re-sending it
+// tomorrow (or any day) automatically shifts from "X days left" to
+// "tomorrow" to "today" without anyone editing copy by hand.
+function merchFollowupUrgency(now = new Date()) {
+  const manilaToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(now); // YYYY-MM-DD
+  const daysLeft = Math.round(
+    (new Date(`${MERCH_PREORDER_END_DATE}T00:00:00Z`) - new Date(`${manilaToday}T00:00:00Z`)) / 86400000
+  );
+
+  if (daysLeft <= 0) {
+    return {
+      subjectSuffix: 'today is the LAST DAY to pre-order your RELAY 2026 merch!',
+      headline: '⏳ Pre-orders close today!',
+      sub: "This is it — today's your last chance to lock in your size and favorite items before the window closes.",
+      reminderLine: "Just a friendly reminder — you haven't placed your RELAY 2026 merch pre-order yet, and today's your very last chance to grab it! 🏃",
+      cta: 'Order Now — Today Only!',
+    };
+  }
+  if (daysLeft === 1) {
+    return {
+      subjectSuffix: 'last call — RELAY 2026 pre-orders close tomorrow!',
+      headline: '⏳ Last day for pre-orders is tomorrow!',
+      sub: "Don't miss out — lock in your size and favorite RELAY 2026 gear before the window closes.",
+      reminderLine: "Just a friendly reminder — you haven't placed your RELAY 2026 merch pre-order yet, and this is your last chance to grab it before everyone else picks the good sizes! 🏃",
+      cta: 'Order Now — Ends Tomorrow',
+    };
+  }
+  return {
+    subjectSuffix: `${daysLeft} days left to pre-order your RELAY 2026 merch!`,
+    headline: `⏳ ${daysLeft} days left to pre-order!`,
+    sub: "Don't wait too long — lock in your size and favorite RELAY 2026 gear before the window closes.",
+    reminderLine: "Just a friendly reminder — you haven't placed your RELAY 2026 merch pre-order yet. Grab your favorite items before the good sizes run out! 🏃",
+    cta: `Order Now — ${daysLeft} Days Left`,
+  };
+}
+
 // Merch preorder invite — email always (unless skipped because a group
 // member already received it), SMS only when merch_sms_enabled is on (its
 // own dedicated switch, independent of the shared sms_enabled gate the
@@ -893,13 +1085,15 @@ async function runMerchInvite(reg, { provider, sendSms, settings, requesterEmail
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
 
+    const urgency = variant === 'followup' ? merchFollowupUrgency() : null;
+
     mailResult = await sendEmail({
       provider,
       to:      reg.email,
       subject: variant === 'followup'
-        ? `${firstName}, last call — RELAY 2026 pre-orders close tomorrow!`
+        ? `${firstName}, ${urgency.subjectSuffix}`
         : `${firstName}, preorder your RELAY 2026 merch`,
-      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [], country: reg.country || null, fxRates, variant }),
+      html:    merchInviteEmail({ name: reg.name, heroUrl, orderLink: merchLink(siteUrl, reg.id), products: productRows || [], country: reg.country || null, fxRates, variant, urgency }),
     });
   }
 
@@ -1173,9 +1367,10 @@ function attendanceEmail({ name, heroUrl, links }) {
   </div></body></html>`;
 }
 
-function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = null, fxRates, variant = 'invite' }) {
+function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = null, fxRates, variant = 'invite', urgency = null }) {
   const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
   const isFollowup = variant === 'followup';
+  const u = isFollowup ? (urgency || merchFollowupUrgency()) : null;
 
   const escapeHtml = (s) => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1256,12 +1451,12 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = n
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 16px;">
       <tr><td style="background:#FDF6E0;border:1.5px solid #E8B830;border-radius:10px;padding:14px 18px;text-align:center;">
         <span class="hourglass-spin" style="font-size:20px;">⏳</span>
-        <span style="font-size:15px;font-weight:800;color:#7A5A10;display:block;margin-top:6px;">Last day for pre-orders is tomorrow!</span>
-        <span style="font-size:13px;color:#7A5A10;display:block;margin-top:4px;">Don't miss out — lock in your size and favorite RELAY 2026 gear before the window closes.</span>
+        <span style="font-size:15px;font-weight:800;color:#7A5A10;display:block;margin-top:6px;">${escapeHtml(u.headline.replace('⏳ ', ''))}</span>
+        <span style="font-size:13px;color:#7A5A10;display:block;margin-top:4px;">${escapeHtml(u.sub)}</span>
       </td></tr>
     </table>
     <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
-      Just a friendly reminder — you haven't placed your RELAY 2026 merch pre-order yet, and this is your last chance to grab it before everyone else picks the good sizes! 🏃
+      ${escapeHtml(u.reminderLine)}
     </p>
     ` : `
     <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
@@ -1289,7 +1484,7 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = n
   <div class="note">This preorder page is only available through your confirmed-participant link.</div>
 
   <div class="cta-wrap">
-    <a href="${orderLink}" style="display:inline-block;padding:15px 40px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#ffffff;background-color:#2E7048;background-image:linear-gradient(135deg,#2E7048,#4BAE6A);">Open Merch Preorder</a>
+    <a href="${orderLink}" style="display:inline-block;padding:15px 40px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#ffffff;background-color:#2E7048;background-image:linear-gradient(135deg,#2E7048,#4BAE6A);">${isFollowup ? escapeHtml(u.cta) : 'Open Merch Preorder'}</a>
   </div>
   <p class="link-fallback">Button not working? Copy this link:<br>${orderLink}</p>
 
@@ -1298,6 +1493,167 @@ function merchInviteEmail({ name, heroUrl, orderLink, products = [], country = n
 </body>
 </html>`;
 }
+
+// Breakout session invite — email only, no SMS. 'variant' mirrors the merch
+// invite pattern: 'invite' is the standard announcement, 'followup' is the
+// last-day reminder with date-aware urgency copy (see breakoutFollowupUrgency).
+async function runBreakoutInvite(reg, { provider, siteUrl, variant = 'invite' }) {
+  const imgUrl  = (process.env.IMAGE_SITE_URL || siteUrl || '').replace(/\/+$/, '');
+  const heroUrl = `${imgUrl}/assets/images/hero-email.jpg?v=${Date.now()}`;
+  const firstName = String(reg.name || '').trim().split(/\s+/)[0];
+
+  const { data: sessions } = await supabase
+    .from('breakout_sessions')
+    .select('title, speaker')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  const urgency = variant === 'followup' ? breakoutFollowupUrgency() : null;
+
+  const mailResult = await sendEmail({
+    provider,
+    to:      reg.email,
+    subject: variant === 'followup'
+      ? `${firstName}, ${urgency.subjectSuffix}`
+      : `${firstName}, pick your RELAY 2026 breakout session`,
+    html:    breakoutInviteEmail({ name: reg.name, heroUrl, selectLink: breakoutLink(siteUrl, reg.id), sessions: sessions || [], variant, urgency }),
+  });
+
+  return mailResult;
+}
+
+function breakoutInviteEmail({ name, heroUrl, selectLink, sessions = [], variant = 'invite', urgency = null }) {
+  const firstName = String(name || '').trim().split(/\s+/)[0] || 'there';
+  const isFollowup = variant === 'followup';
+  const u = isFollowup ? (urgency || breakoutFollowupUrgency()) : null;
+
+  const escapeHtml = (s) => String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Speakers are stored as plain names — matches the "Pastor" prefix shown
+  // on the breakout-selection page, so the two never read inconsistently.
+  const speakerLabel = (name) => {
+    const n = String(name || '').trim();
+    if (!n) return '';
+    if (/^(pastor|dr\.?|rev\.?|elder)\b/i.test(n)) return n;
+    return 'Pastor ' + n;
+  };
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const [dueY, dueM, dueD] = BREAKOUT_DUE_DATE.split('-');
+  const dueDateLabel = `${MONTHS[parseInt(dueM,10)-1]} ${parseInt(dueD,10)}, ${dueY}`;
+
+  // Same color-per-session mapping used on the admin's breakout-response
+  // board and the participant picker page, so a session reads as "the green
+  // one" (etc.) consistently everywhere it shows up.
+  const sessionGradients = [
+    'linear-gradient(135deg, #1C2B38, #2E7048)',
+    'linear-gradient(135deg, #1C2B38, #3A8BBF)',
+    'linear-gradient(135deg, #1C2B38, #6D28D9)',
+    'linear-gradient(135deg, #1C2B38, #C49A1A)',
+    'linear-gradient(135deg, #1C2B38, #C0392B)',
+  ];
+  // Flat fallback per gradient, for the email clients that ignore
+  // background-image (Outlook desktop) — keeps the header from going white.
+  const sessionFallbackColors = ['#2E7048', '#3A8BBF', '#6D28D9', '#C49A1A', '#C0392B'];
+
+  const sessionRows = sessions.map((s, i) => {
+    const gradient = sessionGradients[i % sessionGradients.length];
+    const fallback = sessionFallbackColors[i % sessionFallbackColors.length];
+    return `
+    <tr><td style="padding-bottom:10px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:10px;overflow:hidden;border:1px solid #E9EEF1;">
+        <tr><td style="background-color:${fallback};background-image:${gradient};padding:14px 16px;">
+          <div style="font-size:14.5px;font-weight:700;color:#ffffff;line-height:1.35;">${escapeHtml(s.title)}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.85);margin-top:4px;">${escapeHtml(speakerLabel(s.speaker))}</div>
+        </td></tr>
+      </table>
+    </td></tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout Session Selection — RELAY 2026</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #F2F5F8; margin: 0; padding: 0; }
+  .wrap { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .bar { height: 4px; background: linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A); }
+  .hero-img { width: 100%; display: block; }
+  .header { background: linear-gradient(135deg,#1C2B38,#2E7048); padding: 34px 32px; text-align: center; }
+  .header h1 { color: #fff; font-size: 24px; margin: 0; letter-spacing: -.01em; }
+  .header p { color: rgba(255,255,255,0.65); font-size: 13px; margin: 8px 0 0; }
+  .intro { padding: 28px 32px 6px; }
+  .section-title { font-size: 17px; font-weight: 800; color: #1C2B38; text-align: center; margin: 24px 0 14px; }
+  .sessions-wrap { padding: 0 32px; }
+  .cta-wrap { text-align: center; margin: 20px 0 16px; }
+  .link-fallback { font-size: 11px; color: #6B8A9A; text-align: center; line-height: 1.6; padding: 0 32px 28px; }
+  .footer { background: #f7fafb; padding: 16px 32px; text-align: center; font-size: 11px; color: #6B8A9A; border-top: 1px solid #D4E2EA; }
+  .hourglass-spin { display: inline-block; animation: hourglass-spin 1.8s linear infinite; }
+  @keyframes hourglass-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"></div>
+  <img src="${heroUrl}" alt="RELAY 2026" class="hero-img">
+  <div class="header">
+    <h1>${isFollowup ? 'Last Call: Pick Your Breakout Session ⏳' : 'Pick Your Breakout Session 🎤'}</h1>
+    <p>RELAY Conference Asia Pacific 2026</p>
+  </div>
+
+  <div class="intro">
+    <p style="font-size:15px;color:#2A3D4A;margin-bottom:12px;">Hi <strong>${escapeHtml(firstName)}</strong>,</p>
+    ${isFollowup ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 16px;">
+      <tr><td style="background:#FDF6E0;border:1.5px solid #E8B830;border-radius:10px;padding:14px 18px;text-align:center;">
+        <span class="hourglass-spin" style="font-size:20px;">⏳</span>
+        <span style="font-size:15px;font-weight:800;color:#7A5A10;display:block;margin-top:6px;">${escapeHtml(u.headline.replace('⏳ ', ''))}</span>
+        <span style="font-size:13px;color:#7A5A10;display:block;margin-top:4px;">${escapeHtml(u.sub)}</span>
+      </td></tr>
+    </table>
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:12px;">
+      ${escapeHtml(u.reminderLine)}
+    </p>
+    ` : `
+    <p style="font-size:14px;color:#2A3D4A;line-height:1.7;margin-bottom:14px;">
+      We'll be holding four breakout sessions at RELAY 2026 — each with a different speaker and topic. Seats are limited to <b>45 participants per session</b>, so pick the one you'd like to join before it fills up!
+    </p>
+    `}
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+      <tr><td style="background:#EBF5FB;border:1.5px solid #3A8BBF;border-radius:10px;padding:12px 16px;text-align:center;">
+        <span style="font-size:14px;">🗓️</span>
+        <span style="font-size:13.5px;font-weight:700;color:#1C2B38;">&nbsp;September 25, 2026 &middot; 11:00 AM &ndash; 12:00 NN</span>
+      </td></tr>
+    </table>
+
+    <p style="font-size:13px;color:#2A3D4A;line-height:1.6;margin-bottom:6px;">
+      \u23f0 Please choose your session by <b>${escapeHtml(dueDateLabel)}</b>. After that, selections close.
+    </p>
+    <p style="font-size:12.5px;color:#6B8A9A;line-height:1.6;margin-bottom:0;">
+      If you haven't picked by then, you can still choose a session at the venue — subject to available seats — or our team may assign you to one directly.
+    </p>
+  </div>
+
+  <p class="section-title">Breakout Session Topics</p>
+  <div class="sessions-wrap">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sessionRows}</table>
+  </div>
+
+  <div class="cta-wrap">
+    <a href="${selectLink}" style="display:inline-block;padding:15px 40px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#ffffff;background-color:#2E7048;background-image:linear-gradient(135deg,#2E7048,#4BAE6A);">${isFollowup ? escapeHtml(u.cta) : 'Choose My Session'}</a>
+  </div>
+  <p class="link-fallback">Button not working? Copy this link:<br>${selectLink}</p>
+
+  <div class="footer">RELAY 2026 &middot; Sovereign Grace Churches Asia Pacific &middot; Questions? Reply to this email.</div>
+</div>
+</body>
+</html>`;
+}
+
 
 function partialPaymentEmail({ primaryName, amount, date, payment_method, totalFee, newPartialTotal, remaining, isGroup, heroUrl, siteUrl, registrationId, group_id }) {
   const uploadLink  = `${siteUrl}/upload-receipt?id=${registrationId}${isGroup && group_id ? `&group_id=${group_id}` : ''}`;

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RELAY 2026 - Breakout Session Selection</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF;
+    --sky-light: #EBF5FB;
+    --gold: #C49A1A;
+    --gold-light: #E8B830;
+    --gold-bg: #FDF6E0;
+    --green: #2E7048;
+    --green-bg: #EAF5EE;
+    --green-bright: #4BAE6A;
+    --page: #E4EAEE;
+    --card: #fff;
+    --dark: #1C2B38;
+    --text: #2A3D4A;
+    --muted: #6B8A9A;
+    --border: #D4E2EA;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "DM Sans", sans-serif; background: var(--page); color: var(--text); min-height: 100vh; }
+  .page-panel { max-width: 720px; margin: 0 auto; background: #F9FBFC; min-height: 100vh; box-shadow: 0 0 32px rgba(26,58,82,0.06); }
+  .hero-wrap { max-width: 720px; margin: 0 auto; }
+  .hero { width: 100%; display: block; line-height: 0; margin: 0; padding: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
+  .confetti-bar { height: 4px; background: linear-gradient(90deg, var(--green-bright), var(--sky), var(--gold-light), var(--green-bright)); background-size: 200%; animation: shimmer 3s linear infinite; }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 18px 80px; }
+  h1 { font-family: "Bebas Neue", sans-serif; font-size: 34px; letter-spacing: .04em; color: var(--dark); line-height: 1.1; }
+  .lead { font-size: 14px; color: var(--muted); line-height: 1.6; margin-top: 8px; }
+  .fallback-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+
+  .session-window {
+    display: flex; align-items: center; gap: 8px; margin-top: 14px;
+    background: var(--sky-light); border: 1px solid var(--sky);
+    color: var(--dark); font-size: 13.5px; font-weight: 600;
+    border-radius: 10px 10px 0 0; padding: 12px 14px;
+  }
+  .session-window strong { color: var(--sky); }
+
+  .session-details {
+    border: 1px solid var(--sky); border-top: none; border-radius: 0 0 10px 10px;
+    background: var(--sky-light); overflow: hidden;
+  }
+  .session-detail-row {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    font-size: 13px; color: var(--dark);
+  }
+  .session-detail-row:not(:first-child) { border-top: 1px solid rgba(58,139,191,0.22); }
+  .session-detail-row strong { color: var(--dark); }
+  .session-detail-row.warn { color: var(--gold); font-size: 12.5px; font-weight: 700; }
+
+
+
+  .closed-banner {
+    margin-top: 18px; background: #FCEAEA; border: 1.5px solid #E0736B; color: #8C2E27;
+    border-radius: 10px; padding: 14px 16px; font-size: 13.5px; font-weight: 600; line-height: 1.6;
+  }
+
+  .tiles { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 22px; }
+  @media (min-width: 560px) { .tiles { grid-template-columns: 1fr 1fr; } }
+
+  .tile {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+    border: 2px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 18px 18px 16px; display: flex; flex-direction: column;
+    gap: 10px; cursor: pointer; transition: border-color .15s, transform .1s, box-shadow .15s;
+    position: relative; overflow: hidden;
+  }
+  .tile-accent { height: 6px; margin: -18px -18px 2px; flex-shrink: 0; border-radius: 12px 12px 0 0; }
+  .tile:hover:not(.disabled) {
+    border-color: var(--sky); box-shadow: 0 4px 18px rgba(58,139,191,0.14); transform: translateY(-1px);
+  }
+  .tile.selected {
+    border-color: var(--green); background: linear-gradient(180deg, var(--green-bg) 0%, #f4faf4 100%);
+    box-shadow: 0 4px 18px rgba(46,112,72,0.12);
+  }
+  .tile.disabled { cursor: not-allowed; opacity: 0.55; }
+
+  .tile-title { font-size: 18px; font-weight: 800; color: var(--dark); line-height: 1.3; padding-right: 34px; }
+  .tile-speaker-row { display: flex; align-items: center; gap: 10px; padding-right: 34px; }
+  .tile-speaker-photo { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); }
+  .tile-speaker-info { min-width: 0; }
+  .tile-speaker { font-size: 13px; color: var(--sky); font-weight: 700; line-height: 1.3; }
+  .tile-speaker-post { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.3; margin-top: 1px; white-space: pre-line; }
+  .tile-seats { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: auto; }
+  .tile-seats.low { color: var(--gold); }
+  .tile-seats.full { color: #C0392B; font-weight: 800; }
+  .tile-check {
+    position: absolute; top: 14px; right: 14px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--green); color: #fff; display: none; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+    flex-shrink: 0; box-shadow: 0 2px 6px rgba(46,112,72,0.35);
+  }
+  .tile.selected .tile-check { display: flex; }
+  .tile-full-badge {
+    position: absolute; top: 14px; right: 14px; background: #C0392B; color: #fff;
+    font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 6px;
+  }
+
+  .confirm-bar { margin-top: 22px; }
+  .confirm-btn {
+    width: 100%; padding: 15px; border-radius: 10px; border: none; font-size: 15px; font-weight: 800;
+    color: #fff; background: linear-gradient(135deg, var(--green), var(--green-bright)); cursor: pointer;
+  }
+  .confirm-btn:disabled { background: #9FB6C6; cursor: not-allowed; }
+
+  .status-msg { margin-top: 14px; font-size: 13.5px; font-weight: 600; text-align: center; line-height: 1.6; }
+  .status-msg.ok { color: var(--green); }
+  .status-msg.err { color: #C0392B; }
+
+  .loading, .error-state { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+
+  /* Locked / confirmed state — shown once a selection exists, whether from
+     a fresh submit or reopening the link later. */
+  .done-wrap { text-align: center; margin-bottom: 18px; }
+  .done-icon {
+    width: 76px; height: 76px; border-radius: 50%; background: var(--green-bg);
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+    margin: 0 auto 18px; animation: doneIconPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes doneIconPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+  .done-wrap h2 { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.05em; color: var(--dark); margin-bottom: 6px; }
+  .done-sub { font-size: 14px; color: var(--muted); line-height: 1.6; }
+  .done-session-card {
+    text-align: left; background: var(--card); border: 1.5px solid var(--green); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 20px; margin-top: 20px; position: relative;
+  }
+  .done-session-label { font-size: 11px; font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .done-session-title { font-size: 17px; font-weight: 800; color: var(--dark); line-height: 1.35; padding-right: 36px; }
+  .done-check {
+    position: absolute; top: 20px; right: 20px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; box-shadow: 0 2px 6px rgba(46,112,72,0.35);
+  }
+  .done-note { margin-top: 16px; background: var(--sky-light); border-radius: 10px; padding: 12px 16px; font-size: 12.5px; color: var(--dark); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="page-panel">
+  <div class="hero-wrap"><div class="hero"><img src="assets/images/hero.jpg" alt="RELAY 2026"></div>
+  <div class="confetti-bar"></div></div>
+  <div class="wrap" id="app">
+    <div class="loading">Loading your breakout session options…</div>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const token = params.get('t') || '';
+const devReg = params.get('dev_reg') || '';
+const isPreview = params.get('preview') === '1';
+
+let state = null;
+let pendingSessionId = null;
+let submitting = false;
+let justSubmitted = false;
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Speakers are stored as plain names ("Jeffrey Jo") — this adds the "Pastor"
+// title at display time so the data itself stays flexible (a name that
+// already carries a title, e.g. "Dr. Jane Doe", is left alone).
+function speakerLabel(name) {
+  const n = String(name || '').trim();
+  if (!n) return '';
+  if (/^(pastor|dr\.?|rev\.?|elder)\b/i.test(n)) return n;
+  return 'Pastor ' + n;
+}
+
+// Tiny headshot pulled from assets/images/speakers/<first-last>.png — not
+// every speaker has one on file yet, so a missing image just quietly
+// collapses rather than showing a broken-image icon.
+function speakerPhotoUrl(name) {
+  const slug = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug ? 'assets/images/speakers/' + slug + '.png' : '';
+}
+
+function speakerRowHtml(name, post) {
+  const photo = speakerPhotoUrl(name);
+  const photoHtml = photo
+    ? `<img class="tile-speaker-photo" src="${esc(photo)}" alt="" loading="lazy" onerror="this.remove()">`
+    : '';
+  const postText = (post && post.trim()) ? post.trim() : 'Position \u2014 TBA';
+  return `<div class="tile-speaker-row">${photoHtml}<div class="tile-speaker-info"><div class="tile-speaker">${esc(speakerLabel(name))}</div><div class="tile-speaker-post">${esc(postText)}</div></div></div>`;
+}
+
+function formatDueDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+async function load() {
+  try {
+    const qs = new URLSearchParams();
+    if (token) qs.set('t', token);
+    if (devReg) qs.set('dev_reg', devReg);
+    if (isPreview) qs.set('preview', '1');
+    const res = await fetch('/.netlify/functions/breakout-selection?' + qs.toString());
+    const json = await res.json();
+    if (!res.ok) {
+      renderError(json.error || 'This link is invalid or has expired.');
+      return;
+    }
+    state = json;
+    pendingSessionId = state.currentSelection;
+    render();
+  } catch (e) {
+    renderError('Something went wrong loading this page. Please refresh and try again.');
+  }
+}
+
+function renderError(msg) {
+  document.getElementById('app').innerHTML = `<div class="error-state">⚠️ ${esc(msg)}</div>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const firstName = (state.registration?.name || '').trim().split(/\s+/)[0] || 'there';
+
+  // Once a selection exists — whether they just made it or they're
+  // reopening this link later — there's nothing left to pick. Show the
+  // locked confirmation instead of the picker.
+  if (state.currentSelection) {
+    const picked = state.sessions.find(s => s.id === state.currentSelection);
+    app.innerHTML = `
+      <div class="done-wrap">
+        <div class="done-icon">✅</div>
+        <h2>${justSubmitted ? 'Thank You, ' + esc(firstName) + '!' : 'You\u2019re All Set, ' + esc(firstName) + '!'}</h2>
+        <div class="done-sub">${justSubmitted ? 'You\u2019ll receive a confirmation email soon. See you at the conference!' : 'Here\u2019s the breakout session you picked. See you at the conference!'}</div>
+      </div>
+      <div class="done-session-card">
+        <div class="done-check">✓</div>
+        <div class="done-session-label">Your Breakout Session</div>
+        <div class="done-session-title">${esc(picked ? picked.title : 'Selected')}</div>
+        <div style="margin-top:6px;">${speakerRowHtml(picked ? picked.speaker : '', picked ? picked.speaker_post : '')}</div>
+      </div>
+      <div class="done-note">🗓️ <strong>September 25, 2026 · 11:00 AM – 12:00 NN</strong> — this selection is final and can\u2019t be changed. Reach out to the registration desk if you need help.</div>
+    `;
+    return;
+  }
+
+  const closed = !!state.closed;
+
+  // Same color-per-session mapping used on the admin's breakout-response
+  // board, so a given session reads as "the green one" (etc.) consistently
+  // for both participants picking here and admins reviewing responses there.
+  const sessionColors = [
+    'linear-gradient(135deg, #1C2B38, #2E7048)',
+    'linear-gradient(135deg, #1C2B38, #3A8BBF)',
+    'linear-gradient(135deg, #1C2B38, #6D28D9)',
+    'linear-gradient(135deg, #1C2B38, #C49A1A)',
+    'linear-gradient(135deg, #1C2B38, #C0392B)',
+  ];
+
+  const tilesHtml = state.sessions.map((s, idx) => {
+    const isSelected = pendingSessionId === s.id;
+    const isDisabled = s.isFull && !isSelected;
+    const seatsClass = s.isFull ? 'full' : (s.seatsLeft <= 8 ? 'low' : '');
+    const seatsLabel = s.isFull ? 'FULL — no seats left' : `${s.seatsLeft} of ${s.capacity} seats left`;
+    const accent = sessionColors[idx % sessionColors.length];
+    return `
+      <div class="tile ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" data-session-id="${s.id}" onclick="${(closed || isDisabled) ? '' : `selectTile('${s.id}')`}">
+        <div class="tile-accent" style="background:${accent};"></div>
+        ${isSelected ? '<div class="tile-check">✓</div>' : (isDisabled ? '<div class="tile-full-badge">Full</div>' : '')}
+        <div class="tile-title">${esc(s.title)}</div>
+        ${speakerRowHtml(s.speaker, s.speaker_post)}
+        <div class="tile-seats ${seatsClass}">${seatsLabel}</div>
+      </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <h1>Breakout Session Selection</h1>
+    <p class="lead">Hi <strong>${esc(firstName)}</strong> — we're holding ${state.sessions.length} breakout sessions at RELAY 2026, each with a different speaker and topic. Seats are limited per session, so pick the one you'd like to join before it fills up!</p>
+    <div class="session-window">🗓️ <span><strong>September 25, 2026</strong> · 11:00 AM – 12:00 NN</span></div>
+    <div class="session-details">
+      <div class="session-detail-row">🔒 <span>Selections close: <strong>${esc(formatDueDate(state.dueDate))}</strong></span></div>
+      <div class="session-detail-row warn">⚠️ <span>Heads up — once you confirm, your selection is final and can\u2019t be changed.</span></div>
+    </div>
+    <p class="fallback-note">If you don\u2019t choose by the deadline, you can still pick a session at the venue — subject to available seats — or our team may assign you to one directly.</p>
+    ${closed ? `<div class="closed-banner">⚠️ Breakout session selection is now closed. Please reach out to the registration desk if you still need to be placed in a session.</div>` : ''}
+    <div class="tiles">${tilesHtml}</div>
+    ${closed ? '' : `
+    <div class="confirm-bar">
+      <button class="confirm-btn" id="confirmBtn" onclick="confirmSelection()" ${pendingSessionId ? '' : 'disabled'}>
+        Confirm My Session
+      </button>
+    </div>`}
+    <div id="statusMsg"></div>
+  `;
+}
+
+function selectTile(sessionId) {
+  pendingSessionId = sessionId;
+  render();
+}
+
+async function confirmSelection() {
+  if (!pendingSessionId || submitting) return;
+  submitting = true;
+  const btn = document.getElementById('confirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  try {
+    const res = await fetch('/.netlify/functions/breakout-selection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, dev_reg: devReg || undefined, session_id: pendingSessionId }),
+    });
+    const json = await res.json();
+    submitting = false;
+    if (!res.ok) {
+      // Someone else already grabbed this — refresh seat counts. Being
+      // told the pick already exists shouldn't happen from this screen
+      // (the picker isn't shown once locked), but reload just in case.
+      document.getElementById('statusMsg').innerHTML = `<div class="status-msg err">⚠️ ${esc(json.error || 'Could not save your selection — please try again.')}</div>`;
+      if (json.error && (json.error.includes('filled up') || json.already_selected)) await load();
+      return;
+    }
+    justSubmitted = true;
+    state.currentSelection = pendingSessionId;
+    render();
+  } catch (e) {
+    submitting = false;
+    document.getElementById('statusMsg').innerHTML = `<div class="status-msg err">⚠️ Something went wrong — please try again.</div>`;
+  }
+}
+
+load();
+</script>
+</body>
+</html>
