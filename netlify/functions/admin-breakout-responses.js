@@ -56,7 +56,7 @@ export const handler = async (event) => {
       // Fetch all confirmed (non-cancelled) registrations
       const { data: registrations, error: regErr } = await supabase
         .from('registrations')
-        .select('id, name, email, mobile, age, church, registrant_type, status')
+        .select('id, name, email, mobile, age, church, registrant_type, status, breakout_invited_at')
         .neq('status', 'cancelled')
         .order('name', { ascending: true });
       if (regErr) throw regErr;
@@ -87,6 +87,7 @@ export const handler = async (event) => {
           sessionId: sel?.session_id || null,
           selfSelected: sel ? !sel.selected_by_admin : null, // null = no selection at all
           assignedAt: sel?.assigned_at || null,
+          invitedAt: reg.breakout_invited_at || null,
         };
 
         if (sel && sessionMap[sel.session_id]) {

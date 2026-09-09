@@ -784,6 +784,13 @@ export const handler = async (event) => {
         }
 
         const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : null;
+        // Same hard cap the merch blast enforces — without it, a single
+        // request can fan out an unbounded number of concurrent sends (see
+        // the concurrency fix below for why that matters for deliverability).
+        if (ids && ids.length > BULK_LIMIT) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: `Too many at once — send at most ${BULK_LIMIT} per batch` }) };
+        }
+
         let regsResult;
         try {
           regsResult = await fetchBreakoutCandidates(ids);
@@ -811,12 +818,21 @@ export const handler = async (event) => {
           }
         };
 
-        const [newResults, followupResults] = await Promise.all([
-          mapWithConcurrency(newGroup, BULK_CONCURRENCY, sendOne('invite')),
-          mapWithConcurrency(followupGroup, BULK_CONCURRENCY, sendOne('followup')),
-        ]);
+        // Both groups share ONE concurrency-limited pool (matching the merch
+        // blast) rather than each getting their own — running them via
+        // Promise.all previously let up to 2x BULK_CONCURRENCY sends fire at
+        // once (new + followup pools each independently capped at 6), which
+        // is very likely what was tripping Gmail's bulk-send abuse detection
+        // and causing the bounces/temporary blocks: a burst of ~12
+        // simultaneous sends per chunk instead of 6.
+        const tagged = [
+          ...newGroup.map(reg => ({ reg, variant: 'invite' })),
+          ...followupGroup.map(reg => ({ reg, variant: 'followup' })),
+        ];
+        const results = await mapWithConcurrency(tagged, BULK_CONCURRENCY, ({ reg, variant }) => sendOne(variant)(reg));
 
-        const results = [...newResults, ...followupResults];
+        const newResults = results.filter(r => r.variant === 'invite');
+        const followupResults = results.filter(r => r.variant === 'followup');
         const sent   = results.filter(r => r.ok);
         const failed = results.filter(r => !r.ok);
         return {
