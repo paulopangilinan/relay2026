@@ -14,9 +14,15 @@
   }
   body {
     font-family: 'DM Sans', Arial, sans-serif;
-    background: #F2F5F8; min-height: 100vh;
+    background: #F7FAFB; min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
   }
+  /* Single wrapper for the whole centered column (hero + confetti + chips +
+     card) so it reads as one content panel with its own background,
+     distinct from the outer page background above. Matches the palette
+     used on gathering.html (body #F7FAFB / panel var(--page-bg) #E4EAEE). */
+  .center-col { width: 100%; max-width: 620px; background: #E4EAEE; }
+  .hero-wrap { width: 100%; }
   .hero { width: 100%; display: block; line-height: 0; }
   .hero img { width: 100%; height: auto; display: block; }
   .confetti-bar {
@@ -36,8 +42,9 @@
   .chip-venue { background: rgba(74,155,196,0.18); color: #8DD4F5; border: 1px solid rgba(74,155,196,0.3); }
   .chip-date  { background: rgba(232,184,48,0.18);  color: #F5D06A; border: 1px solid rgba(232,184,48,0.3); }
   .chip-age   { background: rgba(75,174,106,0.18);  color: #7EE0A2; border: 1px solid rgba(75,174,106,0.3); }
-  .page-wrap { width: 100%; max-width: 520px; padding: 40px 20px 64px; text-align: center; }
+  .page-wrap { width: 100%; max-width: 620px; padding: 40px 20px 64px; text-align: center; }
   .icon { font-size: 56px; margin-bottom: 20px; }
+  .promo-hero { width: 100%; border-radius: 12px; display: block; margin: 0 auto 20px; }
   .card {
     background: var(--card-bg); border-radius: 16px;
     border: 1px solid var(--border); padding: 36px 28px;
@@ -68,29 +75,46 @@
 </head>
 <body>
 
-<div class="hero">
-  <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
-</div>
-<div class="confetti-bar"></div>
-<div class="chips-bar">
-  <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
-  <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
-  <span class="chip chip-age">👥 Ages 17 to late 30s (Young Adults &amp; Leaders)</span>
-</div>
+<div class="center-col">
+  <div class="hero-wrap">
+    <div class="hero">
+      <img src="assets/images/hero.jpg" alt="RELAY Conference — Living for Christ Alone">
+    </div>
+  </div>
+  <div class="confetti-bar"></div>
+  <div class="chips-bar">
+    <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
+    <span class="chip chip-date">🗓 Sept 23–26, 2026 · 4 Days 3 Nights</span>
+    <span class="chip chip-age">👥 Ages 17 to late 30s (Young Adults &amp; Leaders)</span>
+  </div>
 
-<div class="page-wrap">
+  <div class="page-wrap">
   <div class="card">
-    <div class="icon">🙏</div>
     <h1 id="pageTitle">Registration is Now Closed</h1>
     <div class="divider"></div>
     <p id="pageBody">
       Thank you so much for your interest in RELAY 2026.<br>
       We're grateful for your heart to join us — unfortunately, registration for this category has already closed.
     </p>
+
+    <!-- PH-only cross-promo: Gathering Around the Gospel, merged into the
+         same card. International visitors never see this — no equivalent
+         event/registration is offered to them. -->
+    <div id="gatheringPromo" style="display:none;margin-top:28px;padding-top:28px;border-top:1px solid var(--border);">
+      <img class="promo-hero" src="/assets/images/gathering-hero.jpg" alt="Gathering Around the Gospel">
+      <p id="gatheringPromoText">
+        Don't worry — you can still join us at <strong>Gathering Around the Gospel</strong>,
+        an evening of song, scripture, and prayer led by David Zimmer &amp; Caleb Dirnberger,
+        on September 25 at CCT Tagaytay Retreat &amp; Training Center.
+      </p>
+      <a href="/gathering" style="display:inline-block;margin-top:20px;padding:13px 28px;background:var(--green);color:#fff;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Register for the Gathering →</a>
+    </div>
+
     <div class="contact" id="contactWrap" style="display:none;">
       Have questions? Reach out to us at
       <a href="#" id="contactLink"></a>
     </div>
+  </div>
   </div>
 </div>
 
@@ -114,11 +138,28 @@
     document.getElementById('pageBody').innerHTML =
       'Thank you so much for your interest in RELAY 2026.<br>' +
       'We\'re grateful for your heart to join us — unfortunately, international registration has already closed.';
+    // International visitors don't get the Gathering promo — no CTA, no mention.
   } else if (type === 'ph') {
     document.getElementById('pageTitle').textContent = 'Philippine Registration is Now Closed';
     document.getElementById('pageBody').innerHTML =
       'Thank you so much for your interest in RELAY 2026.<br>' +
       'We\'re grateful for your heart to join us — unfortunately, Philippine registration has already closed.';
+
+    // Only show the Gathering CTA if Gathering registration is itself still
+    // open — otherwise a capped-out/closed Gathering would be a dead end.
+    fetch('/.netlify/functions/site-settings')
+      .then(r => r.json())
+      .then(s => {
+        if (!s.reg_gathering_closed) {
+          // Gathering is open: collapse into one combined title + subtext,
+          // dropping the separate "Thank you..." closed paragraph.
+          document.getElementById('pageTitle').textContent =
+            'Registration is Now Closed. Missed the RELAY Conference 2026?';
+          document.getElementById('pageBody').style.display = 'none';
+          document.getElementById('gatheringPromo').style.display = 'block';
+        }
+      })
+      .catch(() => {});
   }
 </script>
 </body>

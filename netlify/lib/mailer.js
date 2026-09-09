@@ -1,10 +1,10 @@
 // netlify/lib/mailer.js
 // Central mail sender.
 //
-// Gmail (nodemailer) remains the default provider and behaves exactly as it did
-// before this module existed. Resend is opt-in per send — pass provider:'resend'.
-// If Resend is requested but unconfigured or failing, the send falls back to
-// Gmail so a mail never silently disappears.
+// Resend is now the default provider repo-wide. Gmail (nodemailer) is opt-in
+// per send — pass provider:'gmail' — and remains the fallback: if Resend is
+// requested (explicitly or by default) but unconfigured or failing, the send
+// falls back to Gmail so a mail never silently disappears.
 
 import nodemailer from 'nodemailer';
 
@@ -99,22 +99,23 @@ async function sendViaResend({ to, subject, html, replyTo }) {
  * @returns {Promise<{provider:string,id:string,fellBack?:boolean}>}
  */
 export async function sendEmail({ to, subject, html, replyTo, provider }) {
-  if (provider === 'resend') {
-    if (!resendConfigured()) {
-      console.warn('[mailer] Resend requested but RESEND_API_KEY is unset — using Gmail.');
-      return { ...(await sendViaGmail({ to, subject, html, replyTo })), fellBack: true };
-    }
-    try {
-      return await sendViaResend({ to, subject, html, replyTo });
-    } catch (err) {
-      console.error('[mailer] Resend send failed, falling back to Gmail:', err.message);
-      return { ...(await sendViaGmail({ to, subject, html, replyTo })), fellBack: true };
-    }
+  if (provider === 'gmail') {
+    return sendViaGmail({ to, subject, html, replyTo });
   }
-  return sendViaGmail({ to, subject, html, replyTo });
+  // Default (provider unset or 'resend'): try Resend, fall back to Gmail.
+  if (!resendConfigured()) {
+    console.warn('[mailer] Resend is the default provider but RESEND_API_KEY/RESEND_FROM are unset — using Gmail.');
+    return { ...(await sendViaGmail({ to, subject, html, replyTo })), fellBack: true };
+  }
+  try {
+    return await sendViaResend({ to, subject, html, replyTo });
+  } catch (err) {
+    console.error('[mailer] Resend send failed, falling back to Gmail:', err.message);
+    return { ...(await sendViaGmail({ to, subject, html, replyTo })), fellBack: true };
+  }
 }
 
-// 'gmail' | 'resend' — anything else is coerced to the Gmail default.
+// 'gmail' | 'resend' — anything else is coerced to the Resend default.
 export function normalizeProvider(value) {
-  return value === 'resend' ? 'resend' : 'gmail';
+  return value === 'gmail' ? 'gmail' : 'resend';
 }

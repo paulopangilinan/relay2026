@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gathering Around the Gospel — Registration Closed</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB; --green: #2E7048;
+    --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A;
+    --border: #D4E2EA; --card-bg: #fff; --page-bg: #E4EAEE;
+  }
+  body {
+    font-family: 'DM Sans', Arial, sans-serif;
+    background: var(--page-bg); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .hero-wrap { max-width: 620px; width: 100%; margin: 0 auto; }
+  .hero { width: 100%; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
+  .confetti-bar {
+    height: 4px; width: 100%;
+    background: linear-gradient(90deg, #4BAE6A, #3A8BBF, #E8B830, #4BAE6A);
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+  .page-wrap { width: 100%; max-width: 520px; padding: 40px 20px 64px; text-align: center; }
+  .icon { font-size: 56px; margin-bottom: 20px; }
+  .card {
+    background: var(--card-bg); border-radius: 16px;
+    border: 1px solid var(--border); padding: 36px 28px;
+    box-shadow: 0 2px 20px rgba(28,43,56,0.08);
+  }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px; letter-spacing: 0.06em;
+    color: var(--dark); margin-bottom: 12px;
+  }
+  p {
+    font-size: 14px; color: var(--muted);
+    line-height: 1.7; margin-bottom: 0;
+  }
+  .divider {
+    width: 40px; height: 3px; border-radius: 50px;
+    background: linear-gradient(90deg, var(--sky), var(--green));
+    margin: 16px auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-wrap">
+  <div class="hero">
+    <picture>
+      <source media="(max-width: 640px)" srcset="assets/images/gathering-hero-mobile.jpg">
+      <img src="assets/images/gathering-hero.jpg" alt="Gathering Around the Gospel">
+    </picture>
+  </div>
+</div>
+<div class="confetti-bar"></div>
+
+<div class="page-wrap">
+  <div class="icon" id="closedIcon">🙏</div>
+  <div class="card">
+    <h1 id="closedTitle">Registration Closed</h1>
+    <div class="divider"></div>
+    <p id="closedMessage">Registration for Gathering Around the Gospel is now closed. We can't wait to see everyone on September 25 at CCT Tagaytay Retreat &amp; Training Center — see you there!</p>
+  </div>
+</div>
+
+<script>
+  // ?reason=capped → registration hit GATHERING_MAX_PARTICIPANTS, distinct
+  // copy from the regular manual-close / past-cutoff case above.
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('reason') === 'capped') {
+    document.getElementById('closedIcon').textContent = '🎉';
+    document.getElementById('closedTitle').textContent = 'We\'re Full!';
+    document.getElementById('closedMessage').textContent =
+      "Thank you so much for your interest in Gathering Around the Gospel — we've reached our maximum capacity and registration is now closed. We're grateful for your heart to join us, and we hope to see you at future gatherings!";
+  }
+</script>
+
+</body>
+</html>

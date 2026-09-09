@@ -1,0 +1,86 @@
+// netlify/functions/admin-gathering.js
+import { createClient } from "@supabase/supabase-js";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "../lib/mailer.js";
+import { sendGatheringPaymentConfirmedEmail } from "../lib/gathering-email.js";
+
+const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const headers    = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
+const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || "relay2026secret";
+
+function getAdmin(event) {
+  try {
+    const token = (event.headers.authorization || "").replace("Bearer ", "");
+    return jwt.verify(token, JWT_SECRET);
+  } catch { return null; }
+}
+
+export const handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers };
+
+  const admin = getAdmin(event);
+  if (!admin) return { statusCode: 401, headers, body: JSON.stringify({ error: "Unauthorized" }) };
+
+  try {
+    if (event.httpMethod === "GET") {
+      const { data, error } = await supabase
+        .from("gathering_registrations")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return { statusCode: 200, headers, body: JSON.stringify({ registrations: data || [] }) };
+    }
+
+    if (event.httpMethod === "POST") {
+      const body = JSON.parse(event.body || "{}");
+      const { action, id } = body;
+      if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing id" }) };
+
+      const { data: row, error: fetchErr } = await supabase
+        .from("gathering_registrations").select("*").eq("id", id).single();
+      if (fetchErr || !row) return { statusCode: 404, headers, body: JSON.stringify({ error: "Not found" }) };
+
+      if (action === "confirm") {
+        // Only admins with verify_payment may confirm a GCash payment —
+        // matches the permission gate used by every other payment-confirming
+        // action in admin-data.js. Being logged in as *some* admin is not
+        // enough on its own.
+        if (!admin.permissions?.verify_payment || admin.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: "No permission" }) };
+        }
+        // Only GCash rows are confirmable here. Venue payments are never
+        // marked confirmed through this panel — they stay 'unpaid' until
+        // the participant actually checks in at the venue, which is a
+        // separate flow.
+        if (row.payment_method !== "gcash") {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Only GCash payments can be confirmed here. Venue payments are confirmed at check-in." }) };
+        }
+        const { data: updated, error } = await supabase
+          .from("gathering_registrations")
+          .update({ payment_status: "confirmed", verified_at: new Date().toISOString(), verified_by: admin.email || "admin" })
+          .eq("id", id).select().single();
+        if (error) throw error;
+
+        sendGatheringPaymentConfirmedEmail(sendEmail, updated);
+
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, registration: updated }) };
+      }
+
+      if (action === "update_count") {
+        // Removed: admins no longer edit participant_count after
+        // submission. What was submitted is honored as-is; if a
+        // participant's headcount changes, they register again as a
+        // separate batch instead. Endpoint intentionally left rejecting
+        // this action in case any stale client still calls it.
+        return { statusCode: 410, headers, body: JSON.stringify({ error: "Editing participant count is no longer supported. Ask the participant to submit a new registration for any additional participants." }) };
+      }
+
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown action" }) };
+    }
+
+    return { statusCode: 405, headers, body: "Method Not Allowed" };
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Something went wrong." }) };
+  }
+};

@@ -185,9 +185,23 @@
   const PH_FORM   = '/register-ph';
   const INTL_FORM = '/register-international';
 
-  function showTypePicker() {
+  async function showTypePicker() {
     document.getElementById('loading').style.display  = 'none';
     document.getElementById('chooser').style.display  = 'none';
+    // Check closed status before showing Single/Group — a closed PH
+    // registration should redirect straight to the closed message instead
+    // of letting the visitor pick a type first and only finding out on
+    // the next screen.
+    try {
+      const res = await fetch('/.netlify/functions/site-settings');
+      const settings = await res.json();
+      if (settings.reg_ph_closed) {
+        window.location.replace('/registration-closed.html?type=ph');
+        return;
+      }
+    } catch (e) {
+      // Settings check failed — fail open and show the picker as before.
+    }
     document.getElementById('typePicker').style.display = 'block';
   }
 
