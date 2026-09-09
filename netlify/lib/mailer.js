@@ -46,6 +46,19 @@ async function sendViaGmail({ to, subject, html, replyTo }) {
     html,
     ...(replyTo ? { replyTo } : {}),
   });
+  // nodemailer's sendMail() promise resolves successfully even when the SMTP
+  // server rejected specific recipients — it only throws on a hard failure
+  // of the transaction itself. A rejected recipient shows up in
+  // info.rejected (and is absent from info.accepted) while the call still
+  // "succeeds", which is exactly how a blocked/bounced send was silently
+  // getting marked as invited: no exception ever reached the caller's catch
+  // block. Treat any rejected recipient as a real failure instead.
+  const targets = Array.isArray(to) ? to : [to];
+  const rejected = (info.rejected || []).filter(addr => targets.includes(addr));
+  if (rejected.length) {
+    const reason = (info.rejectedErrors && info.rejectedErrors[0]?.message) || 'Rejected by mail server';
+    throw new Error(`Gmail rejected ${rejected.join(', ')}: ${reason}`);
+  }
   return { provider: 'gmail', id: info.messageId };
 }
 

@@ -5316,6 +5316,14 @@
     const unassignedTotal = (breakoutData.unassigned || []).length;
     const selectedCount = breakoutSelectedUnassigned.size;
     const allSelected = unassignedTotal > 0 && selectedCount === unassignedTotal;
+    // Split the unassigned pool by whether they've ever gotten a breakout
+    // email — mirrors exactly how the backend classifies invite vs.
+    // reminder (see splitBreakoutCandidates in admin-data.js), so clicking
+    // one of these buttons always targets the group its label promises.
+    const neverInvited = (breakoutData.unassigned || []).filter(p => !p.invitedAt);
+    const alreadyInvited = (breakoutData.unassigned || []).filter(p => !!p.invitedAt);
+    const neverInvitedCount = neverInvited.length;
+    const alreadyInvitedCount = alreadyInvited.length;
 
     // Group unassigned by church
     const unassignedByChurch = {};
@@ -5349,10 +5357,23 @@
               <input type="checkbox" ${allSelected ? 'checked' : ''} ${unassignedTotal === 0 ? 'disabled' : ''} onchange="toggleBreakoutSelectAllUnassigned(this.checked)" style="accent-color:var(--sky);cursor:pointer;">
               <span>Select All (${selectedCount})</span>
             </label>
+            <button onclick="sendBreakoutGroupEmail('invite')"
+                    ${neverInvitedCount === 0 ? 'disabled' : ''}
+                    title="Send the initial breakout invite to everyone who hasn't received one yet"
+                    style="padding:6px 12px;background:${neverInvitedCount > 0 ? 'var(--green)' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${neverInvitedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+              <span>📧</span> New Invite ${neverInvitedCount > 0 ? `(${neverInvitedCount})` : ''}
+            </button>
+            <button onclick="sendBreakoutGroupEmail('followup')"
+                    ${alreadyInvitedCount === 0 ? 'disabled' : ''}
+                    title="Send a reminder to everyone who's already been invited but hasn't picked a session"
+                    style="padding:6px 12px;background:${alreadyInvitedCount > 0 ? '#C49A1A' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${alreadyInvitedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+              <span>⏳</span> Reminder ${alreadyInvitedCount > 0 ? `(${alreadyInvitedCount})` : ''}
+            </button>
             <button onclick="blastBreakoutFromUnassigned()"
                     ${selectedCount === 0 ? 'disabled' : ''}
+                    title="Send to exactly the participants checked below, regardless of group"
                     style="padding:6px 12px;background:${selectedCount > 0 ? 'var(--sky)' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${selectedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
-              <span>✉️</span> Blast Email ${selectedCount > 0 ? `(${selectedCount})` : ''}
+              <span>✉️</span> Send Selected ${selectedCount > 0 ? `(${selectedCount})` : ''}
             </button>
           </div>
         </div>
@@ -5459,6 +5480,22 @@
       return;
     }
     openBulkBreakoutModalForIds(selectedIds);
+  }
+
+  // Auto-selects exactly the matching group (never-invited for 'invite',
+  // already-invited-but-unresponsive for 'followup') and jumps straight to
+  // the send modal — no need to hand-pick checkboxes first. The manual
+  // "Send Selected" button next to these still covers custom subsets.
+  function sendBreakoutGroupEmail(variant) {
+    const pool = breakoutData.unassigned || [];
+    const group = pool.filter(p => variant === 'invite' ? !p.invitedAt : !!p.invitedAt);
+    if (!group.length) {
+      showToast(variant === 'invite' ? 'Everyone unassigned has already been invited.' : 'No one is waiting on a reminder right now.');
+      return;
+    }
+    breakoutSelectedUnassigned = new Set(group.map(p => p.registrationId));
+    renderBreakoutResponses();
+    openBulkBreakoutModalForIds(group.map(p => p.registrationId));
   }
 
   async function openBulkBreakoutModalForIds(ids) {
