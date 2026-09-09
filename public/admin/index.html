@@ -323,6 +323,9 @@
 
   /* MOBILE */
   @media(max-width:1100px){.tiles-row{grid-template-columns:repeat(2,1fr);}.tiles-row.intl-tiles{grid-template-columns:repeat(3,1fr);}}
+  .gathering-tile-actions{display:flex;flex-direction:column;justify-content:center;gap:8px;}
+  @media(max-width:1100px){.gathering-tiles-row{grid-template-columns:repeat(2,1fr);}.gathering-tile-actions{grid-column:1 / -1;flex-direction:row;}}
+  @media(max-width:640px){.gathering-tiles-row{grid-template-columns:1fr;}.gathering-tile-actions{flex-direction:column;}}
   @media(max-width:768px){
     .login-card{width:calc(100vw - 40px);padding:32px 24px;}
     .topbar{padding:0 16px;height:auto;padding-top:12px;padding-bottom:12px;}
@@ -399,8 +402,17 @@
   .breakout-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-items:start;}
   .breakout-col{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
   .breakout-col-header{padding:12px 14px;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:1.35;}
+  /* Fixed min-height keeps all 4 session headers the same height regardless
+     of how many lines the title wraps to, so column bodies (already capped
+     via .breakout-col-body max-height below) line up evenly at the bottom. */
+  .breakout-col:not(.unassigned) .breakout-col-header{min-height:78px;box-sizing:border-box;}
   .breakout-col-header .bcol-count{font-family:'DM Mono';font-size:12px;opacity:0.85;white-space:nowrap;}
   .breakout-col-body{padding:8px;min-height:80px;display:flex;flex-direction:column;gap:6px;transition:background 0.15s;}
+  /* Per-session lists (4 topic columns) can run to 45 rows — cap the height
+     and let each column scroll independently instead of stretching the
+     whole board. Excludes .unassigned, which uses its own masonry layout
+     below and is a different, already-scoped concern. */
+  .breakout-col:not(.unassigned) .breakout-col-body{max-height:560px;overflow-y:auto;}
   .breakout-col-body.drag-over{background:rgba(58,139,191,0.08);outline:2px dashed var(--sky);outline-offset:-4px;border-radius:0 0 10px 10px;}
   .breakout-participant{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px 30px;cursor:default;position:relative;transition:box-shadow 0.15s,border-color 0.15s;}
   .breakout-participant.draggable{cursor:grab;}
@@ -445,9 +457,24 @@
      match the topic column headers below rather than towering over them. */
   .breakout-summary-bar{display:flex;align-items:stretch;gap:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden;flex-wrap:wrap;}
   .breakout-summary-stat{padding:8px 16px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border);min-width:104px;}
-  .breakout-summary-stat:last-child{border-right:none;}
+  /* There are exactly 4 stats, always the first 4 children (spacer + legend
+     follow) — nth-child(4) is the real "last stat" here, not :last-child
+     (which actually matches the legend wrapper and never applied). */
+  .breakout-summary-stat:nth-child(4){border-right:none;}
   .breakout-summary-stat .n{font-family:'DM Mono';font-size:16px;font-weight:700;color:var(--dark);line-height:1.1;}
   .breakout-summary-stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+  .breakout-summary-legend{display:flex;align-items:center;gap:10px;padding:0 16px;flex-wrap:wrap;}
+  /* Mobile: 4 stats become a clean 2x2 grid instead of wrapping unevenly,
+     and the legend drops to its own full-width row below instead of
+     crowding beside the stats. */
+  @media(max-width:640px){
+    .breakout-summary-stat{flex:1 1 50%;min-width:0;border-bottom:1px solid var(--border);}
+    .breakout-summary-stat:nth-child(2n){border-right:none;}
+    .breakout-summary-stat:nth-child(2n+1){border-right:1px solid var(--border);}
+    .breakout-summary-stat:nth-child(n+3){border-bottom:none;}
+    .breakout-summary-spacer{display:none;}
+    .breakout-summary-legend{flex:1 1 100%;border-top:1px solid var(--border);padding:10px 12px;justify-content:flex-start;}
+  }
 </style>
 </head>
 <body>
@@ -870,7 +897,10 @@
           <span class="tab-icon">🧾</span><span class="tab-label">Merch Orders</span> <span class="tab-badge" id="badge-orders">0</span>
         </button>
         <button class="tab-btn" onclick="switchGroup('breakout')" id="group-breakout">
-          <span class="tab-icon">🎯</span><span class="tab-label">Breakout Responses</span> <span class="tab-badge" id="badge-breakout">0</span>
+          <span class="tab-icon">🎯</span><span class="tab-label">Breakout Sessions</span> <span class="tab-badge" id="badge-breakout">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchGroup('gathering')" id="group-gathering">
+          <span class="tab-icon">🎵</span><span class="tab-label">GATG</span> <span class="tab-badge" id="badge-gathering">0</span>
         </button>
       </div>
       <div style="height:4px;border-radius:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);margin:-14px 0 18px;"></div>
@@ -1559,8 +1589,8 @@
           <span class="n" id="br-none" style="color:var(--amber);">–</span>
           <span class="l">No Response</span>
         </div>
-        <div style="flex:1;min-width:12px;"></div>
-        <div style="display:flex;align-items:center;gap:10px;padding:0 16px;flex-wrap:wrap;">
+        <div class="breakout-summary-spacer" style="flex:1;min-width:12px;"></div>
+        <div class="breakout-summary-legend">
           <div style="display:flex;align-items:center;gap:5px;">
             <span class="bp-badge self" style="position:static;">SELF</span>
             <span style="font-size:11px;color:var(--text);font-weight:600;">Chose own <span style="color:var(--muted);font-weight:400;">(Locked)</span></span>
@@ -1582,6 +1612,92 @@
       </div>
     </div>
 
+    <!-- GATHERING TAB -->
+    <div class="tab-content" id="content-gathering">
+      <div style="margin-bottom:12px;">
+        <div style="font-size:16px;font-weight:700;color:var(--dark);">🙏 Gathering Around the Gospel</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Venue payments are never marked confirmed here — that only happens at check-in. Only GCash payments can be confirmed. Participant count reflects what was submitted and isn't editable — additional participants register as a new submission.</div>
+      </div>
+      <div class="tiles-row gathering-tiles-row">
+        <div class="tile">
+          <div class="tile-label">Total Registrants</div>
+          <div class="tile-count c-total" id="gathering-total">–</div>
+          <div class="tile-sub" id="gathering-participants-sub">–</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">GCash Confirmed</div>
+          <div class="tile-main">
+            <span class="tile-count c-green" id="gathering-confirmed">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount c-green" id="gathering-rev-confirmed">₱0</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">GCash Pending Review</div>
+          <div class="tile-main">
+            <span class="tile-count" id="gathering-pending" style="color:var(--gold);">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount" id="gathering-rev-pending" style="color:var(--gold);">₱0</span>
+          </div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Pay at Venue (Unpaid)</div>
+          <div class="tile-main">
+            <span class="tile-count" id="gathering-venue" style="color:var(--muted);">–</span>
+            <span class="tile-pipe">|</span>
+            <span class="tile-amount" id="gathering-rev-venue" style="color:var(--muted);">₱0</span>
+          </div>
+        </div>
+        <div class="tile gathering-tile-actions">
+          <button onclick="exportGatheringExcel()" style="width:100%;padding:9px 15px;background:#2E7048;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">📊</span> Export Excel</button>
+          <button onclick="loadGatheringRegistrations()" style="width:100%;padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">🔄</span> Refresh</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group"><label>Search</label><input type="text" id="gathering-filter-search" placeholder="Name, email…" oninput="applyGatheringFilters()"></div>
+        <div class="filter-group" style="position:relative;">
+          <label>Payment Method</label>
+          <div id="gathering-method-trigger" onclick="toggleGatheringDropdown('method')" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:180px;user-select:none;">
+            <span id="gathering-method-label">All Payment Methods</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="gathering-method-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:200px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllGathering('method')" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Payment Methods</div>
+            <div id="gathering-method-list"></div>
+          </div>
+        </div>
+        <div class="filter-group" style="position:relative;">
+          <label>Car</label>
+          <div id="gathering-car-trigger" onclick="toggleGatheringDropdown('car')" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:150px;user-select:none;">
+            <span id="gathering-car-label">All</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="gathering-car-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:180px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllGathering('car')" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All</div>
+            <div id="gathering-car-list"></div>
+          </div>
+        </div>
+        <div class="filter-group" style="position:relative;">
+          <label>Payment Status</label>
+          <div id="gathering-status-trigger" onclick="toggleGatheringDropdown('status')" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-width:170px;user-select:none;">
+            <span id="gathering-status-label">All Statuses</span><span style="color:var(--muted);font-size:10px;">▾</span>
+          </div>
+          <div id="gathering-status-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:190px;max-height:320px;overflow-y:auto;padding:6px;">
+            <div onclick="selectAllGathering('status')" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Statuses</div>
+            <div id="gathering-status-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table style="min-width:820px;">
+            <thead><tr>
+              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Registered</th><th>Verified By</th><th>Action</th>
+            </tr></thead>
+            <tbody id="gathering-body"><tr><td colspan="11" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ADMINS TAB -->
     <div class="tab-content" id="content-admins">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -1596,7 +1712,7 @@
           <table style="min-width:900px;">
             <thead><tr>
               <th>Name</th><th>Email</th>
-              <th>Receive Updates</th><th>Verify Payment</th><th>Merch Order Notify</th><th>Manage Admins</th><th>Manage Churches</th>
+              <th>Receive Updates</th><th>Verify Payment</th><th>Merch Order Notify</th><th>Gathering Updates</th><th>Manage Admins</th><th>Manage Churches</th>
               <th>Super Admin</th><th>Status</th><th>Action</th>
             </tr></thead>
             <tbody id="admins-body"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
@@ -1642,6 +1758,31 @@
 
             
         </div>
+        </div>
+
+        <!-- Gathering Toggle -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-top:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">🙏 Gathering Around the Gospel Registration</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-status">Loading…</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Also auto-closes past the GATHERING_REG_END cutoff, regardless of this switch.</div>
+            </div>
+            <div onclick="toggleSetting('gathering')" id="settings-gathering-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-gathering-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Maximum Participants</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-cap-status">Loading…</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Also auto-closes once the participant cap is reached — raise the number here to reopen registration.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <input type="number" id="settings-gathering-max-input" min="1" style="width:100px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Mono',monospace;">
+              <button onclick="saveGatheringMaxParticipants()" style="padding:8px 14px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">Save</button>
+            </div>
+          </div>
         </div>
 
         <!-- Pay-Later Toggle (PH-only) -->
@@ -2013,6 +2154,9 @@
           <input type="checkbox" id="am-perm-merch-notify"> Receive Merch Order Notifications
         </label>
         <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-gathering-notify"> Receive Gathering Around the Gospel Updates
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-manage"> Manage Admin Users
         </label>
         <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
@@ -2071,7 +2215,7 @@
   let pendingScopeType = null, pendingScopeId = null, pendingScopeName = null, pendingScopeGroupId = null;
   // Notification config comes back with the dashboard payload (admin-data GET).
   let notifyConfig = { sms_enabled: false, sms_on_followup: true, sms_configured: false, sms_ready: false, resend_configured: false };
-  let followUpProvider = 'gmail', followUpSmsOn = true, followUpSmsAvailable = false;
+  let followUpProvider = 'resend', followUpSmsOn = true, followUpSmsAvailable = false;
   let bulkSelected = new Set();   // registration ids ticked for bulk follow-up
 
   async function login() {
@@ -2144,12 +2288,14 @@
     const settingsTab = document.getElementById('tab-settings');
     const ordersTab   = document.getElementById('group-orders');
     const breakoutTab = document.getElementById('group-breakout');
+    const gatheringTab = document.getElementById('group-gathering');
     if (adminTab)    adminTab.style.display    = adminSession?.permissions?.manage_admins   ? 'flex' : 'none';
     if (churchesTab) churchesTab.style.display = adminSession?.permissions?.manage_churches ? 'flex' : 'none';
     if (merchTab)    merchTab.style.display    = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
     if (settingsTab) settingsTab.style.display = adminSession?.is_super_admin               ? 'flex' : 'none';
     if (ordersTab)   ordersTab.style.display   = adminSession?.permissions?.verify_payment  ? 'flex' : 'none';
     if (breakoutTab) breakoutTab.style.display = (adminSession?.permissions?.verify_payment || adminSession?.is_super_admin) ? 'flex' : 'none';
+    if (gatheringTab) gatheringTab.style.display = adminSession?.permissions?.verify_payment ? 'flex' : 'none';
     // Note: the Settings menu button itself stays visible for every admin —
     // Refresh Data and Sign Out live inside it regardless of permissions.
   }
@@ -2784,10 +2930,12 @@
     document.getElementById('group-registrations')?.classList.toggle('active', group === 'registrations');
     document.getElementById('group-orders')?.classList.toggle('active', group === 'orders');
     document.getElementById('group-breakout')?.classList.toggle('active', group === 'breakout');
+    document.getElementById('group-gathering')?.classList.toggle('active', group === 'gathering');
     document.getElementById('registrations-subtabs').style.display = group === 'registrations' ? 'flex' : 'none';
     if (group === 'registrations') switchTab(lastRegistrationsTab || 'ph');
     else if (group === 'orders') switchTab('orders');
     else if (group === 'breakout') switchTab('breakout');
+    else if (group === 'gathering') switchTab('gathering');
   }
 
   function backToDashboard() {
@@ -2802,15 +2950,18 @@
     if (tab === 'ph' || tab === 'intl') { activeGroup = 'registrations'; lastRegistrationsTab = tab; }
     else if (tab === 'orders') { activeGroup = 'orders'; }
     else if (tab === 'breakout') { activeGroup = 'breakout'; }
+    else if (tab === 'gathering') { activeGroup = 'gathering'; }
     // Keep the top-level group buttons in sync with whichever tab is active.
     const groupReg = document.getElementById('group-registrations');
     const groupOrders = document.getElementById('group-orders');
     const groupBreakout = document.getElementById('group-breakout');
+    const groupGathering = document.getElementById('group-gathering');
     const subtabs = document.getElementById('registrations-subtabs');
     if (!isSettingsTab) {
       if (groupReg)      groupReg.classList.toggle('active', activeGroup === 'registrations');
       if (groupOrders)   groupOrders.classList.toggle('active', activeGroup === 'orders');
       if (groupBreakout) groupBreakout.classList.toggle('active', activeGroup === 'breakout');
+      if (groupGathering) groupGathering.classList.toggle('active', activeGroup === 'gathering');
       if (subtabs)       subtabs.style.display = activeGroup === 'registrations' ? 'flex' : 'none';
     }
     // Clear all tab buttons and topbar icon buttons
@@ -2829,6 +2980,7 @@
     if (tab === 'merch')    { loadMerchProducts(); loadSettings(); }
     if (tab === 'orders')   { loadMerchOrders(); if (!merchProducts.length) loadMerchProducts(); }
     if (tab === 'breakout') { loadBreakoutResponses(); }
+    if (tab === 'gathering') { loadGatheringRegistrations(); }
     if (tab === 'settings') { loadSettings(); loadBreakoutSessions(); }
   }
 
@@ -3278,7 +3430,7 @@
   // to; the server re-checks status before sending, so a stale or over-broad
   // selection can't reach anyone who isn't owing.
   const BULK_CHUNK = 12;   // must stay <= BULK_LIMIT in admin-data.js (15)
-  let bulkProvider = 'gmail', bulkSmsOn = true, bulkSmsAvailable = false, bulkSending = false;
+  let bulkProvider = 'resend', bulkSmsOn = true, bulkSmsAvailable = false, bulkSending = false;
 
   // Bulk actions act on what the admin ticked — nothing is ever preselected.
   // The send handlers decide who is actually eligible and skip the rest, so the
@@ -3751,7 +3903,7 @@
   // ── Pre-conference invitation ────────────────────────────────────────────────
   // PH male participants who have paid. Gender is only ever an explicitly
   // recorded value — a blank gender means not eligible, never a guess.
-  let attendanceProvider = 'gmail', attendanceSmsOn = true, attendanceSmsAvailable = false;
+  let attendanceProvider = 'resend', attendanceSmsOn = true, attendanceSmsAvailable = false;
   let attendanceIds = [], attendanceSending = false;
   // 'single' routes to attendance_invite, which allows an unrecorded gender
   // because the admin is vouching for that one person. 'bulk' uses the
@@ -4167,7 +4319,7 @@
   // --- Merch bulk/single modal handlers ---------------------------------
   let merchSending = false;
   let merchTargetIds = [];
-  let bulkMerchProvider = 'gmail';
+  let bulkMerchProvider = 'resend';
   let merchSmsOn = true, merchSmsAvailable = false;
   let merchEmailVariant = 'invite';
 
@@ -4317,7 +4469,7 @@
         const res = await fetch('/.netlify/functions/admin-data', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'gmail', send_sms: sendSms, email_variant: merchEmailVariant }),
+          body: JSON.stringify({ action: 'blast_merch_invite', ids: chunk, email_provider: bulkMerchProvider || 'resend', send_sms: sendSms, email_variant: merchEmailVariant }),
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'Bulk merch send failed');
@@ -4370,7 +4522,7 @@
   // button a human could click to accidentally re-send the initial invite.
   let breakoutSending = false;
   let breakoutTargetIds = [];
-  let bulkBreakoutProvider = 'gmail';
+  let bulkBreakoutProvider = 'resend';
 
   async function blastBreakoutInvite() {
     openBulkBreakoutModalForSelection();
@@ -4492,7 +4644,7 @@
         const res = await fetch('/.netlify/functions/admin-data', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'blast_breakout_invite', ids: chunk, email_provider: bulkBreakoutProvider || 'gmail' }),
+          body: JSON.stringify({ action: 'blast_breakout_invite', ids: chunk, email_provider: bulkBreakoutProvider || 'resend' }),
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'Bulk breakout send failed');
@@ -4927,6 +5079,7 @@
         <td style="text-align:center;">${check(perm.receive_updates)}</td>
         <td style="text-align:center;">${check(perm.verify_payment)}</td>
         <td style="text-align:center;">${check(perm.merch_order_notify)}</td>
+        <td style="text-align:center;">${check(perm.gathering_email_updates)}</td>
         <td style="text-align:center;">${check(perm.manage_admins)}</td>
         <td style="text-align:center;">${check(perm.manage_churches)}</td>
         <td style="text-align:center;">${a.is_super_admin ? '⭐' : '—'}</td>
@@ -4954,6 +5107,7 @@
     document.getElementById('am-perm-updates').checked = true;
     document.getElementById('am-perm-verify').checked  = false;
     document.getElementById('am-perm-merch-notify').checked = false;
+    document.getElementById('am-perm-gathering-notify').checked = false;
     document.getElementById('am-perm-manage').checked   = false;
     document.getElementById('am-perm-churches').checked = false;
     document.getElementById('am-super').checked = false;
@@ -4976,6 +5130,7 @@
     document.getElementById('am-perm-updates').checked = !!perm.receive_updates;
     document.getElementById('am-perm-verify').checked  = !!perm.verify_payment;
     document.getElementById('am-perm-merch-notify').checked = !!perm.merch_order_notify;
+    document.getElementById('am-perm-gathering-notify').checked = !!perm.gathering_email_updates;
     document.getElementById('am-perm-manage').checked    = !!perm.manage_admins;
     document.getElementById('am-perm-churches').checked  = !!perm.manage_churches;
     document.getElementById('am-super').checked = !!admin.is_super_admin;
@@ -5002,6 +5157,7 @@
       receive_updates:  document.getElementById('am-perm-updates').checked,
       verify_payment:   document.getElementById('am-perm-verify').checked,
       merch_order_notify: document.getElementById('am-perm-merch-notify').checked,
+      gathering_email_updates: document.getElementById('am-perm-gathering-notify').checked,
       manage_admins:    document.getElementById('am-perm-manage').checked,
       manage_churches:  document.getElementById('am-perm-churches').checked,
     };
@@ -5243,7 +5399,7 @@
     if (elSelf) elSelf.textContent = selfCount;
     if (elAdmin) elAdmin.textContent = adminCount;
     if (elNone) elNone.textContent = unassignedCount;
-    if (badgeBreakout) badgeBreakout.textContent = totalReg;
+    if (badgeBreakout) badgeBreakout.textContent = selfCount + adminCount;
 
     // 2. Render Board Columns
     const wrap = document.getElementById('breakout-board-wrap');
@@ -5830,6 +5986,248 @@
       return merchSortDir === 'asc' ? res : -res;
     };
     return [...groups].sort(cmp);
+  }
+
+  // ── Gathering Around the Gospel ─────────────────────────────────────────
+  let gatheringRows = [];
+  let gatheringFilteredRows = [];
+  const gatheringMultiSelect = { method: new Set(), car: new Set(), status: new Set() };
+  const GATHERING_LABELS = { method: ['All Payment Methods', 'methods selected'], car: ['All', 'selected'], status: ['All Statuses', 'statuses selected'] };
+
+  async function loadGatheringRegistrations() {
+    try {
+      const res = await fetch('/.netlify/functions/admin-gathering', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      gatheringRows = json.registrations || [];
+      const badge = document.getElementById('badge-gathering');
+      if (badge) badge.textContent = gatheringRows.reduce((sum, r) => sum + (r.participant_count || 0), 0);
+      renderGatheringTiles();
+      populateGatheringFilterOptions();
+      applyGatheringFilters();
+    } catch (e) { showToast('Error loading gathering registrations: ' + e.message); }
+  }
+
+  // Fixed 2-option lists (unlike Merch Orders' data-driven Item/Church
+  // lists) — Gathering only ever has these two payment methods and the
+  // car question is a boolean — so these are populated once per load
+  // rather than derived from the row data.
+  function gatheringSafeId(key, value) { return `gathering-${key}-` + String(value).replace(/[^a-zA-Z0-9]/g, '_'); }
+
+  const GATHERING_METHOD_OPTS = [['gcash', '💳 GCash'], ['venue', '🏠 Pay at Venue']];
+  const GATHERING_CAR_OPTS    = [['car', '🚗 Bringing Car'], ['no_car', '🚫 No Car']];
+  const GATHERING_STATUS_OPTS = [['confirmed', '✅ Confirmed'], ['pending_review', '⏳ Pending Review'], ['unpaid', '🔲 Unpaid']];
+
+  function populateGatheringFilterOptions() {
+    const mlist = document.getElementById('gathering-method-list');
+    if (mlist) {
+      mlist.innerHTML = GATHERING_METHOD_OPTS.map(([v, label]) =>
+        `<div class="church-opt${gatheringMultiSelect.method.has(v) ? ' selected' : ''}" id="${gatheringSafeId('method', v)}" onclick="toggleGatheringOption('method','${v}')">${gatheringMultiSelect.method.has(v) ? '☑' : '☐'} ${label}</div>`
+      ).join('');
+    }
+    const clist = document.getElementById('gathering-car-list');
+    if (clist) {
+      clist.innerHTML = GATHERING_CAR_OPTS.map(([v, label]) =>
+        `<div class="church-opt${gatheringMultiSelect.car.has(v) ? ' selected' : ''}" id="${gatheringSafeId('car', v)}" onclick="toggleGatheringOption('car','${v}')">${gatheringMultiSelect.car.has(v) ? '☑' : '☐'} ${label}</div>`
+      ).join('');
+    }
+    const slist = document.getElementById('gathering-status-list');
+    if (slist) {
+      slist.innerHTML = GATHERING_STATUS_OPTS.map(([v, label]) =>
+        `<div class="church-opt${gatheringMultiSelect.status.has(v) ? ' selected' : ''}" id="${gatheringSafeId('status', v)}" onclick="toggleGatheringOption('status','${v}')">${gatheringMultiSelect.status.has(v) ? '☑' : '☐'} ${label}</div>`
+      ).join('');
+    }
+    Object.keys(GATHERING_LABELS).forEach(key => updateGatheringLabel(key));
+  }
+
+  function toggleGatheringDropdown(key) {
+    const dd = document.getElementById(`gathering-${key}-dropdown`);
+    if (!dd) return;
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleGatheringOption(key, value) {
+    const set = gatheringMultiSelect[key];
+    const el = document.getElementById(gatheringSafeId(key, value));
+    if (set.has(value)) {
+      set.delete(value);
+      if (el) { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑', '☐'); }
+    } else {
+      set.add(value);
+      if (el) { el.classList.add('selected'); el.textContent = el.textContent.replace('☐', '☑'); }
+    }
+    updateGatheringLabel(key);
+    applyGatheringFilters();
+  }
+
+  function selectAllGathering(key) {
+    gatheringMultiSelect[key].clear();
+    document.querySelectorAll(`#gathering-${key}-list .church-opt`).forEach(el => { el.classList.remove('selected'); el.textContent = el.textContent.replace('☑', '☐'); });
+    updateGatheringLabel(key);
+    applyGatheringFilters();
+    document.getElementById(`gathering-${key}-dropdown`).style.display = 'none';
+  }
+
+  function updateGatheringLabel(key) {
+    const lbl = document.getElementById(`gathering-${key}-label`);
+    if (!lbl) return;
+    const [allLabel, suffix] = GATHERING_LABELS[key] || ['All', 'selected'];
+    const set = gatheringMultiSelect[key];
+    if (set.size === 0) { lbl.textContent = allLabel; return; }
+    if (set.size === 1) {
+      const opts = key === 'method' ? GATHERING_METHOD_OPTS : key === 'status' ? GATHERING_STATUS_OPTS : GATHERING_CAR_OPTS;
+      const match = opts.find(([v]) => v === [...set][0]);
+      lbl.textContent = match ? match[1] : [...set][0];
+      return;
+    }
+    lbl.textContent = set.size + ' ' + suffix;
+  }
+
+  document.addEventListener('click', e => {
+    Object.keys(GATHERING_LABELS).forEach(key => {
+      const trigger = document.getElementById(`gathering-${key}-trigger`);
+      const dd = document.getElementById(`gathering-${key}-dropdown`);
+      if (dd && trigger && !trigger.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
+    });
+  });
+
+  // Search matches name OR email, substring, case-insensitive. Method/Car
+  // filters are inclusive multi-selects (empty set = no filter on that
+  // dimension), all three combine with AND. Feeds the table only — tiles
+  // stay on the full unfiltered gatheringRows, same convention as Merch
+  // Orders' stat tiles.
+  function applyGatheringFilters() {
+    const q = (document.getElementById('gathering-filter-search')?.value || '').trim().toLowerCase();
+    const methods = gatheringMultiSelect.method;
+    const cars = gatheringMultiSelect.car;
+    const statuses = gatheringMultiSelect.status;
+    gatheringFilteredRows = gatheringRows.filter(r => {
+      if (q) {
+        const hay = `${r.name || ''} ${r.email || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (methods.size && !methods.has(r.payment_method)) return false;
+      if (cars.size) {
+        const bucket = r.bringing_car ? 'car' : 'no_car';
+        if (!cars.has(bucket)) return false;
+      }
+      if (statuses.size && !statuses.has(r.payment_status)) return false;
+      return true;
+    });
+    renderGatheringTable();
+  }
+
+  // Exports exactly what's currently on screen — the filtered row set,
+  // not the full gatheringRows — so the file matches whatever
+  // search/method/car filters are applied at export time.
+  function exportGatheringExcel() {
+    if (typeof XLSX === 'undefined') {
+      showToast('Export library is still loading, please try again in a second.');
+      return;
+    }
+    const rows = [
+      ['Name', 'Email', 'Mobile', 'Participants', 'Payment Method', 'Amount Due', 'Payment Status', 'Car Info', 'Registered', 'Verified By']
+    ];
+    gatheringFilteredRows.forEach(r => {
+      const carInfo = r.bringing_car
+        ? `${r.car_maker || ''} ${r.car_model || ''} · ${r.car_plate || ''}`.trim()
+        : 'No';
+      const statusLabel = r.payment_status === 'confirmed' ? 'Confirmed'
+        : r.payment_status === 'pending_review' ? 'Pending Review' : 'Unpaid';
+      rows.push([
+        r.name || '',
+        r.email || '',
+        r.mobile || '',
+        r.participant_count || 0,
+        r.payment_method === 'gcash' ? 'GCash' : 'Pay at Venue',
+        r.amount_due || 0,
+        statusLabel,
+        carInfo,
+        r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
+        r.verified_by || '',
+      ]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 24 }, { wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 12 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Gathering');
+    const filename = `relay2026-gathering-registrations-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showToast(`Exported ${gatheringFilteredRows.length} registration(s) to Excel!`);
+  }
+
+  function renderGatheringTiles() {
+    const totalParticipants = gatheringRows.reduce((s, r) => s + (r.participant_count || 0), 0);
+    const confirmed = gatheringRows.filter(r => r.payment_status === 'confirmed');
+    const pending   = gatheringRows.filter(r => r.payment_status === 'pending_review');
+    const venue     = gatheringRows.filter(r => r.payment_method === 'venue');
+    const confirmedRevenue = confirmed.reduce((s, r) => s + (r.amount_due || 0), 0);
+    const pendingRevenue   = pending.reduce((s, r) => s + (r.amount_due || 0), 0);
+    const venueRevenue     = venue.reduce((s, r) => s + (r.amount_due || 0), 0);
+
+    document.getElementById('gathering-total').textContent = gatheringRows.length;
+    document.getElementById('gathering-participants-sub').textContent = totalParticipants + ' total participants';
+    document.getElementById('gathering-confirmed').textContent = confirmed.length;
+    document.getElementById('gathering-rev-confirmed').textContent = '₱' + confirmedRevenue.toLocaleString();
+    document.getElementById('gathering-pending').textContent = pending.length;
+    document.getElementById('gathering-rev-pending').textContent = '₱' + pendingRevenue.toLocaleString();
+    document.getElementById('gathering-venue').textContent = venue.length;
+    document.getElementById('gathering-rev-venue').textContent = '₱' + venueRevenue.toLocaleString();
+  }
+
+  function gatheringStatusBadge(row) {
+    if (row.payment_status === 'confirmed') return '<span style="color:var(--green);font-weight:700;">✅ Confirmed</span>';
+    if (row.payment_status === 'pending_review') return '<span style="color:var(--gold);font-weight:700;">⏳ Pending Review</span>';
+    return '<span style="color:var(--muted);font-weight:700;">Unpaid</span>';
+  }
+
+  function renderGatheringTable() {
+    const body = document.getElementById('gathering-body');
+    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="11" class="empty">No registrations yet</td></tr>'; return; }
+    const rows = gatheringFilteredRows;
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="11" class="empty">No registrations match the current filters</td></tr>'; return; }
+    body.innerHTML = rows.map(r => {
+      const methodLabel = r.payment_method === 'gcash' ? '💳 GCash' : '🏠 Venue';
+      const receiptCell = r.receipt_url
+        ? `<a href="javascript:void(0)" onclick="openImgModal('${r.receipt_url}')">View</a>`
+        : '<span style="color:var(--muted);">—</span>';
+      const actionCell = r.payment_method === 'gcash' && r.payment_status === 'pending_review'
+        ? `<button onclick="confirmGatheringPayment('${r.id}')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Confirm</button>`
+        : (r.payment_method === 'venue'
+            ? '<span style="color:var(--muted);font-size:11px;">Confirmed at check-in</span>'
+            : '<span style="color:var(--muted);">—</span>');
+      const registered = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
+      const carCell = r.bringing_car
+        ? `<span title="${esc(r.car_maker || '')} ${esc(r.car_model || '')} · ${esc(r.car_plate || '')}" style="font-size:12px;">🚗 ${esc(r.car_maker || '')} ${esc(r.car_model || '')}<br><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;">${esc(r.car_plate || '')}</span></span>`
+        : '<span style="color:var(--muted);">—</span>';
+      return `<tr>
+        <td>${esc(r.name)}</td>
+        <td style="font-size:11px;color:var(--muted);">${esc(r.email || '—')}<br>${esc(r.mobile || '')}</td>
+        <td>${r.participant_count}</td>
+        <td>${methodLabel}</td>
+        <td>₱${(r.amount_due || 0).toLocaleString()}</td>
+        <td>${receiptCell}</td>
+        <td>${gatheringStatusBadge(r)}</td>
+        <td>${carCell}</td>
+        <td>${registered}</td>
+        <td>${r.verified_by ? esc(r.verified_by) : '<span style="color:var(--muted);">—</span>'}</td>
+        <td>${actionCell}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function confirmGatheringPayment(id) {
+    try {
+      const res = await fetch('/.netlify/functions/admin-gathering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ action: 'confirm', id }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast('Payment confirmed');
+      loadGatheringRegistrations();
+    } catch (e) { showToast('Error: ' + e.message); }
   }
 
   async function loadMerchOrders() {
@@ -6983,6 +7381,7 @@
   const SETTING_TOGGLES = {
     ph:   'reg_ph_closed',
     intl: 'reg_intl_closed',
+    gathering: 'reg_gathering_closed',
     sms:  'sms_enabled',
     ph_pay_later_enabled: 'ph_pay_later_enabled',
     merch_preorder_closed: 'merch_preorder_closed',
@@ -6992,7 +7391,7 @@
   };
 
   let currentSettings = {
-    reg_ph_closed: false, reg_intl_closed: false, sms_enabled: false,
+    reg_ph_closed: false, reg_intl_closed: false, reg_gathering_closed: false, sms_enabled: false,
     ph_pay_later_enabled: false,
     merch_preorder_closed: false, merch_downpayment_percent: 0,
     merch_sms_enabled: false, merch_sms_template: '',
@@ -7291,10 +7690,24 @@
     // Registration switches read as a warning: ON means closed.
     paintToggle('ph',   currentSettings.reg_ph_closed,   '#C0392B');
     paintToggle('intl', currentSettings.reg_intl_closed, '#C0392B');
+    paintToggle('gathering', currentSettings.reg_gathering_closed, '#C0392B');
     document.getElementById('settings-ph-status').textContent =
       currentSettings.reg_ph_closed   ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
     document.getElementById('settings-intl-status').textContent =
       currentSettings.reg_intl_closed ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+    document.getElementById('settings-gathering-status').textContent =
+      currentSettings.reg_gathering_closed ? 'Registration is closed — users will see a closed notice.' : 'Registration is open.';
+
+    // Max participants cap — live counter + editable field (Round 21)
+    const gCount = currentSettings.gathering_participant_count ?? 0;
+    const gMax   = currentSettings.gathering_max_participants ?? 500;
+    const capStatusEl = document.getElementById('settings-gathering-cap-status');
+    if (capStatusEl) {
+      capStatusEl.textContent = `Maximum Participants ${gCount}/${gMax}`;
+      capStatusEl.style.color = gCount >= gMax ? '#C0392B' : 'var(--muted)';
+    }
+    const gMaxInput = document.getElementById('settings-gathering-max-input');
+    if (gMaxInput && document.activeElement !== gMaxInput) gMaxInput.value = gMax;
 
     // Pay-later toggle for PH registrations
     paintToggle('ph_pay_later_enabled', currentSettings.ph_pay_later_enabled, '#2E7048');
@@ -7747,6 +8160,26 @@
     return json;
   }
 
+  async function saveGatheringMaxParticipants() {
+    const input = document.getElementById('settings-gathering-max-input');
+    const num = parseInt(input.value, 10);
+    if (isNaN(num) || num < 1) {
+      showToast('Enter a valid maximum participants number.', true);
+      return;
+    }
+    const prev = currentSettings.gathering_max_participants;
+    currentSettings.gathering_max_participants = num;
+    try {
+      await saveSingleSetting('gathering_max_participants');
+      showToast('Maximum participants saved.');
+      renderSettingsUI();
+    } catch (err) {
+      currentSettings.gathering_max_participants = prev;
+      renderSettingsUI();
+      showToast('Failed to save: ' + err.message, true);
+    }
+  }
+
   async function loadSettings() {
     try {
       const res  = await fetch('/.netlify/functions/site-settings', {
@@ -7765,6 +8198,12 @@
       }
       if ('merch_downpayment_percent' in data && data.merch_downpayment_percent !== null && data.merch_downpayment_percent !== undefined) {
         currentSettings.merch_downpayment_percent = Number(data.merch_downpayment_percent);
+      }
+      if ('gathering_max_participants' in data && data.gathering_max_participants !== null && data.gathering_max_participants !== undefined) {
+        currentSettings.gathering_max_participants = Number(data.gathering_max_participants);
+      }
+      if ('gathering_participant_count' in data && data.gathering_participant_count !== null && data.gathering_participant_count !== undefined) {
+        currentSettings.gathering_participant_count = Number(data.gathering_participant_count);
       }
       // Not part of the sms_events catalogue (deliberately kept out of the
       // Site Settings SMS list), so it needs its own explicit copy here.
@@ -7808,7 +8247,7 @@
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
       const payload = settingsMigrationPending
-        ? { reg_ph_closed: currentSettings.reg_ph_closed, reg_intl_closed: currentSettings.reg_intl_closed, ph_pay_later_enabled: currentSettings.ph_pay_later_enabled }
+        ? { reg_ph_closed: currentSettings.reg_ph_closed, reg_intl_closed: currentSettings.reg_intl_closed, reg_gathering_closed: currentSettings.reg_gathering_closed, ph_pay_later_enabled: currentSettings.ph_pay_later_enabled }
         : currentSettings;
       const res = await fetch('/.netlify/functions/site-settings', {
         method: 'PUT',
@@ -7846,6 +8285,13 @@
   window.closeSettingsMenu    = closeSettingsMenu;
   window.openSettingsMenu     = openSettingsMenu;
   window.switchGroup          = switchGroup;
+  window.loadGatheringRegistrations = loadGatheringRegistrations;
+  window.confirmGatheringPayment    = confirmGatheringPayment;
+  window.toggleGatheringDropdown    = toggleGatheringDropdown;
+  window.toggleGatheringOption      = toggleGatheringOption;
+  window.selectAllGathering         = selectAllGathering;
+  window.applyGatheringFilters      = applyGatheringFilters;
+  window.exportGatheringExcel       = exportGatheringExcel;
   window.backToDashboard      = backToDashboard;
   window.tileFilter           = tileFilter;
   window.resetFilters         = resetFilters;
@@ -7891,6 +8337,7 @@
   window.deleteMerchProduct   = deleteMerchProduct;
   window.toggleSetting        = toggleSetting;
   window.saveSettings         = saveSettings;
+  window.saveGatheringMaxParticipants = saveGatheringMaxParticipants;
   window.toggleFollowUpSms          = toggleFollowUpSms;
   window.toggleFollowUpProviderMenu = toggleFollowUpProviderMenu;
   window.selectFollowUpProvider     = selectFollowUpProvider;

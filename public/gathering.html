@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gathering Around the Gospel — Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF;
+    --sky-light: #EBF5FB;
+    --deep: #1a3a52;
+    --gold: #C49A1A;
+    --gold-light: #E8B830;
+    --gold-bg: #FDF6E0;
+    --green: #2E7048;
+    --green-light: #EAF5EE;
+    --green-bright: #4BAE6A;
+    --white: #FFFFFF;
+    --page-bg: #E4EAEE;
+    --card-bg: #FFFFFF;
+    --dark: #1C2B38;
+    --muted: #6B8A9A;
+    --text: #2A3D4A;
+    --border: #D4E2EA;
+    --input-bg: #F7FAFB;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Outer page (outside the 620px content column) stays lighter than the
+     content column itself so the column visibly stands out — not just the
+     white cards against the column. */
+  body { font-family: 'DM Sans', sans-serif; background: #F7FAFB; color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  .hero-wrap { max-width: 620px; margin: 0 auto; }
+  .hero { width: 100%; display: block; line-height: 0; }
+  .hero img { width: 100%; height: auto; display: block; }
+
+  .chips-bar {
+    background: var(--dark);
+    max-width: 620px; margin: 0 auto;
+    padding: 12px 20px;
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 50px; padding: 5px 13px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .chip-venue { background: rgba(74,155,196,0.18); color: #8DD4F5; border: 1px solid rgba(74,155,196,0.3); }
+  .chip-date  { background: rgba(212,168,50,0.18);  color: #F5D070; border: 1px solid rgba(212,168,50,0.3); }
+  .chip-time  { background: rgba(75,174,106,0.18);  color: #85E0A3; border: 1px solid rgba(75,174,106,0.3); }
+
+  .confetti-bar {
+    height: 4px;
+    max-width: 620px; margin: 0 auto;
+    background: linear-gradient(90deg, var(--green-bright), var(--sky), var(--gold-light), var(--green-bright));
+    background-size: 200%; animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+  .page-wrap { max-width: 620px; margin: 0 auto; padding: 32px 20px 80px; background: var(--page-bg); }
+
+  .form-heading { margin-bottom: 28px; text-align: center; }
+  .form-heading h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+    letter-spacing: 0.05em; color: var(--dark); margin-bottom: 6px;
+  }
+  .form-heading p { color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+  .card {
+    background: var(--card-bg); border-radius: 14px; padding: 24px;
+    box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--sky);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--dark); }
+  .field input[type="text"], .field input[type="number"] {
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 9px;
+    padding: 12px 14px; font-size: 14px; font-family: inherit; color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--sky); }
+  .field .hint { font-size: 11px; color: var(--muted); }
+
+  /* Payment method toggle */
+  .pay-options { display: flex; flex-direction: column; gap: 10px; }
+  .pay-option {
+    display: flex; align-items: flex-start; gap: 12px;
+    border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  }
+  .pay-option:has(input:checked) { border-color: var(--sky); background: var(--sky-light); }
+  .pay-option input[type="radio"] { margin-top: 2px; accent-color: var(--sky); }
+  .pay-title { font-weight: 600; font-size: 14px; color: var(--dark); }
+  .pay-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .slide-panel { display: none; margin-top: 16px; }
+  .slide-panel.open { display: block; }
+
+  /* GCash card — matches official GCash QR format (same as register-ph.html) */
+  .gcash-card {
+    background: #0A8FD9;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 16px;
+    text-align: center;
+  }
+  .gcash-header {
+    padding: 0;
+    line-height: 0;
+    background: #0A8FD9;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+  }
+  .gcash-header img {
+    width: 100%; height: auto; display: block;
+  }
+  .gcash-inner {
+    background: #F5F7FA;
+    border-radius: 14px;
+    margin: 0 14px 14px;
+    padding: 24px 20px 20px;
+    text-align: center;
+  }
+  .gcash-qr {
+    width: 190px; height: 190px; background: #fff; border-radius: 10px;
+    margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .gcash-qr img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .gcash-transfer-note {
+    font-size: 13px; color: #666; margin-bottom: 18px;
+  }
+  .gcash-breakdown-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #f0f8ff; border-radius: 8px;
+    margin-bottom: 14px; border: 1px solid #d0e8f5;
+  }
+  .gcash-breakdown-toggle .total-label { font-size: 13px; font-weight: 700; color: var(--dark); }
+  .gcash-breakdown-toggle .total-amount { font-family: 'Bebas Neue'; font-size: 20px; color: var(--sky); letter-spacing: 0.04em; }
+  .gcash-divider { border: none; border-top: 1px solid #E0E0E0; margin: 0 0 14px; }
+  .gcash-acct-name {
+    font-size: 22px; font-weight: 800; color: #0070E0;
+    letter-spacing: 0.04em; margin-bottom: 6px;
+  }
+  .gcash-acct-holder {
+    font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px;
+  }
+  .gcash-detail-row {
+    display: flex; justify-content: center; align-items: center; gap: 6px;
+    padding: 4px 0; font-size: 13px;
+  }
+  .gcash-detail-lbl { color: #888; font-weight: 500; }
+  .gcash-detail-val { color: #444; font-weight: 600; font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  .upload-box {
+    border: 1.5px dashed var(--border); border-radius: 10px; padding: 18px;
+    text-align: center; cursor: pointer; background: var(--input-bg); transition: border-color 0.15s;
+  }
+  .upload-box:hover { border-color: var(--sky); }
+  .upload-box .icon { font-size: 22px; margin-bottom: 6px; }
+  .upload-box .label { font-size: 13px; font-weight: 600; color: var(--dark); }
+  .upload-box .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .upload-box.has-file { border-color: var(--green); background: var(--green-light); }
+  .upload-box.has-file .label { color: var(--green); }
+  #receiptInput { display: none; }
+
+  .submit-btn {
+    width: 100%; background: var(--green); color: #fff; border: none; border-radius: 10px;
+    padding: 15px; font-family: 'Bebas Neue'; font-size: 18px; letter-spacing: 0.05em;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .submit-btn:hover { background: #245c3a; }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--dark); color: #fff; padding: 12px 20px; border-radius: 10px;
+    font-size: 13px; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 999;
+    max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #C0392B; }
+
+  .success-screen { display: none; text-align: center; padding: 40px 20px; background: var(--card-bg); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; }
+  .success-screen.show { display: block; }
+  .success-icon-circle {
+    width: 88px; height: 88px; border-radius: 50%; background: var(--green-light);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; animation: doneIconPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes doneIconPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+  .success-checkmark { width: 56px; height: 56px; overflow: visible; }
+  .success-checkmark-circle {
+    fill: none; stroke: var(--green-bright); stroke-width: 4.5; stroke-linecap: round;
+    stroke-dasharray: 227; stroke-dashoffset: 227; animation: scCircle 0.6s ease-out forwards;
+  }
+  .success-checkmark-check {
+    fill: none; stroke: var(--green); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 48; stroke-dashoffset: 48; animation: scCheck 0.35s ease-out 0.55s forwards;
+  }
+  @keyframes scCircle { to { stroke-dashoffset: 0; } }
+  @keyframes scCheck { to { stroke-dashoffset: 0; } }
+  .success-screen h2 { font-family: 'Bebas Neue'; font-size: 26px; color: var(--dark); margin-bottom: 8px; letter-spacing: 0.03em; }
+  .success-screen p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  /* Speakers */
+  .speakers-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 320px; margin: 0 auto; }
+  .speaker-card { text-align: center; }
+  .speaker-photo {
+    width: 88px; height: 88px; border-radius: 50%; overflow: hidden;
+    margin: 0 auto 10px; border: 2px solid var(--border);
+  }
+  .speaker-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .speaker-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .speaker-role { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* Car / vehicle toggle */
+  .toggle-row { display: flex; gap: 10px; }
+  .toggle-btn {
+    flex: 1; text-align: center; padding: 12px; border: 1.5px solid var(--border); border-radius: 9px;
+    cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); transition: all 0.15s;
+  }
+  .toggle-btn.active { border-color: var(--sky); background: var(--sky-light); color: var(--sky); }
+
+  /* Map / directions */
+  .map-embed { border-radius:12px; overflow:hidden; margin-bottom:16px; border:1px solid var(--border); }
+  .map-embed iframe { width:100%; height:250px; border:0; display:block; }
+  .directions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 520px) { .directions-grid { grid-template-columns: 1fr; } }
+  .dir-card { background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .dir-icon { font-size: 18px; margin-bottom: 6px; }
+  .dir-title { font-size: 12px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+  .dir-text { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  @media (max-width: 600px) {
+    /* Chips bar: allow wrapping with smaller text */
+    .chips-bar { padding: 10px 12px; gap: 6px; }
+    .chip { font-size: 11px; padding: 4px 10px; }
+
+    /* Page padding */
+    .page-wrap { padding: 20px 14px 60px; }
+
+    /* Heading */
+    .form-heading { margin-bottom: 20px; }
+    .form-heading h1 { font-size: 28px; }
+
+    /* Cards */
+    .card, .success-screen { padding: 18px 16px; border-radius: 12px; margin-bottom: 14px; }
+
+    /* Section label smaller */
+    .section-label { font-size: 9px; }
+
+    .map-embed iframe { height: 200px; }
+  }
+
+  @media (max-width: 380px) {
+    .speaker-photo { width: 60px; height: 60px; }
+    .speakers-grid { gap: 12px; }
+    .chip { font-size: 10px; padding: 3px 8px; }
+    .gcash-qr { width: 140px; height: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-wrap">
+  <div class="hero">
+    <picture>
+      <source media="(max-width: 640px)" srcset="assets/images/gathering-hero-mobile.jpg">
+      <img src="assets/images/gathering-hero.jpg" alt="Gathering Around the Gospel">
+    </picture>
+  </div>
+</div>
+<div class="chips-bar">
+  <span class="chip chip-venue">📍 CCT Tagaytay Retreat &amp; Training Center</span>
+  <span class="chip chip-date">🗓 September 25, 2026</span>
+  <span class="chip chip-time">🕖 7:00–9:30 PM</span>
+</div>
+<div class="confetti-bar"></div>
+
+<div class="page-wrap">
+
+  <div class="form-heading" id="formHeading">
+    <h1>Participant Registration</h1>
+    <p>Join us for an evening in Song, Scripture, and Prayer.</p>
+    <p style="margin-top:4px;">Registration deadline: <strong>September 25, 2026, 5:00 PM</strong></p>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon-circle">
+      <svg class="success-checkmark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+        <circle class="success-checkmark-circle" cx="40" cy="40" r="34"></circle>
+        <path class="success-checkmark-check" d="M23 41l11 11 22-22"></path>
+      </svg>
+    </div>
+    <h2>You're registered!</h2>
+    <p id="successMsg">We've received your registration for Gathering Around the Gospel.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-label">🎵 Worship Leads</div>
+    <div class="speakers-grid">
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/david-zimmer.png" alt="David Zimmer"></div>
+        <div class="speaker-name">David Zimmer</div>
+      </div>
+      <div class="speaker-card">
+        <div class="speaker-photo"><img src="assets/images/speakers/caleb-dirnberger.png" alt="Caleb Dirnberger"></div>
+        <div class="speaker-name">Caleb Dirnberger</div>
+      </div>
+    </div>
+  </div>
+
+  <form id="gatheringForm">
+    <div class="card">
+      <div class="section-label">📋 Your Details</div>
+
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" placeholder="Full name" required autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="text" id="email" name="email" placeholder="you@example.com" required autocomplete="email">
+        <span class="hint">We'll send your payment confirmation here.</span>
+      </div>
+
+      <div class="field">
+        <label for="mobile">Mobile Number</label>
+        <input type="text" id="mobile" name="mobile" placeholder="09XX XXX XXXX" required autocomplete="tel">
+      </div>
+
+      <div class="field">
+        <label for="participantCount">Number of Participants</label>
+        <input type="number" id="participantCount" name="participantCount" min="1" value="1" required>
+        <span class="hint">Include yourself if you're attending.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">🅿️ Parking</div>
+      <div class="field">
+        <label>Will you be bringing a car to the venue?</label>
+        <div class="toggle-row">
+          <div class="toggle-btn active" id="carNoBtn" onclick="setBringingCar(false)">🚫 No</div>
+          <div class="toggle-btn" id="carYesBtn" onclick="setBringingCar(true)">🚗 Yes</div>
+        </div>
+        <span class="hint">This helps us plan parking at the venue.</span>
+      </div>
+
+      <div class="slide-panel" id="carPanel">
+        <div class="field">
+          <label for="carMaker">Car Maker</label>
+          <input type="text" id="carMaker" name="carMaker" placeholder="e.g. Toyota">
+        </div>
+        <div class="field">
+          <label for="carModel">Car Model</label>
+          <input type="text" id="carModel" name="carModel" placeholder="e.g. Vios">
+        </div>
+        <div class="field">
+          <label for="carPlate">Plate Number</label>
+          <input type="text" id="carPlate" name="carPlate" placeholder="e.g. ABC 1234">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">💰 Payment</div>
+
+      <div class="pay-options">
+        <label class="pay-option">
+          <input type="radio" name="paymentMethod" value="venue" checked onchange="handlePaymentChange()">
+          <div>
+            <div class="pay-title">🏠 Pay at Venue</div>
+            <div class="pay-desc">Pay in cash when you arrive at CCT Tagaytay.</div>
+          </div>
+        </label>
+        <label class="pay-option">
+          <input type="radio" name="paymentMethod" value="gcash" onchange="handlePaymentChange()">
+          <div>
+            <div class="pay-title">💳 Pay via GCash</div>
+            <div class="pay-desc">Pay now and upload your receipt.</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="slide-panel" id="gcashPanel">
+        <div class="gcash-card" id="gcashCard">
+          <div class="gcash-header">
+            <img src="assets/images/gcash-header.png" alt="GCash" style="width:100%;height:auto;display:block;">
+          </div>
+          <div class="gcash-inner">
+            <div class="gcash-qr">
+              <img src="assets/images/qr/gcash-qr.png" alt="GCash QR Code">
+            </div>
+            <div class="gcash-transfer-note">Transfer fees may apply.</div>
+            <div class="gcash-breakdown-toggle">
+              <span class="total-label">💰 Total Amount Due</span>
+              <span class="total-amount" id="gcashAmount">₱200</span>
+            </div>
+            <hr class="gcash-divider">
+            <div class="gcash-acct-name" id="gcashAcctName">Loading…</div>
+            <div class="gcash-acct-holder" id="gcashAcctHolder"></div>
+            <div class="gcash-detail-row">
+              <span class="gcash-detail-lbl">Mobile No.:</span>
+              <span class="gcash-detail-val" id="gcashMobile"></span>
+              <button type="button" onclick="copyGCashNumber()" title="Copy to clipboard" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:#0070E0;font-size:15px;line-height:1;margin-left:2px;" id="clipBtn">📋</button>
+            </div>
+            <button type="button" onclick="openGCash()" style="margin-top:16px;width:100%;padding:12px;background:#0070E0;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <span style="font-size:18px;">📱</span> <span>Open GCash App</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="upload-box" id="uploadBox" onclick="document.getElementById('receiptInput').click()" style="margin-top:14px;">
+          <div class="icon">📎</div>
+          <div class="label" id="uploadLabel">Upload GCash Receipt</div>
+          <div class="sub">JPG or PNG, up to 5MB</div>
+        </div>
+        <input type="file" id="receiptInput" accept="image/*" onchange="handleReceiptSelect(this)">
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Submit Registration</button>
+  </form>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="section-label">🗺️ Map & Location Guide</div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:4px;">📍 CCT Tagaytay Retreat &amp; Training Center</div>
+      <div style="font-size:13px;color:var(--muted);">Km 58, Tagaytay–Nasugbu Highway, Tagaytay City, Cavite</div>
+    </div>
+
+    <div class="map-embed">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3869.0372049125863!2d120.99400620321268!3d14.133909695983661!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd7a220ed6d8a7%3A0x23b93e6e24f47ea2!2sCCT%20Tagaytay%20Retreat%20and%20Training%20Center!5e0!3m2!1sen!2sph!4v1774401484819!5m2!1sen!2sph"
+        width="100%" height="250" style="border:0;display:block;" allowfullscreen="" loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
+
+    <div class="section-label" style="margin-top:4px;">🧭 How to Get There</div>
+    <div class="directions-grid">
+      <div class="dir-card">
+        <div class="dir-icon">🚗</div>
+        <div class="dir-title">By Private Car</div>
+        <div class="dir-text">From Manila, take <strong>SLEX → Sta. Rosa–Tagaytay Road</strong>. Follow signs to Tagaytay–Nasugbu Highway. CCT is along Km 58, past Robinsons Tagaytay. Travel time: <strong>~1.5–2 hrs</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">🚌</div>
+        <div class="dir-title">By Bus (from Manila)</div>
+        <div class="dir-text">Take a <strong>JAC Liner or ALPS</strong> bus bound for Tagaytay from Buendia or Cubao. Alight at <strong>Mahogany Market</strong>, then ride a jeepney or tricycle to CCT. Travel time: <strong>~2 hrs</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">🚐</div>
+        <div class="dir-title">From Cavite / CCSGM</div>
+        <div class="dir-text">Take the <strong>Imus–Tagaytay route</strong> via Amadeo Road. Alternatively, ride a jeepney from Imus or Dasmarinas toward Tagaytay. Travel time: <strong>~45–60 mins</strong>.</div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-icon">✈️</div>
+        <div class="dir-title">From the Airport</div>
+        <div class="dir-text">From <strong>NAIA</strong>, take Skyway → SLEX → Sta. Rosa exit, then follow Tagaytay Road. By Grab/taxi: approx. <strong>₱800–₱1,200</strong>. Travel time: <strong>~2 hrs</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Registration closed check ──────────────────────────────────────────────
+  // Server computes the closed state (manual switch OR past GATHERING_REG_END
+  // in Asia/Manila) so this page never has to do its own timezone math.
+  (async function() {
+    try {
+      const res = await fetch('/.netlify/functions/site-settings');
+      if (!res.ok) return;
+      const settings = await res.json();
+      if (settings.reg_gathering_closed) {
+        window.location.replace(settings.gathering_capped ? '/gathering-closed.html?reason=capped' : '/gathering-closed.html');
+      }
+    } catch (e) { /* fail open — don't block registration on network error */ }
+  })();
+
+  const FEE_PER_HEAD = 200; // display-only estimate; server snapshots the authoritative rate at submit time
+  let bringingCar = false;
+
+  function setBringingCar(val) {
+    bringingCar = val;
+    document.getElementById('carYesBtn').classList.toggle('active', val);
+    document.getElementById('carNoBtn').classList.toggle('active', !val);
+    document.getElementById('carPanel').classList.toggle('open', val);
+  }
+
+  function handlePaymentChange() {
+    const gcash = document.querySelector('input[name="paymentMethod"]:checked').value === 'gcash';
+    document.getElementById('gcashPanel').classList.toggle('open', gcash);
+    updateAmount();
+  }
+
+  function updateAmount() {
+    const count = Math.max(1, parseInt(document.getElementById('participantCount').value, 10) || 1);
+    document.getElementById('gcashAmount').textContent = '₱' + (FEE_PER_HEAD * count).toLocaleString();
+  }
+  document.getElementById('participantCount').addEventListener('input', updateAmount);
+
+  // Fetch GCash account name/holder/mobile (same shared account as the main site)
+  fetch('/.netlify/functions/gcash-details')
+    .then(r => r.json())
+    .then(d => {
+      const name   = document.getElementById('gcashAcctName');
+      const holder = document.getElementById('gcashAcctHolder');
+      const mobile = document.getElementById('gcashMobile');
+      if (name)   name.textContent   = d.accountName   || 'CCSGM';
+      if (holder) holder.textContent = d.accountHolder || '';
+      if (mobile) mobile.textContent = d.mobile        || '';
+    })
+    .catch(() => {
+      const name = document.getElementById('gcashAcctName');
+      if (name) name.textContent = 'CCSGM';
+    });
+
+  function copyGCashNumber() {
+    const mobile = document.getElementById('gcashMobile')?.textContent?.trim();
+    if (!mobile) { showToast('Number not loaded yet.', true); return; }
+    navigator.clipboard.writeText(mobile).then(() => {
+      const btn = document.getElementById('clipBtn');
+      btn.textContent = '✅';
+      setTimeout(() => btn.textContent = '📋', 2000);
+    }).catch(() => {
+      showToast('Copied: ' + mobile, false);
+    });
+  }
+
+  function openGCash() {
+    const ua = navigator.userAgent || '';
+    const isAndroid = /android/i.test(ua);
+    const isIOS = /iphone|ipad|ipod/i.test(ua);
+    const isAndroidIAB = isAndroid && /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+
+    if (isAndroidIAB) {
+      const url = window.location.href;
+      window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    } else if (isAndroid) {
+      window.location.href = 'intent://main#Intent;scheme=gcash;package=com.globe.gcash.android;end';
+    } else if (isIOS) {
+      const isIOSIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+      if (isIOSIAB) {
+        window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+      } else {
+        var appOpened = false;
+        window.addEventListener('blur', function() { appOpened = true; }, { once: true });
+        window.location.href = 'gcash://';
+        setTimeout(function() {
+          if (!appOpened && !document.hidden) {
+            window.location.href = 'https://apps.apple.com/ph/app/gcash/id520020791';
+          }
+        }, 1500);
+      }
+    } else {
+      showToast('Open GCash on your phone to pay.', false);
+    }
+  }
+
+  const MAX_RECEIPT_BYTES = 5 * 1024 * 1024; // 5MB — matches the "up to 5MB" label on the upload box
+
+  function handleReceiptSelect(input) {
+    const box = document.getElementById('uploadBox');
+    const label = document.getElementById('uploadLabel');
+    const file = input.files?.[0];
+    if (file && file.size > MAX_RECEIPT_BYTES) {
+      showToast('⚠️ That file is too big — please attach an image under 5MB.', true);
+      input.value = '';
+      box.classList.remove('has-file');
+      label.textContent = 'Upload GCash Receipt';
+      return;
+    }
+    if (file) {
+      box.classList.add('has-file');
+      label.textContent = '✓ ' + file.name;
+    } else {
+      box.classList.remove('has-file');
+      label.textContent = 'Upload GCash Receipt';
+    }
+  }
+
+  function showToast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.toggle('error', !!isError);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function fileToBase64(fileInput) {
+    return new Promise((resolve, reject) => {
+      const file = fileInput?.files?.[0];
+      if (!file) { resolve(null); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve({ base64: reader.result.split(',')[1], name: file.name });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('gatheringForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = document.getElementById('submitBtn');
+
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const mobile = document.getElementById('mobile').value.trim();
+    const participantCount = parseInt(document.getElementById('participantCount').value, 10);
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+    if (!name) { showToast('⚠️ Please enter your name.', true); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('⚠️ Please enter a valid email.', true); return; }
+    if (!mobile) { showToast('⚠️ Please enter your mobile number.', true); return; }
+    if (!participantCount || participantCount < 1) { showToast('⚠️ Please enter a valid number of participants.', true); return; }
+
+    const carMaker = document.getElementById('carMaker').value.trim();
+    const carModel = document.getElementById('carModel').value.trim();
+    const carPlate = document.getElementById('carPlate').value.trim();
+    if (bringingCar && (!carMaker || !carModel || !carPlate)) {
+      showToast('⚠️ Please fill in your car maker, model, and plate number.', true); return;
+    }
+
+    let receipt = null;
+    if (paymentMethod === 'gcash') {
+      const receiptInput = document.getElementById('receiptInput');
+      const receiptFile = receiptInput.files?.[0];
+      if (receiptFile && receiptFile.size > MAX_RECEIPT_BYTES) {
+        showToast('⚠️ That file is too big — please attach an image under 5MB.', true);
+        return;
+      }
+      receipt = await fileToBase64(receiptInput);
+      if (!receipt) { showToast('⚠️ Please upload your GCash receipt.', true); return; }
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    try {
+      const res = await fetch('/.netlify/functions/submit-gathering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          mobile,
+          participantCount,
+          paymentMethod,
+          receiptBase64: receipt?.base64 || null,
+          receiptName: receipt?.name || null,
+          bringingCar,
+          carMaker: bringingCar ? carMaker : null,
+          carModel: bringingCar ? carModel : null,
+          carPlate: bringingCar ? carPlate : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+      document.getElementById('gatheringForm').style.display = 'none';
+      document.getElementById('formHeading').style.display = 'none';
+      const successMsg = paymentMethod === 'gcash'
+        ? `We've received your GCash receipt for ${participantCount} participant(s), totaling ₱${data.amountDue?.toLocaleString?.() ?? ''}. We'll confirm your payment shortly.`
+        : `We've reserved a spot for ${name} and ${participantCount} participant(s). Please pay at the venue.`;
+      document.getElementById('successMsg').textContent = successMsg;
+      document.getElementById('successScreen').classList.add('show');
+    } catch (err) {
+      showToast('❌ ' + err.message, true);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Registration';
+    }
+  });
+</script>
+<!-- FOOTER -->
+<div style="max-width:560px;margin:0 auto;padding:32px 20px 48px;text-align:center;">
+  <div style="font-size:13px;font-weight:700;color:#2A3D4A;margin-bottom:6px;">Got questions? We're here for you.</div>
+  <div style="font-size:12px;color:#6B8A9A;line-height:1.6;">Reach out to us at <a id="footerEmail" href="mailto:ccsgmprojects@gmail.com" style="color:#3A8BBF;font-weight:600;">ccsgmprojects@gmail.com</a> and we'll get back to you as soon as we can.</div>
+</div>
+<script>
+  fetch('/.netlify/functions/contact-info')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.email) return;
+      var el = document.getElementById('footerEmail');
+      if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
+    }).catch(function(){});
+</script>
+</body>
+</html>

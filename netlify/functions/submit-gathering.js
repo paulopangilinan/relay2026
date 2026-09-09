@@ -1,0 +1,255 @@
+// netlify/functions/submit-gathering.js
+// Handles form submissions from /gathering (Gathering Around the Gospel).
+// Intentionally minimal — name + headcount + payment method only. Not
+// wired into the main `registrations` table or its email/SMS pipeline.
+import { createClient } from "@supabase/supabase-js";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "../lib/mailer.js";
+import { gatheringHeroUrl, gatheringEmailShell, escapeHtml, GATHERING_HEADER_GRADIENT_BLUE, GATHERING_HEADER_GRADIENT_GREEN } from "../lib/gathering-email.js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
+
+// Snapshotted per-row at insert time (see fee_per_head column) so a later
+// change to this env var never rebills someone who already registered.
+const DEFAULT_FEE_PHP = 200;
+
+// Hard backstop behind the client-side check on gathering.html — matches
+// the "up to 5MB" label shown on the upload box there.
+const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
+
+// Mirrors the same computed cutoff used by site-settings.js — kept in sync
+// manually since these are two separate functions; both fall open (allow
+// submission) if GATHERING_REG_END is unset or unparsable, and both default
+// to the same tentative date/time.
+const DEFAULT_GATHERING_REG_END = "2026-09-25T17:00:00+08:00";
+function isPastGatheringCutoff() {
+  const end = process.env.GATHERING_REG_END || DEFAULT_GATHERING_REG_END;
+  const endTime = new Date(end).getTime();
+  if (isNaN(endTime)) return false;
+  return Date.now() >= endTime;
+}
+
+// Adjustable live in admin Settings, mirrors site-settings.js. Counts every
+// registration's participant_count regardless of payment method/status.
+const DEFAULT_GATHERING_MAX_PARTICIPANTS = 500;
+async function isGatheringCapped() {
+  try {
+    const [{ data: settings }, { data: rows }] = await Promise.all([
+      supabase.from("site_settings").select("gathering_max_participants").eq("id", true).maybeSingle(),
+      supabase.from("gathering_registrations").select("participant_count"),
+    ]);
+    const max = settings?.gathering_max_participants ?? DEFAULT_GATHERING_MAX_PARTICIPANTS;
+    const total = (rows || []).reduce((sum, r) => sum + (r.participant_count || 0), 0);
+    return total >= max;
+  } catch {
+    return false; // fail open — a settings/count read error shouldn't block registration
+  }
+}
+
+async function isRegistrationClosed() {
+  if (isPastGatheringCutoff()) return true;
+  if (await isGatheringCapped()) return true;
+  try {
+    const { data } = await supabase.from("site_settings").select("reg_gathering_closed").eq("id", true).maybeSingle();
+    return !!data?.reg_gathering_closed;
+  } catch {
+    return false; // fail open — a settings read error shouldn't block registration
+  }
+}
+
+// Builds the shared info body (participants/payment/contact/car) used by
+// both the venue and GCash admin-notify variants below.
+function gatheringNotifyBody(row) {
+  const carRow = row.bringing_car
+    ? `<p style="margin:0 0 4px;">Car: <strong>${escapeHtml(row.car_maker || "")} ${escapeHtml(row.car_model || "")}</strong> — Plate <strong>${escapeHtml(row.car_plate || "")}</strong></p>`
+    : `<p style="margin:0 0 4px;">Bringing a car: <strong>No</strong></p>`;
+  return `
+    <p style="margin:0 0 10px;"><strong>${escapeHtml(row.name)}</strong> just registered for Gathering Around the Gospel.</p>
+    <p style="margin:0 0 4px;">Participants: <strong>${row.participant_count}</strong></p>
+    <p style="margin:0 0 4px;">Payment method: <strong>${row.payment_method === "gcash" ? "GCash" : "Pay at Venue"}</strong></p>
+    <p style="margin:0 0 4px;">Amount due: <strong>₱${row.amount_due?.toLocaleString?.() ?? row.amount_due}</strong></p>
+    <p style="margin:0 0 4px;">Email: ${escapeHtml(row.email)}</p>
+    <p style="margin:0 0 4px;">Mobile: ${escapeHtml(row.mobile)}</p>
+    ${carRow}`;
+}
+
+// Pay-at-venue admin-notify — green gradient header, purely informational.
+// Venue payments are never confirmable from admin (only at check-in), so
+// there's no CTA here.
+function gatheringVenueNotifyEmail(row) {
+  return gatheringEmailShell({
+    heroUrl: gatheringHeroUrl(),
+    headerBg: GATHERING_HEADER_GRADIENT_GREEN,
+    headerTitle: "New Gathering Registration",
+    body: gatheringNotifyBody(row),
+    footer: "Review it from the Gathering tab in the admin dashboard.",
+  });
+}
+
+// GCash admin-notify — blue gradient header (matches the main site's
+// convention for "needs a payment confirmation" emails), plus an optional
+// one-click "Confirm Payment" CTA for admins who can verify payments.
+function gatheringGcashNotifyEmail(row, confirmLink, canVerify) {
+  const cta = canVerify
+    ? `<div style="text-align:center;margin-top:20px;"><a href="${confirmLink}" style="display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;color:#fff;background:#2E7048;">✅ Confirm Payment</a></div>`
+    : "";
+  const receiptBlock = row.receipt_url
+    ? `<div style="margin:14px 0 4px;">
+        <p style="margin:0 0 6px;color:#6B8A9A;font-size:13px;">Receipt:</p>
+        <a href="${row.receipt_url}" style="display:inline-block;"><img src="${row.receipt_url}" alt="Payment receipt" style="max-width:100%;width:280px;border-radius:8px;border:1px solid #E1E8ED;display:block;" /></a>
+      </div>`
+    : "";
+  return gatheringEmailShell({
+    heroUrl: gatheringHeroUrl(),
+    headerBg: GATHERING_HEADER_GRADIENT_BLUE,
+    headerTitle: "New Gathering Registration",
+    body: `${gatheringNotifyBody(row)}
+      ${receiptBlock}
+      <div style="margin-top:10px;color:#6B8A9A;font-size:13px;">Check GCash to confirm payment was received${canVerify ? ", then click the button below to confirm." : "."}</div>
+      ${cta}`,
+    footer: "Review it from the Gathering tab in the admin dashboard.",
+  });
+}
+
+async function notifyAdminsOfGatheringRegistration(row) {
+  try {
+    const { data: admins, error } = await supabase
+      .from("admins")
+      .select("email, name, permissions, force_password_change");
+    if (error || !admins) return;
+    const notifyAdmins = admins.filter(a => a.permissions?.gathering_email_updates && !a.force_password_change);
+    if (!notifyAdmins.length) return;
+
+    const isGcash = row.payment_method === "gcash";
+    const siteUrl = (process.env.SITE_URL || "").replace(/\/+$/, "");
+    const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || "relay2026secret";
+    const baseConfirmUrl = `${siteUrl}/.netlify/functions/confirm-gathering?id=${row.id}`;
+
+    for (const admin of notifyAdmins) {
+      let html;
+      if (isGcash) {
+        const canVerify = !!admin.permissions?.verify_payment;
+        // Only mint a link (and show the CTA) for admins who are actually
+        // allowed to confirm payments — mirrors submit.js's canVerify gate.
+        const confirmLink = canVerify
+          ? `${baseConfirmUrl}&atoken=${jwt.sign({ email: admin.email, name: admin.name }, JWT_SECRET, { expiresIn: "30d" })}`
+          : baseConfirmUrl;
+        html = gatheringGcashNotifyEmail(row, confirmLink, canVerify);
+      } else {
+        html = gatheringVenueNotifyEmail(row);
+      }
+      const subject = isGcash
+        ? `New Gathering Registration + Payment — ${row.name}`
+        : `New Gathering Registration — ${row.name}`;
+      await sendEmail({ to: admin.email, subject, html, provider: "resend" })
+        .catch(err => console.error("Gathering admin-notify email failed:", err.message));
+    }
+  } catch (err) {
+    console.error("notifyAdminsOfGatheringRegistration failed:", err.message);
+  }
+}
+
+export const handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers };
+  if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "Method Not Allowed" };
+
+  try {
+    if (await isRegistrationClosed()) {
+      return { statusCode: 403, headers, body: JSON.stringify({ error: "Registration for Gathering Around the Gospel is closed." }) };
+    }
+
+    const body = JSON.parse(event.body || "{}");
+    const { name, email, mobile, participantCount, paymentMethod, receiptBase64, receiptName,
+            bringingCar, carMaker, carModel, carPlate } = body;
+
+    const cleanName  = String(name || "").trim();
+    const cleanEmail = String(email || "").trim();
+    const cleanMobile = String(mobile || "").trim();
+    const count = parseInt(participantCount, 10);
+    const hasCar = bringingCar === true || bringingCar === "true";
+
+    if (!cleanName) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Name is required." }) };
+    }
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "A valid email is required." }) };
+    }
+    if (!cleanMobile) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Mobile number is required." }) };
+    }
+    if (!Number.isInteger(count) || count < 1) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Number of participants must be at least 1." }) };
+    }
+    if (paymentMethod !== "venue" && paymentMethod !== "gcash") {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid payment method." }) };
+    }
+    const cleanCarMaker = hasCar ? String(carMaker || "").trim() : null;
+    const cleanCarModel = hasCar ? String(carModel || "").trim() : null;
+    const cleanCarPlate = hasCar ? String(carPlate || "").trim() : null;
+    if (hasCar && (!cleanCarMaker || !cleanCarModel || !cleanCarPlate)) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Car maker, model, and plate number are required for parking." }) };
+    }
+
+    const feePerHead = parseInt(process.env.GATHERING_FEE_PHP, 10) || DEFAULT_FEE_PHP;
+    const amountDue  = feePerHead * count;
+
+    let receiptUrl = null;
+    if (paymentMethod === "gcash" && receiptBase64) {
+      const buf = Buffer.from(receiptBase64, "base64");
+      if (buf.length > MAX_RECEIPT_BYTES) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: "Receipt image is too large. Please upload a file under 5MB." }) };
+      }
+      const ext  = receiptName?.split(".").pop() || "jpg";
+      const path = `gathering-receipts/${Date.now()}-${cleanName.replace(/\s+/g, "_")}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("relay-uploads")
+        .upload(path, buf, { contentType: `image/${ext}` });
+      if (!uploadErr) {
+        const { data } = supabase.storage.from("relay-uploads").getPublicUrl(path);
+        receiptUrl = data.publicUrl;
+      }
+    }
+
+    // Venue payments never move past 'unpaid' through this system — actual
+    // confirmation happens when they show up at the venue, not here.
+    const paymentStatus = paymentMethod === "gcash" ? "pending_review" : "unpaid";
+
+    const { data: row, error: dbErr } = await supabase
+      .from("gathering_registrations")
+      .insert({
+        name: cleanName,
+        email: cleanEmail,
+        mobile: cleanMobile,
+        participant_count: count,
+        payment_method: paymentMethod,
+        fee_per_head: feePerHead,
+        amount_due: amountDue,
+        receipt_url: receiptUrl,
+        payment_status: paymentStatus,
+        bringing_car: hasCar,
+        car_maker: cleanCarMaker,
+        car_model: cleanCarModel,
+        car_plate: cleanCarPlate,
+      })
+      .select()
+      .single();
+
+    if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
+
+    // Non-blocking — a notify failure should never fail the participant's submission.
+    notifyAdminsOfGatheringRegistration(row);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, id: row.id, amountDue, feePerHead, paymentStatus }),
+    };
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Something went wrong. Please try again." }) };
+  }
+};

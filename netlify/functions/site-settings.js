@@ -17,6 +17,33 @@ const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || 'rela
 const NOTIFICATION_KEYS = Object.keys(NOTIFICATION_DEFAULTS);
 const TEXT_KEYS         = Object.keys(NOTIFICATION_TEXT_DEFAULTS);
 
+// Gathering Around the Gospel registration closes when EITHER the manual
+// admin switch is on, OR the current time (Asia/Manila) is past
+// GATHERING_REG_END. Not hardcoded — env var so the date can move without a
+// deploy. Tentative default: Sept 25, 2026, 5:00 PM Asia/Manila (a few hours
+// before the 7:00 PM event start).
+const DEFAULT_GATHERING_REG_END = '2026-09-25T17:00:00+08:00';
+function isGatheringPastCutoff() {
+  const end = process.env.GATHERING_REG_END || DEFAULT_GATHERING_REG_END;
+  const endTime = new Date(end).getTime();
+  if (isNaN(endTime)) return false; // misconfigured env var — fail open, don't block registration
+  return Date.now() >= endTime;
+}
+
+// Adjustable live in admin Settings (not an env var) so raising the cap can
+// reopen registration without a redeploy. Counts every registration row's
+// participant_count regardless of payment method or status.
+const DEFAULT_GATHERING_MAX_PARTICIPANTS = 500;
+async function getGatheringParticipantTotal() {
+  try {
+    const { data, error } = await supabase.from('gathering_registrations').select('participant_count');
+    if (error || !data) return 0;
+    return data.reduce((sum, r) => sum + (r.participant_count || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
 // Roughly 10 credits — enough for a long notice, low enough that a paste
 // accident can't quietly burn the balance across a whole bulk run.
 const MAX_TEMPLATE_LENGTH = 1600;
@@ -38,11 +65,13 @@ export const handler = async (event) => {
     // a time so a half-migrated database still reports everything it does have,
     // instead of collapsing all the way back to the registration flags.
     const MERCH_COLS = ['merch_preorder_closed', 'merch_downpayment_percent'];
-    const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS];
+    const GATHERING_COLS = ['reg_gathering_closed', 'gathering_max_participants'];
+    const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS, ...GATHERING_COLS];
     const TIERS = [
       [...BASE_COLS, ...NOTIFICATION_KEYS, ...TEXT_KEYS],   // fully migrated
       [...BASE_COLS, ...NOTIFICATION_KEYS],                 // with notification keys
       BASE_COLS,                                            // base only
+      ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS], // fallback before gathering migration
       ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled'], // fallback before merch migration
     ];
 
@@ -58,11 +87,20 @@ export const handler = async (event) => {
 
     // Public callers (registration and merch preorder pages) only need a small subset of flags.
     if (!requester) {
+      const maxParticipants = data?.gathering_max_participants !== undefined && data?.gathering_max_participants !== null
+        ? Number(data.gathering_max_participants) : DEFAULT_GATHERING_MAX_PARTICIPANTS;
+      const participantTotal = await getGatheringParticipantTotal();
+      const isCapped = participantTotal >= maxParticipants;
+
       if (!data) return {
         statusCode: 200, headers,
         body: JSON.stringify({
           reg_ph_closed: false, reg_intl_closed: false, ph_pay_later_enabled: false,
           merch_preorder_closed: false, merch_downpayment_percent: 0,
+          // No manual switch recorded yet — still closed once past the date
+          // cutoff or the participant cap has been reached.
+          reg_gathering_closed: isGatheringPastCutoff() || isCapped,
+          gathering_capped: isCapped,
         })
       };
       return {
@@ -73,6 +111,14 @@ export const handler = async (event) => {
           ph_pay_later_enabled: !!data.ph_pay_later_enabled,
           merch_preorder_closed: !!data.merch_preorder_closed,
           merch_downpayment_percent: data.merch_downpayment_percent !== undefined && data.merch_downpayment_percent !== null ? Number(data.merch_downpayment_percent) : 0,
+          // Closed if the manual admin switch is on, OR we're past
+          // GATHERING_REG_END, OR the participant cap has been reached —
+          // computed server-side so the client never has to do its own
+          // timezone math or run its own count query.
+          reg_gathering_closed: !!data.reg_gathering_closed || isGatheringPastCutoff() || isCapped,
+          // Lets the client distinguish "capacity reached" from a regular
+          // manual/date closure so it can redirect to the right message.
+          gathering_capped: isCapped,
         }),
       };
     }
@@ -82,6 +128,15 @@ export const handler = async (event) => {
       reg_intl_closed: !!data?.reg_intl_closed,
       merch_preorder_closed: !!data?.merch_preorder_closed,
       merch_downpayment_percent: data?.merch_downpayment_percent !== undefined && data?.merch_downpayment_percent !== null ? Number(data.merch_downpayment_percent) : 0,
+      // Admin panel shows the raw manual switch (not OR'd with the date
+      // cutoff) so admins can see/toggle it independently of the computed
+      // closed state the public page uses.
+      reg_gathering_closed: !!data?.reg_gathering_closed,
+      gathering_reg_end: process.env.GATHERING_REG_END || DEFAULT_GATHERING_REG_END,
+      gathering_past_cutoff: isGatheringPastCutoff(),
+      gathering_max_participants: data?.gathering_max_participants !== undefined && data?.gathering_max_participants !== null
+        ? Number(data.gathering_max_participants) : DEFAULT_GATHERING_MAX_PARTICIPANTS,
+      gathering_participant_count: await getGatheringParticipantTotal(),
       ...NOTIFICATION_DEFAULTS,
       ...NOTIFICATION_TEXT_DEFAULTS,
       ...(data || {}),
@@ -127,12 +182,19 @@ export const handler = async (event) => {
 
       // Only ever write known columns — anything else in the payload is ignored.
       const patch = { id: true, updated_at: new Date().toISOString() };
-      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', 'merch_preorder_closed', ...NOTIFICATION_KEYS]) {
+      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', 'merch_preorder_closed', 'reg_gathering_closed', ...NOTIFICATION_KEYS]) {
         if (key in body) patch[key] = !!body[key];
       }
       if ('merch_downpayment_percent' in body) {
         const num = parseInt(body.merch_downpayment_percent, 10);
         patch.merch_downpayment_percent = isNaN(num) ? 0 : Math.max(0, Math.min(100, num));
+      }
+      if ('gathering_max_participants' in body) {
+        const num = parseInt(body.gathering_max_participants, 10);
+        if (isNaN(num) || num < 1) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Maximum participants must be a positive number.' }) };
+        }
+        patch.gathering_max_participants = num;
       }
       for (const key of TEXT_KEYS) {
         if (!(key in body)) continue;
