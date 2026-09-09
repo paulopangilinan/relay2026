@@ -897,10 +897,10 @@
           <span class="tab-icon">🧾</span><span class="tab-label">Merch Orders</span> <span class="tab-badge" id="badge-orders">0</span>
         </button>
         <button class="tab-btn" onclick="switchGroup('breakout')" id="group-breakout">
-          <span class="tab-icon">🎯</span><span class="tab-label">Breakout Responses</span> <span class="tab-badge" id="badge-breakout">0</span>
+          <span class="tab-icon">🎯</span><span class="tab-label">Breakout Sessions</span> <span class="tab-badge" id="badge-breakout">0</span>
         </button>
         <button class="tab-btn" onclick="switchGroup('gathering')" id="group-gathering">
-          <span class="tab-icon">🙏</span><span class="tab-label">Gathering</span> <span class="tab-badge" id="badge-gathering">0</span>
+          <span class="tab-icon">🎵</span><span class="tab-label">GATG</span> <span class="tab-badge" id="badge-gathering">0</span>
         </button>
       </div>
       <div style="height:4px;border-radius:3px;background:linear-gradient(90deg,#4BAE6A,#3A8BBF,#E8B830,#4BAE6A);margin:-14px 0 18px;"></div>
@@ -6001,7 +6001,7 @@
       if (!res.ok || json.error) throw new Error(json.error || 'Failed');
       gatheringRows = json.registrations || [];
       const badge = document.getElementById('badge-gathering');
-      if (badge) badge.textContent = gatheringRows.length;
+      if (badge) badge.textContent = gatheringRows.reduce((sum, r) => sum + (r.participant_count || 0), 0);
       renderGatheringTiles();
       populateGatheringFilterOptions();
       applyGatheringFilters();
