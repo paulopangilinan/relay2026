@@ -1078,8 +1078,8 @@
                   <span class="preset-sub">Last-day nudge — only sent to those who haven't ordered yet</span>
                 </button>
               </div>
+              <div id="ph-merch-closed-note" title="Merch preorder page is closed — turn it on in Merch → Preorder Page to send this." style="display:none;position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:#C0392B;color:#fff;border-radius:50%;border:2px solid #fff;font-size:11px;font-weight:700;line-height:14px;text-align:center;cursor:default;box-shadow:0 1px 3px rgba(0,0,0,0.25);">!</div>
             </div>
-            <div id="ph-merch-closed-note" style="display:none;font-size:11px;color:#C0392B;font-weight:600;max-width:220px;line-height:1.4;">Merch preorder page is closed — turn it on in Merch → Preorder Page to send this.</div>
             <!-- Split button: main action sends, caret offers selection presets -->
             <div id="ph-attendance-split" style="display:none;align-items:stretch;position:relative;">
               <button id="ph-bulk-attendance" onclick="openBulkAttendanceModal()" style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#2A6E9E;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;">
@@ -1214,8 +1214,8 @@
                   <span class="preset-sub">Last-day nudge — only sent to those who haven't ordered yet</span>
                 </button>
               </div>
+              <div id="intl-merch-closed-note" title="Merch preorder page is closed — turn it on in Merch → Preorder Page to send this." style="display:none;position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:#C0392B;color:#fff;border-radius:50%;border:2px solid #fff;font-size:11px;font-weight:700;line-height:14px;text-align:center;cursor:default;box-shadow:0 1px 3px rgba(0,0,0,0.25);">!</div>
             </div>
-            <div id="intl-merch-closed-note" style="display:none;font-size:11px;color:#C0392B;font-weight:600;max-width:220px;line-height:1.4;">Merch preorder page is closed — turn it on in Merch → Preorder Page to send this.</div>
             <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('intl')">
               <span class="hc-text">Hide Cancelled</span>
               <div class="toggle-track on" id="intl-hide-cancelled-track"><div class="toggle-thumb"></div></div>
@@ -1435,7 +1435,7 @@
     <!-- MERCH ORDERS TAB -->
     <div class="tab-content" id="content-orders">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:16px;font-weight:700;color:var(--dark);">Merch Orders</div>
+        <div style="font-size:16px;font-weight:700;color:var(--dark);">🧾 Merch Orders</div>
         <button onclick="loadMerchOrders()" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;flex-shrink:0;">Refresh</button>
       </div>
       <div class="tiles-row">
@@ -1560,7 +1560,7 @@
     <div class="tab-content" id="content-breakout">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap;">
         <div>
-          <div style="font-size:16px;font-weight:700;color:var(--dark);">🎯 Breakout Session Responses</div>
+          <div style="font-size:16px;font-weight:700;color:var(--dark);">🎯 Breakout Sessions</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;">Participant selections per session. Drag <strong>unresponded</strong> participants to assign them after the selection deadline.</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -1760,31 +1760,6 @@
         </div>
         </div>
 
-        <!-- Gathering Toggle -->
-        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-top:12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-            <div>
-              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">🙏 Gathering Around the Gospel Registration</div>
-              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-status">Loading…</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Also auto-closes past the GATHERING_REG_END cutoff, regardless of this switch.</div>
-            </div>
-            <div onclick="toggleSetting('gathering')" id="settings-gathering-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
-              <div id="settings-gathering-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
-            </div>
-          </div>
-          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-            <div>
-              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Maximum Participants</div>
-              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-cap-status">Loading…</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Also auto-closes once the participant cap is reached — raise the number here to reopen registration.</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-              <input type="number" id="settings-gathering-max-input" min="1" style="width:100px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Mono',monospace;">
-              <button onclick="saveGatheringMaxParticipants()" style="padding:8px 14px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">Save</button>
-            </div>
-          </div>
-        </div>
-
         <!-- Pay-Later Toggle (PH-only) -->
         <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-top:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
@@ -1858,6 +1833,52 @@
             </table>
           </div>
         </div>
+
+        <!-- Gathering Toggle (moved below Breakout Sessions per user request) -->
+        <div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border);padding:20px 24px;box-shadow:var(--shadow);margin-top:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px;">🙏 Gathering Around the Gospel Registration</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-status">Loading…</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Also auto-closes past the GATHERING_REG_END cutoff, regardless of this switch.</div>
+            </div>
+            <div onclick="toggleSetting('gathering')" id="settings-gathering-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-gathering-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Maximum Participants</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-cap-status">Loading…</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Also auto-closes once the participant cap is reached — raise the number here to reopen registration.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <input type="number" id="settings-gathering-max-input" min="1" style="width:100px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Mono',monospace;">
+              <button onclick="saveGatheringMaxParticipants()" style="padding:8px 14px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">Save</button>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Allow Pay at Venue</div>
+              <div style="font-size:12px;color:var(--muted);" id="settings-gathering-venue-status">Loading…</div>
+            </div>
+            <div onclick="toggleSetting('gathering_venue_payment_enabled')" id="settings-gathering_venue_payment_enabled-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+              <div id="settings-gathering_venue_payment_enabled-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Email Provider</div>
+              <div style="font-size:12px;color:var(--muted);">Which service sends Gathering's own emails (new-registration notify, registration-received, payment-confirmed).</div>
+              <div style="font-size:11px;margin-top:4px;" id="settings-gathering-email-provider-status"></div>
+            </div>
+            <div style="display:flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;flex-shrink:0;">
+              <div id="settings-gathering-email-provider-resend" onclick="saveGatheringEmailProvider('resend')" style="padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🚀 Resend</div>
+              <div id="settings-gathering-email-provider-gmail" onclick="saveGatheringEmailProvider('gmail')" style="padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border-left:1.5px solid var(--border);">💬 Gmail</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -6016,7 +6037,7 @@
 
   const GATHERING_METHOD_OPTS = [['gcash', '💳 GCash'], ['venue', '🏠 Pay at Venue']];
   const GATHERING_CAR_OPTS    = [['car', '🚗 Bringing Car'], ['no_car', '🚫 No Car']];
-  const GATHERING_STATUS_OPTS = [['confirmed', '✅ Confirmed'], ['pending_review', '⏳ Pending Review'], ['unpaid', '🔲 Unpaid']];
+  const GATHERING_STATUS_OPTS = [['confirmed', '✅ Confirmed'], ['pending_review', '⏳ Pending Review'], ['unpaid', '🔲 Unpaid'], ['cancelled', '✖ Cancelled']];
 
   function populateGatheringFilterOptions() {
     const mlist = document.getElementById('gathering-method-list');
@@ -6133,7 +6154,8 @@
         ? `${r.car_maker || ''} ${r.car_model || ''} · ${r.car_plate || ''}`.trim()
         : 'No';
       const statusLabel = r.payment_status === 'confirmed' ? 'Confirmed'
-        : r.payment_status === 'pending_review' ? 'Pending Review' : 'Unpaid';
+        : r.payment_status === 'pending_review' ? 'Pending Review'
+        : r.payment_status === 'cancelled' ? 'Cancelled' : 'Unpaid';
       rows.push([
         r.name || '',
         r.email || '',
@@ -6178,6 +6200,7 @@
   function gatheringStatusBadge(row) {
     if (row.payment_status === 'confirmed') return '<span style="color:var(--green);font-weight:700;">✅ Confirmed</span>';
     if (row.payment_status === 'pending_review') return '<span style="color:var(--gold);font-weight:700;">⏳ Pending Review</span>';
+    if (row.payment_status === 'cancelled') return '<span style="color:var(--red);font-weight:700;">✖ Cancelled</span>';
     return '<span style="color:var(--muted);font-weight:700;">Unpaid</span>';
   }
 
@@ -6191,11 +6214,19 @@
       const receiptCell = r.receipt_url
         ? `<a href="javascript:void(0)" onclick="openImgModal('${r.receipt_url}')">View</a>`
         : '<span style="color:var(--muted);">—</span>';
-      const actionCell = r.payment_method === 'gcash' && r.payment_status === 'pending_review'
-        ? `<button onclick="confirmGatheringPayment('${r.id}')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Confirm</button>`
-        : (r.payment_method === 'venue'
-            ? '<span style="color:var(--muted);font-size:11px;">Confirmed at check-in</span>'
-            : '<span style="color:var(--muted);">—</span>');
+      const actionCell = r.payment_status === 'confirmed' || r.payment_status === 'cancelled'
+        ? '<span style="color:var(--muted);">—</span>'
+        : r.payment_method === 'gcash' && r.payment_status === 'pending_review'
+        ? `<div style="display:flex;gap:6px;">
+            <button onclick="confirmGatheringPayment('${r.id}')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Confirm</button>
+            <button onclick="cancelGatheringPayment('${r.id}')" title="No actual receipt attached / can't verify this payment" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Cancel</button>
+          </div>`
+        : r.payment_method === 'venue' && r.payment_status === 'unpaid'
+        ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+            <span style="color:var(--muted);font-size:11px;">Confirmed at check-in</span>
+            <button onclick="cancelGatheringPayment('${r.id}')" title="Duplicate, no-show, or otherwise shouldn't hold a slot" style="padding:5px 10px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Cancel</button>
+          </div>`
+        : '<span style="color:var(--muted);">—</span>';
       const registered = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
       const carCell = r.bringing_car
         ? `<span title="${esc(r.car_maker || '')} ${esc(r.car_model || '')} · ${esc(r.car_plate || '')}" style="font-size:12px;">🚗 ${esc(r.car_maker || '')} ${esc(r.car_model || '')}<br><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;">${esc(r.car_plate || '')}</span></span>`
@@ -6226,6 +6257,24 @@
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Failed');
       showToast('Payment confirmed');
+      loadGatheringRegistrations();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  async function cancelGatheringPayment(id) {
+    // Destructive-ish — the participant loses their slot against the cap,
+    // so confirm before firing (Confirm has no such prompt since it's not
+    // reversible-by-accident the same way).
+    if (!confirm("Cancel this registration? This frees up their slot against the participant cap. For GCash, use this only when the receipt can't actually be verified — for Pay at Venue, use it for duplicates/no-shows or anyone who otherwise shouldn't hold a slot.")) return;
+    try {
+      const res = await fetch('/.netlify/functions/admin-gathering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ action: 'cancel', id }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast('Registration cancelled');
       loadGatheringRegistrations();
     } catch (e) { showToast('Error: ' + e.message); }
   }
@@ -7384,6 +7433,7 @@
     gathering: 'reg_gathering_closed',
     sms:  'sms_enabled',
     ph_pay_later_enabled: 'ph_pay_later_enabled',
+    gathering_venue_payment_enabled: 'gathering_venue_payment_enabled',
     merch_preorder_closed: 'merch_preorder_closed',
     merch_sms_enabled: 'merch_sms_enabled',
     merch_complete_sms_enabled: 'merch_complete_sms_enabled',
@@ -7393,6 +7443,8 @@
   let currentSettings = {
     reg_ph_closed: false, reg_intl_closed: false, reg_gathering_closed: false, sms_enabled: false,
     ph_pay_later_enabled: false,
+    gathering_venue_payment_enabled: false,
+    gathering_email_provider: 'resend',
     merch_preorder_closed: false, merch_downpayment_percent: 0,
     merch_sms_enabled: false, merch_sms_template: '',
     merch_complete_sms_enabled: false, merch_complete_sms_template: '',
@@ -7706,8 +7758,18 @@
       capStatusEl.textContent = `Maximum Participants ${gCount}/${gMax}`;
       capStatusEl.style.color = gCount >= gMax ? '#C0392B' : 'var(--muted)';
     }
+
+    renderGatheringEmailProvider();
     const gMaxInput = document.getElementById('settings-gathering-max-input');
     if (gMaxInput && document.activeElement !== gMaxInput) gMaxInput.value = gMax;
+
+    // Venue-payment toggle for Gathering — defaults OFF, so "Pay at Venue"
+    // stays hidden on the registration page until an admin explicitly turns
+    // it on here.
+    paintToggle('gathering_venue_payment_enabled', currentSettings.gathering_venue_payment_enabled, '#2E7048');
+    document.getElementById('settings-gathering-venue-status').textContent = currentSettings.gathering_venue_payment_enabled
+      ? 'Pay at Venue is available to registrants.'
+      : 'Pay at Venue is hidden — registrants can only pay via GCash.';
 
     // Pay-later toggle for PH registrations
     paintToggle('ph_pay_later_enabled', currentSettings.ph_pay_later_enabled, '#2E7048');
@@ -7902,6 +7964,34 @@
         currentSettings[column] = !currentSettings[column];
         renderSettingsUI();
         showToast('Failed to save Pay-Later: ' + err.message, true);
+      }
+    }
+
+    // Same immediate-save treatment — this is a business-rule gate the
+    // submit function enforces server-side, so admins should see it take
+    // effect right away rather than waiting on the page's batch Save button.
+    if (key === 'gathering') {
+      try {
+        await saveSingleSetting(column);
+        showToast('Gathering registration setting saved.');
+      } catch (err) {
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save: ' + err.message, true);
+      }
+    }
+
+    // Same immediate-save treatment — this is a business-rule gate the
+    // submit function enforces server-side, so admins should see it take
+    // effect right away rather than waiting on the page's batch Save button.
+    if (key === 'gathering_venue_payment_enabled') {
+      try {
+        await saveSingleSetting(column);
+        showToast('Pay at Venue setting saved.');
+      } catch (err) {
+        currentSettings[column] = !currentSettings[column];
+        renderSettingsUI();
+        showToast('Failed to save Pay at Venue: ' + err.message, true);
       }
     }
 
@@ -8180,6 +8270,50 @@
     }
   }
 
+  function renderGatheringEmailProvider() {
+    const resendBtn = document.getElementById('settings-gathering-email-provider-resend');
+    const gmailBtn  = document.getElementById('settings-gathering-email-provider-gmail');
+    const statusEl  = document.getElementById('settings-gathering-email-provider-status');
+    if (!resendBtn || !gmailBtn) return;
+
+    const active = currentSettings.gathering_email_provider || 'resend';
+    const activeStyle   = 'background:var(--sky);color:#fff;';
+    const inactiveStyle = 'background:var(--card-bg);color:var(--muted);';
+    resendBtn.setAttribute('style', resendBtn.getAttribute('style').replace(/background:[^;]+;color:[^;]+;/, '') + (active === 'resend' ? activeStyle : inactiveStyle));
+    gmailBtn.setAttribute('style',  gmailBtn.getAttribute('style').replace(/background:[^;]+;color:[^;]+;/, '')  + (active === 'gmail'  ? activeStyle : inactiveStyle));
+
+    if (!statusEl) return;
+    // Selecting Resend while it isn't actually configured means every send
+    // silently falls back to Gmail (mailer.js does this on purpose so mail
+    // never disappears) — surface that instead of letting it look like
+    // Resend is being used when it isn't.
+    if (active === 'resend' && !notifyConfig.resend_configured) {
+      statusEl.textContent = '⚠️ Resend isn\'t configured (missing RESEND_API_KEY/RESEND_FROM) — sends are silently falling back to Gmail.';
+      statusEl.style.color = '#C0392B';
+    } else if (active === 'resend') {
+      statusEl.textContent = '✅ Resend is configured and active.';
+      statusEl.style.color = '#2E7048';
+    } else {
+      statusEl.textContent = 'Sending via Gmail — lower daily limits, more likely to be flagged for automated/bulk sends.';
+      statusEl.style.color = 'var(--muted)';
+    }
+  }
+
+  async function saveGatheringEmailProvider(value) {
+    const prev = currentSettings.gathering_email_provider;
+    if (prev === value) return;
+    currentSettings.gathering_email_provider = value;
+    renderGatheringEmailProvider();
+    try {
+      await saveSingleSetting('gathering_email_provider');
+      showToast('Gathering email provider saved.');
+    } catch (err) {
+      currentSettings.gathering_email_provider = prev;
+      renderGatheringEmailProvider();
+      showToast('Failed to save: ' + err.message, true);
+    }
+  }
+
   async function loadSettings() {
     try {
       const res  = await fetch('/.netlify/functions/site-settings', {
@@ -8204,6 +8338,9 @@
       }
       if ('gathering_participant_count' in data && data.gathering_participant_count !== null && data.gathering_participant_count !== undefined) {
         currentSettings.gathering_participant_count = Number(data.gathering_participant_count);
+      }
+      if ('gathering_email_provider' in data && (data.gathering_email_provider === 'gmail' || data.gathering_email_provider === 'resend')) {
+        currentSettings.gathering_email_provider = data.gathering_email_provider;
       }
       // Not part of the sms_events catalogue (deliberately kept out of the
       // Site Settings SMS list), so it needs its own explicit copy here.

@@ -14,19 +14,19 @@
   }
   body {
     font-family: 'DM Sans', Arial, sans-serif;
-    background: var(--page-bg); min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
+    background: #F7FAFB; min-height: 100vh;
   }
   .hero-wrap { max-width: 620px; width: 100%; margin: 0 auto; }
   .hero { width: 100%; display: block; line-height: 0; }
   .hero img { width: 100%; height: auto; display: block; }
   .confetti-bar {
-    height: 4px; width: 100%;
+    height: 4px; max-width: 620px; width: 100%; margin: 0 auto;
     background: linear-gradient(90deg, #4BAE6A, #3A8BBF, #E8B830, #4BAE6A);
     background-size: 200%; animation: shimmer 3s linear infinite;
   }
   @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
-  .page-wrap { width: 100%; max-width: 520px; padding: 40px 20px 64px; text-align: center; }
+  .page-wrap { width: 100%; max-width: 620px; margin: 0 auto; padding: 40px 20px 64px; text-align: center; background: var(--page-bg); }
+  .content-inner { max-width: 520px; margin: 0 auto; }
   .icon { font-size: 56px; margin-bottom: 20px; }
   .card {
     background: var(--card-bg); border-radius: 16px;
@@ -62,13 +62,30 @@
 <div class="confetti-bar"></div>
 
 <div class="page-wrap">
-  <div class="icon" id="closedIcon">🙏</div>
-  <div class="card">
-    <h1 id="closedTitle">Registration Closed</h1>
-    <div class="divider"></div>
-    <p id="closedMessage">Registration for Gathering Around the Gospel is now closed. We can't wait to see everyone on September 25 at CCT Tagaytay Retreat &amp; Training Center — see you there!</p>
+  <div class="content-inner">
+    <div class="icon" id="closedIcon">🙏</div>
+    <div class="card">
+      <h1 id="closedTitle">Registration Closed</h1>
+      <div class="divider"></div>
+      <p id="closedMessage">Registration for Gathering Around the Gospel is now closed. We can't wait to see everyone on September 25 at CCT Tagaytay Retreat &amp; Training Center — see you there!</p>
+    </div>
   </div>
 </div>
+
+<!-- FOOTER -->
+<div style="max-width:560px;margin:0 auto;padding:32px 20px 48px;text-align:center;">
+  <div style="font-size:13px;font-weight:700;color:#2A3D4A;margin-bottom:6px;">Got questions? We're here for you.</div>
+  <div style="font-size:12px;color:#6B8A9A;line-height:1.6;">Reach out to us at <a id="footerEmail" href="mailto:ccsgmprojects@gmail.com" style="color:#3A8BBF;font-weight:600;">ccsgmprojects@gmail.com</a> and we'll get back to you as soon as we can.</div>
+</div>
+<script>
+  fetch('/.netlify/functions/contact-info')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.email) return;
+      var el = document.getElementById('footerEmail');
+      if (el) { el.href = 'mailto:' + d.email; el.textContent = d.email; }
+    }).catch(function(){});
+</script>
 
 <script>
   // ?reason=capped → registration hit GATHERING_MAX_PARTICIPANTS, distinct

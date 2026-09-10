@@ -5,12 +5,36 @@
 // per send — pass provider:'gmail' — and remains the fallback: if Resend is
 // requested (explicitly or by default) but unconfigured or failing, the send
 // falls back to Gmail so a mail never silently disappears.
+//
+// Gmail sends (whether requested directly or reached via fallback) are
+// throttled to reduce the odds of the account getting flagged/blocked for
+// bulk/automated sending — see GMAIL_THROTTLE_MS below. This matters most
+// when Resend's own limit (lower than Gmail's) is exhausted and everything
+// starts falling back to Gmail at once.
 
 import nodemailer from 'nodemailer';
 
 const FROM_NAME = 'RELAY 2026';
 
 let cachedTransporter = null;
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// Gmail's abuse detection responds far more to send *velocity* (many sends
+// in quick succession from one account) than Resend's does — spacing sends
+// out is one of the few concrete things the fallback path can do to look
+// less like automated/bulk sending. This only holds within a single warm
+// function instance (module-level state resets on cold start), but that
+// still covers the common case: several Gathering admin-notify emails going
+// out back-to-back in one request when Resend's quota has been exhausted
+// and every one of them falls back to Gmail together.
+const GMAIL_THROTTLE_MS = 700;
+let lastGmailSendAt = 0;
+async function throttleGmail() {
+  const wait = GMAIL_THROTTLE_MS - (Date.now() - lastGmailSendAt);
+  if (wait > 0) await sleep(wait);
+  lastGmailSendAt = Date.now();
+}
 
 function getTransporter() {
   if (!cachedTransporter) {
@@ -39,6 +63,7 @@ function resendFrom() {
 }
 
 async function sendViaGmail({ to, subject, html, replyTo }) {
+  await throttleGmail();
   const info = await getTransporter().sendMail({
     from: `"${FROM_NAME}" <${process.env.GMAIL_USER}>`,
     to,

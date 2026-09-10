@@ -5,7 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../lib/mailer.js";
-import { gatheringHeroUrl, gatheringEmailShell, escapeHtml, GATHERING_HEADER_GRADIENT_BLUE, GATHERING_HEADER_GRADIENT_GREEN } from "../lib/gathering-email.js";
+import { gatheringHeroUrl, gatheringEmailShell, escapeHtml, GATHERING_HEADER_GRADIENT_BLUE, GATHERING_HEADER_GRADIENT_GREEN, sendGatheringRegistrationReceivedEmail, getGatheringEmailProvider } from "../lib/gathering-email.js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -47,6 +47,26 @@ async function isGatheringCapped() {
     return total >= max;
   } catch {
     return false; // fail open — a settings/count read error shouldn't block registration
+  }
+}
+
+// Round 32: config switch to hide/disable "Pay at Venue" — defaults OFF,
+// opposite of isGatheringCapped()/isPastGatheringCutoff() above. This is the
+// one Gathering check that fails CLOSED on a read error: those checks guard
+// against blocking registration unnecessarily, but this one guards a
+// business rule the admin explicitly turned off, so a settings-read error
+// should never let a disabled payment method slip through.
+async function isVenuePaymentEnabled() {
+  try {
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("gathering_venue_payment_enabled")
+      .eq("id", true)
+      .maybeSingle();
+    if (error) return false;
+    return !!data?.gathering_venue_payment_enabled;
+  } catch {
+    return false; // fail CLOSED
   }
 }
 
@@ -145,7 +165,7 @@ async function notifyAdminsOfGatheringRegistration(row) {
       const subject = isGcash
         ? `New Gathering Registration + Payment — ${row.name}`
         : `New Gathering Registration — ${row.name}`;
-      await sendEmail({ to: admin.email, subject, html, provider: "resend" })
+      await sendEmail({ to: admin.email, subject, html, provider: await getGatheringEmailProvider() })
         .catch(err => console.error("Gathering admin-notify email failed:", err.message));
     }
   } catch (err) {
@@ -186,6 +206,9 @@ export const handler = async (event) => {
     }
     if (paymentMethod !== "venue" && paymentMethod !== "gcash") {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid payment method." }) };
+    }
+    if (paymentMethod === "venue" && !(await isVenuePaymentEnabled())) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Pay at Venue is not available. Please pay via GCash." }) };
     }
     const cleanCarMaker = hasCar ? String(carMaker || "").trim() : null;
     const cleanCarModel = hasCar ? String(carModel || "").trim() : null;
@@ -240,8 +263,9 @@ export const handler = async (event) => {
 
     if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
 
-    // Non-blocking — a notify failure should never fail the participant's submission.
+    // Non-blocking — a notify/email failure should never fail the participant's submission.
     notifyAdminsOfGatheringRegistration(row);
+    sendGatheringRegistrationReceivedEmail(sendEmail, row);
 
     return {
       statusCode: 200,

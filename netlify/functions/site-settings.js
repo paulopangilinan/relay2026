@@ -36,7 +36,9 @@ function isGatheringPastCutoff() {
 const DEFAULT_GATHERING_MAX_PARTICIPANTS = 500;
 async function getGatheringParticipantTotal() {
   try {
-    const { data, error } = await supabase.from('gathering_registrations').select('participant_count');
+    // Cancelled registrations (unverifiable GCash receipts) shouldn't
+    // continue occupying a slot against the participant cap.
+    const { data, error } = await supabase.from('gathering_registrations').select('participant_count').neq('payment_status', 'cancelled');
     if (error || !data) return 0;
     return data.reduce((sum, r) => sum + (r.participant_count || 0), 0);
   } catch {
@@ -65,12 +67,13 @@ export const handler = async (event) => {
     // a time so a half-migrated database still reports everything it does have,
     // instead of collapsing all the way back to the registration flags.
     const MERCH_COLS = ['merch_preorder_closed', 'merch_downpayment_percent'];
-    const GATHERING_COLS = ['reg_gathering_closed', 'gathering_max_participants'];
+    const GATHERING_COLS = ['reg_gathering_closed', 'gathering_max_participants', 'gathering_venue_payment_enabled', 'gathering_email_provider'];
     const BASE_COLS = ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS, ...GATHERING_COLS];
     const TIERS = [
       [...BASE_COLS, ...NOTIFICATION_KEYS, ...TEXT_KEYS],   // fully migrated
       [...BASE_COLS, ...NOTIFICATION_KEYS],                 // with notification keys
       BASE_COLS,                                            // base only
+      ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS, 'reg_gathering_closed', 'gathering_max_participants', 'gathering_venue_payment_enabled'], // fallback before email-provider migration
       ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', ...MERCH_COLS], // fallback before gathering migration
       ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled'], // fallback before merch migration
     ];
@@ -101,6 +104,9 @@ export const handler = async (event) => {
           // cutoff or the participant cap has been reached.
           reg_gathering_closed: isGatheringPastCutoff() || isCapped,
           gathering_capped: isCapped,
+          // No manual switch recorded yet — matches the column's own
+          // DEFAULT false (venue payment hidden until an admin turns it on).
+          gathering_venue_payment_enabled: false,
         })
       };
       return {
@@ -119,6 +125,8 @@ export const handler = async (event) => {
           // Lets the client distinguish "capacity reached" from a regular
           // manual/date closure so it can redirect to the right message.
           gathering_capped: isCapped,
+          // Whether the "Pay at Venue" option should be shown on the form at all.
+          gathering_venue_payment_enabled: !!data.gathering_venue_payment_enabled,
         }),
       };
     }
@@ -132,6 +140,15 @@ export const handler = async (event) => {
       // cutoff) so admins can see/toggle it independently of the computed
       // closed state the public page uses.
       reg_gathering_closed: !!data?.reg_gathering_closed,
+      // Raw manual switch, same "admin sees the unmixed toggle" treatment as
+      // reg_gathering_closed above — defaults false to match the column.
+      gathering_venue_payment_enabled: !!data?.gathering_venue_payment_enabled,
+      // Which provider Gathering's own emails (admin notify, registration
+      // received, payment confirmed) send through — independent of the
+      // repo-wide mailer default. Defaults to 'resend', matching the
+      // column's own DEFAULT.
+      gathering_email_provider: (data?.gathering_email_provider === 'gmail' || data?.gathering_email_provider === 'resend')
+        ? data.gathering_email_provider : 'resend',
       gathering_reg_end: process.env.GATHERING_REG_END || DEFAULT_GATHERING_REG_END,
       gathering_past_cutoff: isGatheringPastCutoff(),
       gathering_max_participants: data?.gathering_max_participants !== undefined && data?.gathering_max_participants !== null
@@ -182,7 +199,7 @@ export const handler = async (event) => {
 
       // Only ever write known columns — anything else in the payload is ignored.
       const patch = { id: true, updated_at: new Date().toISOString() };
-      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', 'merch_preorder_closed', 'reg_gathering_closed', ...NOTIFICATION_KEYS]) {
+      for (const key of ['reg_ph_closed', 'reg_intl_closed', 'ph_pay_later_enabled', 'merch_preorder_closed', 'reg_gathering_closed', 'gathering_venue_payment_enabled', ...NOTIFICATION_KEYS]) {
         if (key in body) patch[key] = !!body[key];
       }
       if ('merch_downpayment_percent' in body) {
@@ -195,6 +212,12 @@ export const handler = async (event) => {
           return { statusCode: 400, headers, body: JSON.stringify({ error: 'Maximum participants must be a positive number.' }) };
         }
         patch.gathering_max_participants = num;
+      }
+      if ('gathering_email_provider' in body) {
+        if (body.gathering_email_provider !== 'gmail' && body.gathering_email_provider !== 'resend') {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "gathering_email_provider must be 'gmail' or 'resend'." }) };
+        }
+        patch.gathering_email_provider = body.gathering_email_provider;
       }
       for (const key of TEXT_KEYS) {
         if (!(key in body)) continue;

@@ -102,6 +102,11 @@
   .pay-option input[type="radio"] { margin-top: 2px; accent-color: var(--sky); }
   .pay-title { font-weight: 600; font-size: 14px; color: var(--dark); }
   .pay-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  /* When Pay at Venue is off, GCash is the only option — shown as a plain
+     info line instead of a selectable radio card, since there's nothing to
+     choose between. */
+  .pay-option.pay-option-sole { cursor: default; border-color: var(--border); background: none; }
+  .pay-option.pay-option-sole input[type="radio"] { display: none; }
 
   .slide-panel { display: none; margin-top: 16px; }
   .slide-panel.open { display: block; }
@@ -380,7 +385,7 @@
       <div class="section-label">💰 Payment</div>
 
       <div class="pay-options">
-        <label class="pay-option">
+        <label class="pay-option" id="venuePayOption">
           <input type="radio" name="paymentMethod" value="venue" checked onchange="handlePaymentChange()">
           <div>
             <div class="pay-title">🏠 Pay at Venue</div>
@@ -493,6 +498,23 @@
       const settings = await res.json();
       if (settings.reg_gathering_closed) {
         window.location.replace(settings.gathering_capped ? '/gathering-closed.html?reason=capped' : '/gathering-closed.html');
+        return;
+      }
+      // Round 32: hide "Pay at Venue" entirely when the admin has it switched
+      // off, leaving GCash as the only option — don't just disable it, since
+      // a disabled-but-visible option is confusing when it's not coming back
+      // on this page load.
+      if (!settings.gathering_venue_payment_enabled) {
+        const venueOption = document.getElementById('venuePayOption');
+        if (venueOption) venueOption.remove();
+        const gcashRadio = document.querySelector('input[name="paymentMethod"][value="gcash"]');
+        if (gcashRadio) {
+          gcashRadio.checked = true;
+          handlePaymentChange();
+          // Only remaining option — show it as a plain info line, not a
+          // selectable radio card, since there's nothing to choose between.
+          gcashRadio.closest('.pay-option')?.classList.add('pay-option-sole');
+        }
       }
     } catch (e) { /* fail open — don't block registration on network error */ }
   })();
