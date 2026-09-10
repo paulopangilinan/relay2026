@@ -4,6 +4,23 @@
 // from the admin panel), and confirm-gathering.js (one-click email link).
 // Kept in one place so the participant-facing "Payment Confirmed" email is
 // always identical no matter which of the two confirm paths triggered it.
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Which mail provider Gathering's own emails go through — configurable from
+// admin Settings (`gathering_email_provider` column), independent of the
+// repo-wide mailer default. Falls back to 'resend' (the current hardcoded
+// behavior) if unset or on a read error, so this is purely additive.
+export async function getGatheringEmailProvider() {
+  try {
+    const { data } = await supabase.from("site_settings").select("gathering_email_provider").eq("id", true).maybeSingle();
+    const p = data?.gathering_email_provider;
+    return (p === "gmail" || p === "resend") ? p : "resend";
+  } catch {
+    return "resend";
+  }
+}
 
 export function escapeHtml(str) {
   return String(str || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -61,6 +78,56 @@ export async function sendGatheringPaymentConfirmedEmail(sendEmail, row) {
     to: row.email,
     subject: "Payment Confirmed — Gathering Around the Gospel",
     html: gatheringPaymentConfirmedEmail(row),
-    provider: "resend",
+    provider: await getGatheringEmailProvider(),
   }).catch(err => console.error("Gathering payment-confirmed email failed:", err.message));
+}
+
+// Shared field list (participants/payment/amount/car) for the
+// registration-received email, addressed to the registrant rather than an
+// admin. Kept here (not in submit-gathering.js's admin-facing
+// gatheringNotifyBody) since the wording is participant-facing throughout.
+function gatheringReceivedBody(row) {
+  const isGcash = row.payment_method === "gcash";
+  const carLine = row.bringing_car
+    ? `<p style="margin:0 0 4px;">Car: <strong>${escapeHtml(row.car_maker || "")} ${escapeHtml(row.car_model || "")}</strong> — Plate <strong>${escapeHtml(row.car_plate || "")}</strong></p>`
+    : `<p style="margin:0 0 4px;">Bringing a car: <strong>No</strong></p>`;
+  const paymentNote = isGcash
+    ? `<p style="margin:14px 0 0;color:#6B8A9A;font-size:13px;">We'll confirm your payment shortly — you'll get another email once it's verified.</p>`
+    : `<p style="margin:14px 0 0;color:#6B8A9A;font-size:13px;">Please pay ₱${row.amount_due?.toLocaleString?.() ?? row.amount_due} at the venue.</p>`;
+  return `
+    <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
+    <p style="margin:0 0 10px;">Thanks for registering for <strong>Gathering Around the Gospel</strong>! Here's a copy of your registration:</p>
+    <p style="margin:0 0 4px;">Participants: <strong>${row.participant_count}</strong></p>
+    <p style="margin:0 0 4px;">Payment method: <strong>${isGcash ? "GCash" : "Pay at Venue"}</strong></p>
+    <p style="margin:0 0 4px;">Amount due: <strong>₱${row.amount_due?.toLocaleString?.() ?? row.amount_due}</strong></p>
+    ${carLine}
+    <p style="margin:14px 0 0;">📍 CCT Tagaytay Retreat &amp; Training Center — September 25, 2026, 7:00–9:30 PM</p>
+    ${paymentNote}`;
+}
+
+/**
+ * Participant-facing "you're registered" email — sent immediately on every
+ * successful submission (venue AND GCash), unlike gatheringPaymentConfirmedEmail
+ * above which only ever fires later for GCash once an admin confirms.
+ * Header color follows the same "blue = awaiting confirmation, green =
+ * nothing left to confirm" convention as the admin-notify emails.
+ */
+export function gatheringRegistrationReceivedEmail(row) {
+  const isGcash = row.payment_method === "gcash";
+  return gatheringEmailShell({
+    heroUrl: gatheringHeroUrl(),
+    headerBg: isGcash ? GATHERING_HEADER_GRADIENT_BLUE : GATHERING_HEADER_GRADIENT_GREEN,
+    headerTitle: "You're Registered! 🎉",
+    body: gatheringReceivedBody(row),
+  });
+}
+
+export async function sendGatheringRegistrationReceivedEmail(sendEmail, row) {
+  if (!row.email) return;
+  return sendEmail({
+    to: row.email,
+    subject: "You're Registered! — Gathering Around the Gospel",
+    html: gatheringRegistrationReceivedEmail(row),
+    provider: await getGatheringEmailProvider(),
+  }).catch(err => console.error("Gathering registration-received email failed:", err.message));
 }

@@ -66,6 +66,25 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, registration: updated }) };
       }
 
+      if (action === "cancel") {
+        // Cancellable for either payment method — venue registrations can be
+        // duplicates/no-shows-in-advance too, not just unverifiable GCash
+        // receipts. Anything already 'confirmed' or already 'cancelled' is
+        // final and not reversible from here.
+        if (!admin.permissions?.verify_payment || admin.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: "No permission" }) };
+        }
+        if (row.payment_status !== "unpaid" && row.payment_status !== "pending_review") {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Only an unpaid or pending-review registration can be cancelled." }) };
+        }
+        const { data: updated, error } = await supabase
+          .from("gathering_registrations")
+          .update({ payment_status: "cancelled", verified_at: new Date().toISOString(), verified_by: admin.email || "admin" })
+          .eq("id", id).select().single();
+        if (error) throw error;
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, registration: updated }) };
+      }
+
       if (action === "update_count") {
         // Removed: admins no longer edit participant_count after
         // submission. What was submitted is honored as-is; if a
