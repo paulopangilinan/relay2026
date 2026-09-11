@@ -419,8 +419,14 @@
   .breakout-participant.draggable:active{cursor:grabbing;}
   .breakout-participant.dragging{opacity:0.35;}
   .breakout-participant.selected{border-color:var(--sky);background:var(--sky-light);}
-  .breakout-participant .mail-btn{position:absolute;right:8px;bottom:8px;z-index:2;padding:4px 8px;background:var(--green-bright);border:1px solid var(--green-bright);border-radius:4px;cursor:pointer;font-size:12px;color:#fff;transition:all 0.15s;}
-  .breakout-participant .mail-btn:hover{background:var(--green);border-color:var(--green);color:#fff;}
+  /* Compact circular icon button, hidden until the card is hovered (or the
+     button itself gets keyboard focus, so it's still reachable via Tab) —
+     was previously a chunky always-visible pill that looked out of place
+     sitting on every card at once. */
+  .breakout-participant .mail-btn{position:absolute;right:8px;bottom:8px;z-index:2;width:24px;height:24px;padding:0;display:flex;align-items:center;justify-content:center;background:var(--sky);border:none;border-radius:50%;cursor:pointer;font-size:11px;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);opacity:0;transform:scale(0.8);pointer-events:none;transition:opacity 0.15s,transform 0.15s,background 0.15s;}
+  .breakout-participant:hover .mail-btn,
+  .breakout-participant .mail-btn:focus-visible{opacity:1;transform:scale(1);pointer-events:auto;}
+  .breakout-participant .mail-btn:hover{background:#2A6E9E;}
   .breakout-participant .mail-btn:disabled{opacity:0.6;cursor:wait;}
   .bp-name{font-size:13px;font-weight:700;color:var(--dark);line-height:1.3;padding-right:64px;}
   .bp-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-right:64px;}
@@ -434,7 +440,7 @@
   .breakout-church-group{margin-bottom:0;background:#F7FAFB;border:1px solid var(--border);border-radius:8px;padding:10px;}
   .breakout-church-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 0 6px;border-bottom:1px solid #EEF3F6;display:flex;justify-content:space-between;align-items:center;}
   .breakout-empty{font-size:12px;color:var(--muted);text-align:center;padding:16px 8px;font-style:italic;}
-  .breakout-unassigned-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;}
+  .breakout-unassigned-toolbar{display:flex;align-items:center;justify-content:flex-start;gap:14px;margin-top:4px;}
   .breakout-select-pill{font-size:11px;cursor:pointer;color:rgba(255,255,255,0.85);display:flex;align-items:center;gap:4px;}
   .breakout-select-pill:hover{color:#fff;}
   /* The Unassigned list can run into the hundreds — instead of one very
@@ -1435,7 +1441,7 @@
     <!-- MERCH ORDERS TAB -->
     <div class="tab-content" id="content-orders">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:16px;font-weight:700;color:var(--dark);">🧾 Merch Orders</div>
+        <div style="font-size:16px;font-weight:700;color:var(--dark);">Merch Orders</div>
         <button onclick="loadMerchOrders()" style="padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;flex-shrink:0;">Refresh</button>
       </div>
       <div class="tiles-row">
@@ -1560,7 +1566,7 @@
     <div class="tab-content" id="content-breakout">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap;">
         <div>
-          <div style="font-size:16px;font-weight:700;color:var(--dark);">🎯 Breakout Sessions</div>
+          <div style="font-size:16px;font-weight:700;color:var(--dark);">🎯 Breakout Session Responses</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;">Participant selections per session. Drag <strong>unresponded</strong> participants to assign them after the selection deadline.</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -1684,6 +1690,13 @@
             <div onclick="selectAllGathering('status')" style="padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;" onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">✓ All Statuses</div>
             <div id="gathering-status-list"></div>
           </div>
+        </div>
+        <div class="filter-actions">
+          <label class="hide-cancelled-wrap" onclick="toggleHideCancelled('gathering')">
+            <span class="hc-text">Hide Cancelled</span>
+            <div class="toggle-track on" id="gathering-hide-cancelled-track"><div class="toggle-thumb"></div></div>
+          </label>
+          <span class="table-count" id="gathering-count">–</span>
         </div>
       </div>
       <div class="table-wrap">
@@ -2602,13 +2615,14 @@
     }
   });
 
-  const hideCancelled = { ph: true, intl: true, merch: true };
+  const hideCancelled = { ph: true, intl: true, merch: true, gathering: true };
 
   function toggleHideCancelled(tab) {
     hideCancelled[tab] = !hideCancelled[tab];
     const track = document.getElementById(`${tab}-hide-cancelled-track`);
     if (track) track.classList.toggle('on', hideCancelled[tab]);
     if (tab === 'merch') applyMerchOrderFilters();
+    else if (tab === 'gathering') applyGatheringFilters();
     else applyFilters(tab);
   }
 
@@ -5375,9 +5389,87 @@
   let draggedRegistrationIds = []; // supports dragging multiple selected cards together
   let breakoutSelectedUnassigned = new Set(); // Set of registrationIds selected for email blast
 
+  let breakoutChurchGroupMap = {}; // lowercased church name -> group name (from /churches), for grouping + the Church filter
+  let breakoutChurchGroupsLoaded = false;
+  let breakoutRegistrantFilter = new Set(); // 'local' | 'international' — empty = show all
+  // Holds literal church names now (not group/bucket names) — 'Others' and
+  // 'Unassigned' are themselves valid literal values here, since a person
+  // with no church on file has the literal value 'Unassigned', and someone
+  // whose typed church doesn't match the catalog keeps their own literal
+  // text under the 'Others' bucket. Selecting a whole group in the dropdown
+  // just adds every literal church under that group at once — see
+  // toggleBreakoutFilterGroup(). Empty set = show all.
+  let breakoutChurchFilter = new Set();
+  let breakoutChurchExpanded = new Set(); // bucket names currently expanded in the nested Church dropdown
+  let breakoutFilterText = '';               // current text-search query for the Unassigned list
+
+  async function loadBreakoutChurchGroups() {
+    if (breakoutChurchGroupsLoaded) return;
+    try {
+      const res = await fetch('/.netlify/functions/churches?all=1');
+      const json = await res.json();
+      const map = {};
+      (json.churches || []).forEach(c => {
+        if (c.group_name) map[c.name.trim().toLowerCase()] = c.group_name;
+      });
+      breakoutChurchGroupMap = map;
+      breakoutChurchGroupsLoaded = true;
+    } catch (e) { /* fail quiet — grouping just falls back to "Others" for everyone */ }
+  }
+
+  // A church with no group (found in the churches list but not assigned to a
+  // group) OR any free-text entry that doesn't match anything in the
+  // churches list buckets under "Others". A blank/empty church value is its
+  // own separate "Unassigned" bucket — it's not "some other church", there's
+  // simply no church on file, so lumping it into "Others" would misreport
+  // who's actually unaffiliated vs. who just isn't in the catalog yet.
+  // International participants are pulled into their own "International"
+  // bucket regardless of what they typed for church — their church names
+  // aren't part of the local church_groups catalog, so mixing them into
+  // "Others" made that bucket a confusing mix of "unrecognized local church"
+  // and "any international participant". registrantType is optional so
+  // existing local-only call sites don't need to change.
+  function breakoutChurchBucket(churchName, registrantType) {
+    if (registrantType === 'international') return 'International';
+    const name = String(churchName || '').trim();
+    if (!name) return 'Unassigned';
+    return breakoutChurchGroupMap[name.toLowerCase()] || 'Others';
+  }
+
+  // Shared sort for bucket/group names: "International" always floats to
+  // the top, "Others" and "Unassigned" always sink to the bottom (in that
+  // order), everything else alphabetical in between.
+  function breakoutBucketSort(a, b) {
+    const rank = v => (v === 'International' ? -1 : v === 'Others' ? 1 : v === 'Unassigned' ? 2 : 0);
+    const ra = rank(a), rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return ra === 0 ? a.localeCompare(b) : 0;
+  }
+
+  // Nested shape for the Church filter dropdown: bucket/group name -> literal
+  // church name -> count of unassigned people with that literal value. Built
+  // fresh from the current unassigned pool each time it's needed (cheap at
+  // this scale) rather than cached, so it never goes stale after a drag/
+  // assign action changes who's in the Unassigned column.
+  function buildBreakoutChurchTree() {
+    const tree = {};
+    (breakoutData.unassigned || []).forEach(p => {
+      const bucket = breakoutChurchBucket(p.church, p.registrantType);
+      const literal = String(p.church || '').trim() || 'Unassigned';
+      if (!tree[bucket]) tree[bucket] = {};
+      tree[bucket][literal] = (tree[bucket][literal] || 0) + 1;
+    });
+    return tree;
+  }
+
+  // Escapes a value for safe embedding inside a single-quoted string in an
+  // inline onclick attribute (backslashes first, then quotes).
+  function breakoutJsAttr(v) { return String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
   async function loadBreakoutResponses() {
     const wrap = document.getElementById('breakout-board-wrap');
     if (wrap) wrap.innerHTML = '<div class="breakout-empty" style="padding:40px 16px;">Loading breakout responses…</div>';
+    await loadBreakoutChurchGroups();
     try {
       const res = await fetch('/.netlify/functions/admin-breakout-responses', {
         headers: { 'Authorization': 'Bearer ' + adminToken },
@@ -5393,6 +5485,26 @@
       if (wrap) wrap.innerHTML = `<div class="breakout-empty" style="color:var(--red);padding:40px 16px;">Error loading breakout responses: ${esc(e.message)}</div>`;
       showToast('Error loading breakout responses: ' + e.message);
     }
+  }
+
+  // Speakers are stored as plain names ("Jeffrey Jo") — this adds the
+  // "Pastor" title at display time so the data itself stays flexible (a
+  // name that already carries a title, e.g. "Dr. Jane Doe", is left alone).
+  // Mirrors breakout-selection.html's speakerLabel() exactly.
+  function bsSpeakerLabel(name) {
+    const n = String(name || '').trim();
+    if (!n) return '';
+    if (/^(pastor|dr\.?|rev\.?|elder)\b/i.test(n)) return n;
+    return 'Pastor ' + n;
+  }
+
+  // Same slug convention as breakout-selection.html — reuses the same
+  // static files in assets/images/speakers/ rather than a separate
+  // admin-entered URL. A speaker without a file on disk just shows the
+  // placeholder avatar instead of a broken image.
+  function bsSpeakerPhotoUrl(name) {
+    const slug = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return slug ? 'assets/images/speakers/' + slug + '.png' : '';
   }
 
   function renderBreakoutResponses() {
@@ -5445,12 +5557,18 @@
 
       sessionsHtml += `
         <div class="breakout-col" id="col-session-${sess.id}">
-          <div class="breakout-col-header" style="background:${color};align-items:flex-start;">
-            <div style="min-width:0;">
-              <div style="line-height:1.3;" title="${esc(sess.title)}">${esc(sess.title)}</div>
-              <div style="font-size:11px;opacity:0.85;font-weight:400;margin-top:3px;">${esc(sess.speaker)}</div>
+          <div class="breakout-col-header" style="background:${color};flex-direction:column;align-items:stretch;gap:8px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+              <div style="min-width:0;line-height:1.3;" title="${esc(sess.title)}">${esc(sess.title)}</div>
+              <span class="bcol-count" style="flex-shrink:0;${isFull ? 'color:#FFB4B4;font-weight:700;' : ''}">${pCount}/${sess.capacity}</span>
             </div>
-            <span class="bcol-count" style="flex-shrink:0;${isFull ? 'color:#FFB4B4;font-weight:700;' : ''}">${pCount}/${sess.capacity}</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <img src="${bsSpeakerPhotoUrl(sess.speaker)}" alt="${esc(sess.speaker)}" loading="lazy"
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                   style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.5);flex-shrink:0;">
+              <div style="display:none;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.5);align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">👤</div>
+              <div style="font-size:12px;font-weight:600;">${esc(bsSpeakerLabel(sess.speaker))}</div>
+            </div>
           </div>
           <div class="breakout-col-body"
                ondragover="onBreakoutDragOver(event, '${sess.id}')"
@@ -5502,18 +5620,24 @@
     const neverInvitedCount = neverInvited.length;
     const alreadyInvitedCount = alreadyInvited.length;
 
-    // Group unassigned by church
+    // Visual grouping stays exactly as it was before Round 46: by the
+    // literal church text on the registration (blank → "Unassigned"), so
+    // the panel's headers/card order are untouched. The Church FILTER,
+    // separately, uses the real church-group bucket (see
+    // breakoutChurchBucket) via each card's own data-church-bucket
+    // attribute — filtering doesn't re-group or reorder anything visually,
+    // it just shows/hides individual cards.
     const unassignedByChurch = {};
     (breakoutData.unassigned || []).forEach(p => {
-      const churchName = (p.church && p.church.trim()) ? p.church.trim() : 'Other Churches';
-      if (!unassignedByChurch[churchName]) unassignedByChurch[churchName] = [];
-      unassignedByChurch[churchName].push(p);
+      const literal = String(p.church || '').trim() || 'Unassigned';
+      if (!unassignedByChurch[literal]) unassignedByChurch[literal] = [];
+      unassignedByChurch[literal].push(p);
     });
 
-    // Sorted church names
+    // Sorted literal-church headers, "Unassigned" always last
     const churchNames = Object.keys(unassignedByChurch).sort((a, b) => {
-      if (a === 'Other Churches') return 1;
-      if (b === 'Other Churches') return -1;
+      if (a === 'Unassigned') return 1;
+      if (b === 'Unassigned') return -1;
       return a.localeCompare(b);
     });
 
@@ -5527,31 +5651,52 @@
             </div>
             <span class="bcol-count">${unassignedCount}</span>
           </div>
-          <input type="text" id="breakout-filter-input" placeholder="Filter by name or email…" style="width:100%;padding:8px 10px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;margin:8px 0;color:#2A3D4A;" oninput="filterBreakoutUnassigned(this.value)">
-          <!-- Toolbar with Blast Email button & Selection Controls -->
+          <div style="display:flex;gap:6px;margin:8px 0;">
+            <input type="text" id="breakout-filter-input" placeholder="Filter by name or email…" style="flex:1.4 1 0;min-width:0;padding:8px 8px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:11px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;" oninput="filterBreakoutUnassigned(this.value)">
+            <div style="position:relative;flex:1 1 0;min-width:0;">
+              <div id="breakout-registrant-trigger" onclick="toggleBreakoutFilterDropdown('registrant')" style="background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);border-radius:6px;padding:8px 8px;font-size:11px;color:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+                <span id="breakout-registrant-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">All Types</span><span style="opacity:0.7;font-size:9px;">▾</span>
+              </div>
+              <div id="breakout-registrant-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.16);min-width:170px;padding:6px;color:var(--dark);">
+                <div onclick="selectAllBreakoutFilter('registrant')" style="padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;">✓ All Types</div>
+                <div id="breakout-registrant-list"></div>
+              </div>
+            </div>
+            <div style="position:relative;flex:1 1 0;min-width:0;">
+              <div id="breakout-church-trigger" onclick="toggleBreakoutFilterDropdown('church')" style="background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);border-radius:6px;padding:8px 8px;font-size:11px;color:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+                <span id="breakout-church-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">All Churches</span><span style="opacity:0.7;font-size:9px;">▾</span>
+              </div>
+              <div id="breakout-church-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.16);min-width:190px;max-height:280px;overflow-y:auto;padding:6px;color:var(--dark);">
+                <div onclick="selectAllBreakoutFilter('church')" style="padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sky);border-bottom:1px solid var(--border);margin-bottom:4px;">✓ All Churches</div>
+                <div id="breakout-church-list"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Toolbar with Blast Email split-button & Selection Controls -->
           <div class="breakout-unassigned-toolbar">
             <label class="breakout-select-pill" title="Select or deselect all unassigned participants">
               <input type="checkbox" ${allSelected ? 'checked' : ''} ${unassignedTotal === 0 ? 'disabled' : ''} onchange="toggleBreakoutSelectAllUnassigned(this.checked)" style="accent-color:var(--sky);cursor:pointer;">
               <span>Select All (${selectedCount})</span>
             </label>
-            <button onclick="sendBreakoutGroupEmail('invite')"
-                    ${neverInvitedCount === 0 ? 'disabled' : ''}
-                    title="Send the initial breakout invite to everyone who hasn't received one yet"
-                    style="padding:6px 12px;background:${neverInvitedCount > 0 ? 'var(--green)' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${neverInvitedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
-              <span>📧</span> New Invite ${neverInvitedCount > 0 ? `(${neverInvitedCount})` : ''}
-            </button>
-            <button onclick="sendBreakoutGroupEmail('followup')"
-                    ${alreadyInvitedCount === 0 ? 'disabled' : ''}
-                    title="Send a reminder to everyone who's already been invited but hasn't picked a session"
-                    style="padding:6px 12px;background:${alreadyInvitedCount > 0 ? '#C49A1A' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${alreadyInvitedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
-              <span>⏳</span> Reminder ${alreadyInvitedCount > 0 ? `(${alreadyInvitedCount})` : ''}
-            </button>
-            <button onclick="blastBreakoutFromUnassigned()"
-                    ${selectedCount === 0 ? 'disabled' : ''}
-                    title="Send to exactly the participants checked below, regardless of group"
-                    style="padding:6px 12px;background:${selectedCount > 0 ? 'var(--sky)' : '#9FB6C6'};color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:${selectedCount > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
-              <span>✉️</span> Send Selected ${selectedCount > 0 ? `(${selectedCount})` : ''}
-            </button>
+            <div style="position:relative;">
+              <button onclick="toggleBreakoutBlastMenu(event)" style="padding:6px 12px;background:var(--sky);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+                <span>✉️</span> Blast Email <span style="font-size:9px;opacity:0.8;">▾</span>
+              </button>
+              <div id="breakout-blast-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:230px;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:20;">
+                <button onclick="sendBreakoutGroupEmail('invite')" ${neverInvitedCount === 0 ? 'disabled' : ''} class="preset-opt" style="${neverInvitedCount === 0 ? 'opacity:0.45;cursor:not-allowed;' : ''}">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">📧 New Invite ${neverInvitedCount > 0 ? `(${neverInvitedCount})` : ''}</span>
+                  <span class="preset-sub">Everyone who hasn't received an invite yet</span>
+                </button>
+                <button onclick="sendBreakoutGroupEmail('followup')" ${alreadyInvitedCount === 0 ? 'disabled' : ''} class="preset-opt" style="${alreadyInvitedCount === 0 ? 'opacity:0.45;cursor:not-allowed;' : ''}">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">⏳ Reminder ${alreadyInvitedCount > 0 ? `(${alreadyInvitedCount})` : ''}</span>
+                  <span class="preset-sub">Invited already but hasn't picked a session</span>
+                </button>
+                <button onclick="blastBreakoutFromUnassigned()" ${selectedCount === 0 ? 'disabled' : ''} class="preset-opt" style="${selectedCount === 0 ? 'opacity:0.45;cursor:not-allowed;' : ''}">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">☑️ Send Selected ${selectedCount > 0 ? `(${selectedCount})` : ''}</span>
+                  <span class="preset-sub">Exactly the participants checked below</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="breakout-col-body">`;
@@ -5562,7 +5707,7 @@
       churchNames.forEach(cName => {
         const pList = unassignedByChurch[cName];
         unassignedHtml += `
-          <div class="breakout-church-group">
+          <div class="breakout-church-group" data-church-literal="${esc(cName)}">
             <div class="breakout-church-title">
               <span>⛪ ${esc(cName)}</span>
               <span style="font-family:'DM Mono';opacity:0.75;">${pList.length}</span>
@@ -5574,6 +5719,9 @@
           unassignedHtml += `
             <div class="breakout-participant draggable ${isChecked ? 'selected' : ''}"
                  id="bp-${p.registrationId}"
+                 data-registrant="${p.registrantType === 'international' ? 'international' : 'local'}"
+                 data-church-bucket="${esc(breakoutChurchBucket(p.church, p.registrantType))}"
+                 data-church-literal="${esc(String(p.church || '').trim() || 'Unassigned')}"
                  draggable="true"
                  ondragstart="onBreakoutDragStart(event, '${p.registrationId}')"
                  ondragend="onBreakoutDragEnd(event)"
@@ -5602,6 +5750,8 @@
     unassignedHtml += `</div></div>`;
 
     wrap.innerHTML = `<div class="breakout-board">${sessionsHtml}${unassignedHtml}</div>`;
+    populateBreakoutFilterOptions();
+    applyBreakoutUnassignedFilters();
   }
 
   function toggleBreakoutParticipantSelect(regId, checked) {
@@ -5620,15 +5770,143 @@
   }
 
   function filterBreakoutUnassigned(query) {
-    const q = query.toLowerCase().trim();
-    const cards = document.querySelectorAll('#col-unassigned .breakout-participant');
-    cards.forEach(card => {
+    breakoutFilterText = (query || '').toLowerCase().trim();
+    applyBreakoutUnassignedFilters();
+  }
+
+  document.addEventListener('click', e => {
+    const menu = document.getElementById('breakout-blast-menu');
+    if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && !e.target.closest('[onclick="toggleBreakoutBlastMenu(event)"]')) menu.style.display = 'none';
+    ['registrant', 'church'].forEach(key => {
+      const trigger = document.getElementById(`breakout-${key}-trigger`);
+      const dd = document.getElementById(`breakout-${key}-dropdown`);
+      if (dd && trigger && !trigger.contains(e.target) && !dd.contains(e.target)) dd.style.display = 'none';
+    });
+  });
+
+  function toggleBreakoutBlastMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('breakout-blast-menu');
+    if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleBreakoutFilterDropdown(key) {
+    const dd = document.getElementById(`breakout-${key}-dropdown`);
+    if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function breakoutFilterSafeId(key, value) { return `breakout-${key}-` + String(value).replace(/[^a-zA-Z0-9]/g, '_'); }
+
+  function populateBreakoutFilterOptions() {
+    const rlist = document.getElementById('breakout-registrant-list');
+    if (rlist) {
+      const opts = [['local', '🇵🇭 Local'], ['international', '🌐 International']];
+      rlist.innerHTML = opts.map(([v, label]) =>
+        `<div class="church-opt${breakoutRegistrantFilter.has(v) ? ' selected' : ''}" id="${breakoutFilterSafeId('registrant', v)}" onclick="toggleBreakoutFilterOption('registrant','${v}')">${breakoutRegistrantFilter.has(v) ? '☑' : '☐'} ${label}</div>`
+      ).join('');
+    }
+    const clist = document.getElementById('breakout-church-list');
+    if (clist) {
+      // Nested: each bucket (real church group, or 'Others'/'Unassigned') is
+      // a row with its own checkbox — checking it selects every literal
+      // church under it at once — plus a caret to expand and pick individual
+      // literal churches within that bucket. Only buckets/churches actually
+      // present in the current unassigned pool are listed — no point
+      // offering a group with zero unassigned people in it.
+      const tree = buildBreakoutChurchTree();
+      const buckets = Object.keys(tree).sort(breakoutBucketSort);
+      clist.innerHTML = buckets.map(bucket => {
+        const childCounts = tree[bucket];
+        const children = Object.keys(childCounts).sort((a, b) => {
+          if (a === 'Unassigned') return 1;
+          if (b === 'Unassigned') return -1;
+          return a.localeCompare(b);
+        });
+        const total = Object.values(childCounts).reduce((sum, n) => sum + n, 0);
+        const selectedChildren = children.filter(c => breakoutChurchFilter.has(c));
+        const allSelected = selectedChildren.length > 0 && selectedChildren.length === children.length;
+        const someSelected = selectedChildren.length > 0 && !allSelected;
+        const box = allSelected ? '☑' : someSelected ? '◪' : '☐';
+        // Only worth expanding when there's more than one distinct literal
+        // church under this bucket, or the single one doesn't already read
+        // the same as the bucket label itself.
+        const expandable = children.length > 1 || (children.length === 1 && children[0] !== bucket);
+        const isOpen = expandable && breakoutChurchExpanded.has(bucket);
+        const caret = expandable
+          ? `<span onclick="event.stopPropagation();toggleBreakoutChurchGroupExpanded('${breakoutJsAttr(bucket)}')" style="cursor:pointer;padding:0 4px;color:var(--muted);width:14px;display:inline-block;">${isOpen ? '▾' : '▸'}</span>`
+          : `<span style="width:14px;display:inline-block;"></span>`;
+        const groupRow = `<div class="church-opt" style="align-items:center;">
+            ${caret}
+            <span onclick="toggleBreakoutFilterGroup('${breakoutJsAttr(bucket)}')" style="flex:1;">${box} ${esc(bucket)} <span style="opacity:.6;">(${total})</span></span>
+          </div>`;
+        const childRows = isOpen
+          ? children.map(c => `<div class="church-opt${breakoutChurchFilter.has(c) ? ' selected' : ''}" id="${breakoutFilterSafeId('church', c)}" style="padding-left:42px;" onclick="toggleBreakoutFilterOption('church','${breakoutJsAttr(c)}')">${breakoutChurchFilter.has(c) ? '☑' : '☐'} ${esc(c)} <span style="opacity:.6;">(${childCounts[c]})</span></div>`).join('')
+          : '';
+        return groupRow + childRows;
+      }).join('');
+    }
+    updateBreakoutFilterLabel('registrant');
+    updateBreakoutFilterLabel('church');
+  }
+
+  function toggleBreakoutFilterOption(key, value) {
+    const set = key === 'registrant' ? breakoutRegistrantFilter : breakoutChurchFilter;
+    if (set.has(value)) set.delete(value); else set.add(value);
+    populateBreakoutFilterOptions();
+    applyBreakoutUnassignedFilters();
+  }
+
+  // Expands/collapses one bucket's list of literal churches in the Church
+  // dropdown — purely a UI state, doesn't touch the filter selection itself.
+  function toggleBreakoutChurchGroupExpanded(bucket) {
+    if (breakoutChurchExpanded.has(bucket)) breakoutChurchExpanded.delete(bucket);
+    else breakoutChurchExpanded.add(bucket);
+    populateBreakoutFilterOptions();
+  }
+
+  // Clicking a bucket/group row's checkbox selects (or, if every literal
+  // church under it is already selected, deselects) every literal church in
+  // that bucket at once — the "filter by group" half of the nested filter.
+  function toggleBreakoutFilterGroup(bucket) {
+    const tree = buildBreakoutChurchTree();
+    const children = Object.keys(tree[bucket] || {});
+    if (!children.length) return;
+    const allSelected = children.every(c => breakoutChurchFilter.has(c));
+    children.forEach(c => allSelected ? breakoutChurchFilter.delete(c) : breakoutChurchFilter.add(c));
+    populateBreakoutFilterOptions();
+    applyBreakoutUnassignedFilters();
+  }
+
+  function selectAllBreakoutFilter(key) {
+    (key === 'registrant' ? breakoutRegistrantFilter : breakoutChurchFilter).clear();
+    populateBreakoutFilterOptions();
+    applyBreakoutUnassignedFilters();
+  }
+
+  function updateBreakoutFilterLabel(key) {
+    const set = key === 'registrant' ? breakoutRegistrantFilter : breakoutChurchFilter;
+    const label = document.getElementById(`breakout-${key}-label`);
+    if (!label) return;
+    if (!set.size) label.textContent = key === 'registrant' ? 'All Types' : 'All Churches';
+    else if (set.size === 1) label.textContent = [...set][0];
+    else label.textContent = `${set.size} selected`;
+  }
+
+  // Text + Registrant Type + Church filters combine with AND, applied via
+  // DOM show/hide (same lightweight approach the text filter already used)
+  // rather than a full re-render — cheap at this scale and keeps drag/drop
+  // state and scroll position intact while filtering.
+  function applyBreakoutUnassignedFilters() {
+    const q = breakoutFilterText;
+    document.querySelectorAll('#col-unassigned .breakout-participant').forEach(card => {
       const nameEl = card.querySelector('.bp-name');
       const metaEl = card.querySelector('.bp-meta');
       const name = (nameEl?.textContent || '').toLowerCase();
       const email = (metaEl?.textContent || '').toLowerCase();
-      const matches = !q || name.includes(q) || email.includes(q);
-      card.style.display = matches ? '' : 'none';
+      const textMatch = !q || name.includes(q) || email.includes(q);
+      const registrantMatch = !breakoutRegistrantFilter.size || breakoutRegistrantFilter.has(card.dataset.registrant);
+      const churchMatch = !breakoutChurchFilter.size || breakoutChurchFilter.has(card.dataset.churchLiteral);
+      card.style.display = (textMatch && registrantMatch && churchMatch) ? '' : 'none';
     });
 
     document.querySelectorAll('#col-unassigned .breakout-church-group').forEach(group => {
@@ -6022,7 +6300,9 @@
       if (!res.ok || json.error) throw new Error(json.error || 'Failed');
       gatheringRows = json.registrations || [];
       const badge = document.getElementById('badge-gathering');
-      if (badge) badge.textContent = gatheringRows.reduce((sum, r) => sum + (r.participant_count || 0), 0);
+      // Same rule as the stat tiles (Round 53) — cancelled registrations
+      // shouldn't count toward the tab badge total either.
+      if (badge) badge.textContent = gatheringRows.reduce((sum, r) => sum + (r.payment_status === 'cancelled' ? 0 : (r.participant_count || 0)), 0);
       renderGatheringTiles();
       populateGatheringFilterOptions();
       applyGatheringFilters();
@@ -6123,6 +6403,7 @@
     const cars = gatheringMultiSelect.car;
     const statuses = gatheringMultiSelect.status;
     gatheringFilteredRows = gatheringRows.filter(r => {
+      if (hideCancelled.gathering && r.payment_status === 'cancelled') return false;
       if (q) {
         const hay = `${r.name || ''} ${r.email || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -6136,6 +6417,8 @@
       return true;
     });
     renderGatheringTable();
+    const countEl = document.getElementById('gathering-count');
+    if (countEl) countEl.textContent = gatheringFilteredRows.length + ' of ' + gatheringRows.length + ' records';
   }
 
   // Exports exactly what's currently on screen — the filtered row set,
@@ -6179,15 +6462,19 @@
   }
 
   function renderGatheringTiles() {
-    const totalParticipants = gatheringRows.reduce((s, r) => s + (r.participant_count || 0), 0);
-    const confirmed = gatheringRows.filter(r => r.payment_status === 'confirmed');
-    const pending   = gatheringRows.filter(r => r.payment_status === 'pending_review');
-    const venue     = gatheringRows.filter(r => r.payment_method === 'venue');
+    // Cancelled registrations never count toward these totals — cancelling
+    // frees the person's slot, so the stat cards should read as if they'd
+    // never registered rather than as an "unpaid"/zero-revenue entry.
+    const activeRows = gatheringRows.filter(r => r.payment_status !== 'cancelled');
+    const totalParticipants = activeRows.reduce((s, r) => s + (r.participant_count || 0), 0);
+    const confirmed = activeRows.filter(r => r.payment_status === 'confirmed');
+    const pending   = activeRows.filter(r => r.payment_status === 'pending_review');
+    const venue     = activeRows.filter(r => r.payment_method === 'venue');
     const confirmedRevenue = confirmed.reduce((s, r) => s + (r.amount_due || 0), 0);
     const pendingRevenue   = pending.reduce((s, r) => s + (r.amount_due || 0), 0);
     const venueRevenue     = venue.reduce((s, r) => s + (r.amount_due || 0), 0);
 
-    document.getElementById('gathering-total').textContent = gatheringRows.length;
+    document.getElementById('gathering-total').textContent = activeRows.length;
     document.getElementById('gathering-participants-sub').textContent = totalParticipants + ' total participants';
     document.getElementById('gathering-confirmed').textContent = confirmed.length;
     document.getElementById('gathering-rev-confirmed').textContent = '₱' + confirmedRevenue.toLocaleString();
