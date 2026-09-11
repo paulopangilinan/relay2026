@@ -4802,6 +4802,12 @@
   // Apostrophes matter: row buttons embed names inside single-quoted JS string
   // literals in onclick handlers, so an unescaped O'Brien breaks the handler.
   function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  // Display-only Proper Case for names in the GATG list + Excel export —
+  // plain per-word capitalization (no particle/prefix handling), source
+  // data in the DB is left untouched.
+  function properCaseName(s) {
+    return String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
   function formatOrderCode(n) { return (n === null || n === undefined) ? '—' : 'RLY-' + String(n).padStart(5, '0'); }
   function churchDisplay(church, isPH) {
     const val = (church || '').trim();
@@ -6444,7 +6450,7 @@
         : r.payment_status === 'pending_review' ? 'Pending Review'
         : r.payment_status === 'cancelled' ? 'Cancelled' : 'Unpaid';
       rows.push([
-        r.name || '',
+        properCaseName(r.name) || '',
         r.email || '',
         r.mobile || '',
         r.participant_count || 0,
@@ -6523,7 +6529,7 @@
         ? `<span title="${esc(r.car_maker || '')} ${esc(r.car_model || '')} · ${esc(r.car_plate || '')}" style="font-size:12px;">🚗 ${esc(r.car_maker || '')} ${esc(r.car_model || '')}<br><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;">${esc(r.car_plate || '')}</span></span>`
         : '<span style="color:var(--muted);">—</span>';
       return `<tr>
-        <td>${esc(r.name)}</td>
+        <td>${esc(properCaseName(r.name))}</td>
         <td style="font-size:11px;color:var(--muted);">${esc(r.email || '—')}<br>${esc(r.mobile || '')}</td>
         <td>${r.participant_count}</td>
         <td>${methodLabel}</td>
