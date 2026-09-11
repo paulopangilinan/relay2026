@@ -34,13 +34,14 @@ function isPastGatheringCutoff() {
 }
 
 // Adjustable live in admin Settings, mirrors site-settings.js. Counts every
-// registration's participant_count regardless of payment method/status.
+// non-cancelled registration's participant_count — cancelled rows free up
+// their slots, same exclusion as site-settings.js's getGatheringParticipantTotal().
 const DEFAULT_GATHERING_MAX_PARTICIPANTS = 500;
 async function isGatheringCapped() {
   try {
     const [{ data: settings }, { data: rows }] = await Promise.all([
       supabase.from("site_settings").select("gathering_max_participants").eq("id", true).maybeSingle(),
-      supabase.from("gathering_registrations").select("participant_count"),
+      supabase.from("gathering_registrations").select("participant_count").neq("payment_status", "cancelled"),
     ]);
     const max = settings?.gathering_max_participants ?? DEFAULT_GATHERING_MAX_PARTICIPANTS;
     const total = (rows || []).reduce((sum, r) => sum + (r.participant_count || 0), 0);
@@ -67,6 +68,26 @@ async function isVenuePaymentEnabled() {
     return !!data?.gathering_venue_payment_enabled;
   } catch {
     return false; // fail CLOSED
+  }
+}
+
+// Round 60: per-submission capacity check (Option A — reject outright, with
+// a live remaining-count hint on the client as Option C). Separate from
+// isGatheringCapped() above, which only answers "are we fully full" for the
+// closed-registration gate; this returns the actual remaining count so a
+// registration that would overshoot the cap can be rejected with a specific
+// number, even while slots are technically still open.
+async function getGatheringRemainingSlots() {
+  try {
+    const [{ data: settings }, { data: rows }] = await Promise.all([
+      supabase.from("site_settings").select("gathering_max_participants").eq("id", true).maybeSingle(),
+      supabase.from("gathering_registrations").select("participant_count").neq("payment_status", "cancelled"),
+    ]);
+    const max = settings?.gathering_max_participants ?? DEFAULT_GATHERING_MAX_PARTICIPANTS;
+    const total = (rows || []).reduce((sum, r) => sum + (r.participant_count || 0), 0);
+    return Math.max(0, max - total);
+  } catch {
+    return null; // read error — treat as "unknown", don't block on it (same fail-open spirit as isGatheringCapped)
   }
 }
 
@@ -203,6 +224,24 @@ export const handler = async (event) => {
     }
     if (!Number.isInteger(count) || count < 1) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Number of participants must be at least 1." }) };
+    }
+    // Checked here (right before further validation/insert) rather than only
+    // in isRegistrationClosed() above, so a request that would push the
+    // total over the cap is rejected with the actual remaining count —
+    // registration can stay technically "open" while still not having room
+    // for a party of this size. `remaining === null` means the capacity
+    // read itself failed — fail open there rather than block on it.
+    const remaining = await getGatheringRemainingSlots();
+    if (remaining !== null && count > remaining) {
+      return {
+        statusCode: 400, headers,
+        body: JSON.stringify({
+          error: remaining > 0
+            ? `Only ${remaining} spot${remaining === 1 ? "" : "s"} remain — please reduce your participant count and try again.`
+            : "Sorry, Gathering Around the Gospel is fully booked.",
+          remainingSlots: remaining,
+        }),
+      };
     }
     if (paymentMethod !== "venue" && paymentMethod !== "gcash") {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid payment method." }) };

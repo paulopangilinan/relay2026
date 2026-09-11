@@ -31,8 +31,8 @@ function isGatheringPastCutoff() {
 }
 
 // Adjustable live in admin Settings (not an env var) so raising the cap can
-// reopen registration without a redeploy. Counts every registration row's
-// participant_count regardless of payment method or status.
+// reopen registration without a redeploy. Counts every non-cancelled
+// registration row's participant_count.
 const DEFAULT_GATHERING_MAX_PARTICIPANTS = 500;
 async function getGatheringParticipantTotal() {
   try {
@@ -104,6 +104,9 @@ export const handler = async (event) => {
           // cutoff or the participant cap has been reached.
           reg_gathering_closed: isGatheringPastCutoff() || isCapped,
           gathering_capped: isCapped,
+          // Round 60 Option C: lets gathering.html show a live "X spots
+          // left" hint as the participant-count field is typed into.
+          gathering_remaining_slots: Math.max(0, maxParticipants - participantTotal),
           // No manual switch recorded yet — matches the column's own
           // DEFAULT false (venue payment hidden until an admin turns it on).
           gathering_venue_payment_enabled: false,
@@ -125,6 +128,8 @@ export const handler = async (event) => {
           // Lets the client distinguish "capacity reached" from a regular
           // manual/date closure so it can redirect to the right message.
           gathering_capped: isCapped,
+          // Round 60 Option C: live remaining-slots hint on the form.
+          gathering_remaining_slots: Math.max(0, maxParticipants - participantTotal),
           // Whether the "Pay at Venue" option should be shown on the form at all.
           gathering_venue_payment_enabled: !!data.gathering_venue_payment_enabled,
         }),

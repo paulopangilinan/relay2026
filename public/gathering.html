@@ -90,6 +90,7 @@
   }
   .field input:focus { border-color: var(--sky); }
   .field .hint { font-size: 11px; color: var(--muted); }
+  .car-notice { margin-top: 2px; margin-bottom: 14px; padding: 10px 12px; background: #FFF8E1; border: 1px solid #F5D477; border-radius: 8px; font-size: 12px; color: #7A5C00; line-height: 1.5; }
 
   /* Payment method toggle */
   .pay-options { display: flex; flex-direction: column; gap: 10px; }
@@ -351,6 +352,7 @@
         <label for="participantCount">Number of Participants</label>
         <input type="number" id="participantCount" name="participantCount" min="1" value="1" required>
         <span class="hint">Include yourself if you're attending.</span>
+        <span class="hint" id="slotsHint" style="display:none;"></span>
       </div>
     </div>
 
@@ -366,6 +368,7 @@
       </div>
 
       <div class="slide-panel" id="carPanel">
+        <div class="car-notice">⚠️ Parking inside CCT Tagaytay is subject to availability — a lot of participants may be bringing a car. We'll do our best to accommodate everyone, but a spot isn't guaranteed.</div>
         <div class="field">
           <label for="carMaker">Car Maker</label>
           <input type="text" id="carMaker" name="carMaker" placeholder="e.g. Toyota">
@@ -516,11 +519,37 @@
           gcashRadio.closest('.pay-option')?.classList.add('pay-option-sole');
         }
       }
+      // Round 60 Option C: live "X spots left" hint. Only shown once we
+      // actually have a number and there's meaningful scarcity — no point
+      // nagging people with "487 spots left".
+      if (typeof settings.gathering_remaining_slots === 'number') {
+        remainingSlots = settings.gathering_remaining_slots;
+        updateSlotsHint();
+      }
     } catch (e) { /* fail open — don't block registration on network error */ }
   })();
 
   const FEE_PER_HEAD = 200; // display-only estimate; server snapshots the authoritative rate at submit time
   let bringingCar = false;
+  let remainingSlots = null; // null = unknown/not loaded yet; don't show a hint in that state
+
+  function updateSlotsHint() {
+    const hint = document.getElementById('slotsHint');
+    if (remainingSlots === null) { hint.style.display = 'none'; return; }
+    const count = Math.max(1, parseInt(document.getElementById('participantCount').value, 10) || 1);
+    // Only surface the hint once it's actually relevant — either they're
+    // about to (or already do) exceed what's left, or capacity is generally
+    // tight (under 20 left). Otherwise stay quiet, same reasoning as above.
+    if (count > remainingSlots || remainingSlots < 20) {
+      hint.style.display = 'block';
+      hint.style.color = count > remainingSlots ? '#C0392B' : 'var(--gold)';
+      hint.textContent = remainingSlots > 0
+        ? `Only ${remainingSlots} spot${remainingSlots === 1 ? '' : 's'} left${count > remainingSlots ? ' — please lower your participant count' : ''}.`
+        : 'Sorry, Gathering Around the Gospel is fully booked.';
+    } else {
+      hint.style.display = 'none';
+    }
+  }
 
   function setBringingCar(val) {
     bringingCar = val;
@@ -539,7 +568,7 @@
     const count = Math.max(1, parseInt(document.getElementById('participantCount').value, 10) || 1);
     document.getElementById('gcashAmount').textContent = '₱' + (FEE_PER_HEAD * count).toLocaleString();
   }
-  document.getElementById('participantCount').addEventListener('input', updateAmount);
+  document.getElementById('participantCount').addEventListener('input', () => { updateAmount(); updateSlotsHint(); });
 
   // Fetch GCash account name/holder/mobile (same shared account as the main site)
   fetch('/.netlify/functions/gcash-details')
@@ -654,6 +683,15 @@
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('⚠️ Please enter a valid email.', true); return; }
     if (!mobile) { showToast('⚠️ Please enter your mobile number.', true); return; }
     if (!participantCount || participantCount < 1) { showToast('⚠️ Please enter a valid number of participants.', true); return; }
+    // Client-side backstop for Option A — the server re-checks this
+    // authoritatively (and handles the race where slots fill in between),
+    // but catching it here avoids a round-trip for the common case.
+    if (remainingSlots !== null && participantCount > remainingSlots) {
+      showToast(remainingSlots > 0
+        ? `⚠️ Only ${remainingSlots} spot${remainingSlots === 1 ? '' : 's'} remain — please reduce your participant count and try again.`
+        : '⚠️ Sorry, Gathering Around the Gospel is fully booked.', true);
+      return;
+    }
 
     const carMaker = document.getElementById('carMaker').value.trim();
     const carModel = document.getElementById('carModel').value.trim();
