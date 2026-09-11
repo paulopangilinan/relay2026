@@ -5502,9 +5502,13 @@
   // static files in assets/images/speakers/ rather than a separate
   // admin-entered URL. A speaker without a file on disk just shows the
   // placeholder avatar instead of a broken image.
+  // Root-relative (leading slash) — unlike breakout-selection.html (served
+  // at the site root, where a bare relative path also happens to work),
+  // this admin panel is served under /admin/, so a relative path here
+  // resolved against /admin/ instead of the site root and 404'd.
   function bsSpeakerPhotoUrl(name) {
     const slug = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    return slug ? 'assets/images/speakers/' + slug + '.png' : '';
+    return slug ? '/assets/images/speakers/' + slug + '.png' : '';
   }
 
   function renderBreakoutResponses() {
