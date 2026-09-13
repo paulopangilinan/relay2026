@@ -329,11 +329,21 @@ export const handler = async (event) => {
 
     // Flag the other side(s) of the match too, so admin sees both rows
     // flagged — not just whichever one happened to submit second.
+    // Wrapped in its own try/catch, not .catch() on the query chain — the
+    // Supabase v2 query builder is only PromiseLike (implements .then()),
+    // not a real Promise, so it has no .catch() method; calling one
+    // directly threw a TypeError that wasn't caught by anything, bubbling
+    // up to the outer handler and turning every duplicate-receipt
+    // resubmission into a 500, even though the insert above had already
+    // succeeded.
     if (duplicateMatchIds.length) {
-      await supabase.from("gathering_registrations")
-        .update({ flagged_duplicate: true })
-        .in("id", duplicateMatchIds)
-        .catch(err => console.error("Failed to flag matched duplicate row(s):", err.message));
+      try {
+        await supabase.from("gathering_registrations")
+          .update({ flagged_duplicate: true })
+          .in("id", duplicateMatchIds);
+      } catch (err) {
+        console.error("Failed to flag matched duplicate row(s):", err.message);
+      }
     }
 
     // Awaited (not fire-and-forget) — Netlify's execution environment can
