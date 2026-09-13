@@ -326,6 +326,25 @@
   .gathering-tile-actions{display:flex;flex-direction:column;justify-content:center;gap:8px;}
   @media(max-width:1100px){.gathering-tiles-row{grid-template-columns:repeat(2,1fr);}.gathering-tile-actions{grid-column:1 / -1;flex-direction:row;}}
   @media(max-width:640px){.gathering-tiles-row{grid-template-columns:1fr;}.gathering-tile-actions{flex-direction:column;}}
+
+  /* Gathering email-status icons — one per applicable email type, a base
+     glyph with a small sent/failed badge at the top-right corner. Failed
+     badges swap to a retry glyph on hover (and spin while a resend is in
+     flight) so retrying doesn't need a separate button next to each icon. */
+  .gem-icon{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:20px;cursor:pointer;border-radius:8px;transition:background 0.15s;}
+  .gem-icon:hover{background:#eef3f6;}
+  .gem-icon.gem-none{opacity:0.35;}
+  .gem-badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;font-size:9px;line-height:14px;text-align:center;color:#fff;font-weight:700;}
+  .gem-badge-sent{background:var(--green);}
+  .gem-badge-failed{background:var(--red);}
+  .gem-badge-retry{background:var(--sky);display:none;align-items:center;justify-content:center;}
+  .gem-icon.gem-failed:hover .gem-badge-failed{display:none;}
+  .gem-icon.gem-failed:hover .gem-badge-retry{display:flex;}
+  .gem-icon.gem-retrying .gem-badge-sent,
+  .gem-icon.gem-retrying .gem-badge-failed{display:none;}
+  .gem-icon.gem-retrying .gem-badge-retry{display:flex;animation:gem-spin 0.8s linear infinite;}
+  .gem-icon.gem-retrying{pointer-events:none;}
+  @keyframes gem-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
   @media(max-width:768px){
     .login-card{width:calc(100vw - 40px);padding:32px 24px;}
     .topbar{padding:0 16px;height:auto;padding-top:12px;padding-bottom:12px;}
@@ -435,6 +454,30 @@
   .bp-badge.self{background:var(--green-light);color:var(--green);border:1px solid rgba(46,112,72,0.2);}
   .bp-badge.admin{background:var(--sky-light);color:var(--sky);border:1px solid rgba(58,139,191,0.2);}
   .bp-badge.none{background:var(--amber-light);color:var(--amber);border:1px solid rgba(217,119,6,0.2);}
+  .bp-badge.speaker{background:#F1E8FF;color:#6D28D9;border:1px solid rgba(109,40,217,0.25);}
+  /* Round 82: a session's speaker (picked in Settings, seated here
+     automatically) gets a subtle tint so their pinned-to-top card reads as
+     distinct at a glance, same purple family as the badge above. Replaces
+     the old "excluded" card state (retired along with the manual exclude
+     toggle — see admin-breakout-responses.js). */
+  .breakout-participant.speaker-card{background:#F7F0FF;border:1px solid rgba(109,40,217,0.2);}
+  /* Round 76: "Move to…" replaced with a circular button (matches the
+     mail button styling) that opens a session-picker modal — mobile only,
+     hidden entirely (display:none, not just hover-hidden) on desktop since
+     desktop keeps drag-and-drop unchanged. Session cards have no mail
+     button to share space with, so they override `right` back to 8px
+     inline; Unassigned cards keep the default 38px so it sits left of the
+     mail button (8px). */
+  .breakout-move-btn{display:none;position:absolute;right:38px;bottom:8px;z-index:2;width:24px;height:24px;padding:0;align-items:center;justify-content:center;background:#2E7048;border:none;border-radius:50%;cursor:pointer;font-size:14px;font-weight:700;line-height:1;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);}
+  .breakout-move-btn:hover{background:#245C3A;}
+  @media(max-width:900px){
+    .breakout-move-btn{display:flex;}
+    .breakout-drag-hint{display:none;}
+    /* The mail button is otherwise hover-revealed (a desktop-only
+       affordance — there's no hover on touch), so force it visible here,
+       same as the Move button above. */
+    .breakout-participant .mail-btn{opacity:1;transform:scale(1);pointer-events:auto;}
+  }
   .breakout-col.unassigned .breakout-col-header{background:linear-gradient(135deg,#546E7A,#37474F);flex-direction:column;align-items:stretch;gap:8px;}
   .breakout-col.unassigned .breakout-participant.draggable:hover{border-color:var(--sky);box-shadow:0 2px 8px rgba(58,139,191,0.15);}
   .breakout-church-group{margin-bottom:0;background:#F7FAFB;border:1px solid var(--border);border-radius:8px;padding:10px;}
@@ -565,7 +608,68 @@
   </div>
 </div>
 
-<!-- PARTIAL PAYMENT MODAL -->
+<!-- GATHERING CANCEL MODAL -->
+<div id="gathering-cancel-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:12px;">Cancel Gathering Registration</h3>
+    <p style="font-size:13px;color:#6B8A9A;margin-bottom:20px;">This frees up their slot against the participant cap. This cannot be undone.</p>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px;">Reason</label>
+      <select id="gathering-cancel-reason" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;background:#fff;">
+        <option value="duplicate">Duplicate Submission</option>
+        <option value="cant_confirm_payment">Can't Confirm Payment</option>
+        <option value="registrant_requested">Registrant Requested</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f7fafb;border-radius:8px;border:1px solid #D4E2EA;cursor:pointer;margin-bottom:20px;">
+      <span style="font-size:13px;color:#2A3D4A;font-weight:600;">Notify registrant via email</span>
+      <input type="checkbox" id="gathering-cancel-notify" checked style="width:18px;height:18px;cursor:pointer;">
+    </label>
+    <div style="display:flex;gap:10px;">
+      <button onclick="submitGatheringCancel()" style="flex:1;padding:12px;background:#E05050;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Confirm Cancellation</button>
+      <button onclick="closeGatheringCancelModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">No</button>
+    </div>
+  </div>
+</div>
+
+<!-- GATHERING GENERIC CONFIRM MODAL — used for "Confirm payment", "Cancel
+     registration", and "resend/retry an email" prompts. Action buttons are
+     rendered dynamically into #gathering-confirm-actions (1 for a plain
+     confirm, 2 for the email resend/retry Resend-vs-Gmail choice) so this
+     one modal covers both shapes. -->
+<div id="gathering-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 id="gathering-confirm-title" style="font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:10px;">Confirm</h3>
+    <p id="gathering-confirm-message" style="font-size:13px;color:#6B8A9A;margin-bottom:18px;line-height:1.5;"></p>
+    <div style="display:flex;gap:10px;">
+      <!-- Simple 1-button case (Confirm Payment, Cancellation email, etc.) -->
+      <div id="gathering-confirm-actions" style="display:flex;gap:10px;flex:1;"></div>
+      <!-- Split-button case (Registration/Payment-Confirmation email — same
+           main-button-plus-caret-menu template used for the bulk Gmail/Resend
+           picker elsewhere (#bulkProviderBtn/#bulkProviderMenu) — main button
+           sends with whichever provider is currently picked, caret just
+           changes the pick, it doesn't send by itself. -->
+      <div id="gathering-confirm-split" style="display:none;flex:1;position:relative;">
+        <div style="display:flex;width:100%;">
+          <button id="gathering-confirm-send-btn" onclick="doGatheringConfirmSend()" style="flex:1;padding:12px;background:var(--sky);color:#fff;border:none;border-radius:8px 0 0 8px;font-weight:700;cursor:pointer;font-size:13px;">🚀 Send via Resend</button>
+          <button onclick="toggleGatheringProviderMenu(event)" id="gathering-confirm-provider-caret" title="Choose email provider" style="padding:12px 11px;background:var(--sky);color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;">▾</button>
+        </div>
+        <div id="gathering-confirm-provider-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectGatheringProvider('resend')" id="gathering-confirm-opt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <div style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="gathering-confirm-check-resend" style="color:#2E7048;display:none;">✓</span></div>
+            <div style="font-size:11px;color:#8098A8;font-weight:500;margin-top:1px;">Fast, reliable delivery via our transactional email service</div>
+          </button>
+          <button onclick="selectGatheringProvider('gmail')" id="gathering-confirm-opt-gmail" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <div style="font-size:13px;font-weight:700;color:#2A3D4A;">💬 Gmail <span id="gathering-confirm-check-gmail" style="color:#2E7048;display:none;">✓</span></div>
+            <div style="font-size:11px;color:#8098A8;font-weight:500;margin-top:1px;">Sent from the team Gmail account — replies land in a real inbox</div>
+          </button>
+        </div>
+      </div>
+      <button onclick="closeGatheringConfirm()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
+    </div>
+  </div>
+</div>
 <div id="partialModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
@@ -1696,6 +1800,10 @@
             <span class="hc-text">Hide Cancelled</span>
             <div class="toggle-track on" id="gathering-hide-cancelled-track"><div class="toggle-thumb"></div></div>
           </label>
+          <label class="hide-cancelled-wrap" onclick="toggleGatheringFlaggedOnly()" title="Show only registrations flagged as a possible duplicate (same GCash receipt as another registration)">
+            <span class="hc-text">⚠️ Flagged Only</span>
+            <div class="toggle-track" id="gathering-flagged-only-track"><div class="toggle-thumb"></div></div>
+          </label>
           <span class="table-count" id="gathering-count">–</span>
         </div>
       </div>
@@ -1703,9 +1811,9 @@
         <div class="table-scroll">
           <table style="min-width:820px;">
             <thead><tr>
-              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Registered</th><th>Verified By</th><th>Action</th>
+              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Registered</th><th>Verified By</th><th>Emails</th><th>Action</th>
             </tr></thead>
-            <tbody id="gathering-body"><tr><td colspan="11" class="loading">Loading...</td></tr></tbody>
+            <tbody id="gathering-body"><tr><td colspan="12" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1911,9 +2019,18 @@
       <input type="text" id="bs-title" placeholder="e.g. Thinking About Love: A Biblical View On Relationships" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
     </div>
     <div style="margin-bottom:14px;">
-      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Speaker Name</label>
-      <input type="text" id="bs-speaker" placeholder="e.g. Jeffrey Jo" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Plain name — "Pastor" is added automatically wherever this is shown.</div>
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Speaker</label>
+      <input type="hidden" id="bs-speaker">
+      <input type="hidden" id="bs-speaker-id">
+      <div id="bs-speaker-picked" style="display:none;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:#F7FAFB;">
+        <span id="bs-speaker-picked-name" style="font-size:13px;font-weight:600;color:var(--dark);"></span>
+        <button type="button" onclick="clearBsSpeakerPick()" style="background:none;border:none;color:var(--sky);font-size:12px;font-weight:700;cursor:pointer;">Change</button>
+      </div>
+      <div id="bs-speaker-search-wrap" style="position:relative;">
+        <input type="text" id="bs-speaker-search" placeholder="Search registrant by name or email…" oninput="onBsSpeakerSearch()" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+        <div id="bs-speaker-results" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Must be an existing registrant — "Pastor" is added automatically wherever their name is shown.</div>
     </div>
     <div style="margin-bottom:14px;">
       <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Speaker Position (optional)</label>
@@ -2226,6 +2343,32 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-confirm-modal" onclick="doConfirm()">✅ Confirm & Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREAKOUT ASSIGN MODAL (Round 76) -->
+<div class="modal-overlay" id="breakoutAssignModal">
+  <div class="modal" style="max-width:360px;">
+    <h3 style="margin-bottom:2px;">Move <span id="breakoutAssignModalName"></span></h3>
+    <p style="margin:0 0 14px;color:var(--muted);font-size:13px;">Choose a session to move them to.</p>
+    <div id="breakoutAssignModalList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-cancel" onclick="closeBreakoutAssignModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREAKOUT CONFIRM MODAL (Round 76) — replaces every native confirm() in
+     the breakout board (single assign/unassign via the modal above, and
+     the batch drag-and-drop paths). -->
+<div class="modal-overlay" id="breakoutConfirmModal">
+  <div class="modal">
+    <h3>Please Confirm</h3>
+    <p id="breakoutConfirmMessage"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBreakoutConfirmModal()">Cancel</button>
+      <button class="btn-confirm-modal" onclick="doBreakoutConfirm()">Confirm</button>
     </div>
   </div>
 </div>
@@ -2624,6 +2767,13 @@
     if (tab === 'merch') applyMerchOrderFilters();
     else if (tab === 'gathering') applyGatheringFilters();
     else applyFilters(tab);
+  }
+
+  function toggleGatheringFlaggedOnly() {
+    gatheringFlaggedOnly = !gatheringFlaggedOnly;
+    const track = document.getElementById('gathering-flagged-only-track');
+    if (track) track.classList.toggle('on', gatheringFlaggedOnly);
+    applyGatheringFilters();
   }
 
   function applyFilters(tab) {
@@ -5324,16 +5474,82 @@
     document.getElementById('breakoutSessionModalTitle').textContent = s ? 'Edit Session' : 'Add Session';
     document.getElementById('bs-id').value = s ? s.id : '';
     document.getElementById('bs-title').value = s ? s.title : '';
-    document.getElementById('bs-speaker').value = s ? s.speaker : '';
     document.getElementById('bs-post').value = s ? s.speakerPost : '';
     document.getElementById('bs-capacity').value = s ? s.capacity : 45;
     document.getElementById('bs-sort').value = s ? s.sortOrder : 0;
     document.getElementById('bs-active').checked = s ? s.isActive : true;
     document.getElementById('bs-err').style.display = 'none';
+
+    // Round 81: speaker is picked from an existing registrant rather than
+    // typed — show the picked-state chip if this session already has one
+    // linked, otherwise show the empty search box.
+    document.getElementById('bs-speaker').value = s ? (s.speaker || '') : '';
+    document.getElementById('bs-speaker-id').value = s ? (s.speakerRegistrationId || '') : '';
+    document.getElementById('bs-speaker-search').value = '';
+    document.getElementById('bs-speaker-results').style.display = 'none';
+    document.getElementById('bs-speaker-results').innerHTML = '';
+    if (s && s.speakerRegistrationId && s.speaker) {
+      document.getElementById('bs-speaker-picked-name').textContent = s.speaker;
+      document.getElementById('bs-speaker-picked').style.display = 'flex';
+      document.getElementById('bs-speaker-search-wrap').style.display = 'none';
+    } else {
+      document.getElementById('bs-speaker-picked').style.display = 'none';
+      document.getElementById('bs-speaker-search-wrap').style.display = 'block';
+    }
+
     document.getElementById('breakoutSessionModal').style.display = 'flex';
   }
   function closeBreakoutSessionModal() {
     document.getElementById('breakoutSessionModal').style.display = 'none';
+  }
+
+  // Round 81: registrant picker for a session's speaker, searched against
+  // the PH + international registration lists already loaded client-side
+  // for the main Registrations tabs (localData/intlData) — no new backend
+  // search endpoint needed. bsSpeakerSearchResults holds the current
+  // result set so click handlers can reference a result by index rather
+  // than re-embedding an escaped name/id pair into an inline onclick string.
+  let bsSpeakerSearchResults = [];
+  function onBsSpeakerSearch() {
+    const q = document.getElementById('bs-speaker-search').value.trim().toLowerCase();
+    const results = document.getElementById('bs-speaker-results');
+    if (q.length < 2) { results.style.display = 'none'; results.innerHTML = ''; bsSpeakerSearchResults = []; return; }
+    const pool = [...(localData || []), ...(intlData || [])].filter(r => r.status !== 'cancelled');
+    bsSpeakerSearchResults = pool.filter(r =>
+      (r.name || '').toLowerCase().includes(q) || (r.email || '').toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!bsSpeakerSearchResults.length) {
+      results.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--muted);">No matching registrant found.</div>';
+      results.style.display = 'block';
+      return;
+    }
+    results.innerHTML = bsSpeakerSearchResults.map((r, idx) => `
+      <div onclick="pickBsSpeaker(${idx})"
+           style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);"
+           onmouseover="this.style.background='var(--sky-light)'" onmouseout="this.style.background=''">
+        <div style="font-weight:600;color:var(--dark);">${esc(r.name)}</div>
+        <div style="font-size:11px;color:var(--muted);">${esc(r.email || '')}</div>
+      </div>`).join('');
+    results.style.display = 'block';
+  }
+
+  function pickBsSpeaker(idx) {
+    const r = bsSpeakerSearchResults[idx];
+    if (!r) return;
+    document.getElementById('bs-speaker-id').value = r.id;
+    document.getElementById('bs-speaker').value = r.name;
+    document.getElementById('bs-speaker-picked-name').textContent = r.name;
+    document.getElementById('bs-speaker-picked').style.display = 'flex';
+    document.getElementById('bs-speaker-search-wrap').style.display = 'none';
+    document.getElementById('bs-speaker-results').style.display = 'none';
+  }
+
+  function clearBsSpeakerPick() {
+    document.getElementById('bs-speaker-id').value = '';
+    document.getElementById('bs-speaker').value = '';
+    document.getElementById('bs-speaker-search').value = '';
+    document.getElementById('bs-speaker-picked').style.display = 'none';
+    document.getElementById('bs-speaker-search-wrap').style.display = 'block';
   }
 
   async function saveBreakoutSession() {
@@ -5344,13 +5560,14 @@
     const session = {
       title: document.getElementById('bs-title').value.trim(),
       speaker: document.getElementById('bs-speaker').value.trim(),
+      speakerRegistrationId: document.getElementById('bs-speaker-id').value.trim() || null,
       speakerPost: document.getElementById('bs-post').value.trim(),
       capacity: parseInt(document.getElementById('bs-capacity').value, 10) || 45,
       sortOrder: parseInt(document.getElementById('bs-sort').value, 10) || 0,
       isActive: document.getElementById('bs-active').checked,
     };
-    if (!session.title || !session.speaker) {
-      errEl.textContent = 'Title and speaker are required.'; errEl.style.display = 'block'; return;
+    if (!session.title || !session.speaker || !session.speakerRegistrationId) {
+      errEl.textContent = 'Title and a linked speaker registrant are required.'; errEl.style.display = 'block'; return;
     }
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
@@ -5395,6 +5612,21 @@
   let draggedRegistrationIds = []; // supports dragging multiple selected cards together
   let breakoutSelectedUnassigned = new Set(); // Set of registrationIds selected for email blast
 
+  // Round 76: hoisted out of renderBreakoutResponses() so the Assign modal
+  // (openBreakoutAssignModal) can color its session rows with the exact
+  // same gradient, by the same index, as that session's column header —
+  // single source of truth instead of two copies drifting apart.
+  const BREAKOUT_SESSION_GRADIENTS = [
+    'linear-gradient(135deg, #1C2B38, #2E7048)',
+    'linear-gradient(135deg, #1C2B38, #3A8BBF)',
+    'linear-gradient(135deg, #1C2B38, #6D28D9)',
+    'linear-gradient(135deg, #1C2B38, #C49A1A)',
+    'linear-gradient(135deg, #1C2B38, #C0392B)',
+  ];
+  // Same gradient the Unassigned column's own header uses — reused for the
+  // "↩ Unassigned" row in the Assign modal for the same visual match.
+  const BREAKOUT_UNASSIGNED_GRADIENT = 'linear-gradient(135deg,#546E7A,#37474F)';
+
   let breakoutChurchGroupMap = {}; // lowercased church name -> group name (from /churches), for grouping + the Church filter
   let breakoutChurchGroupsLoaded = false;
   let breakoutRegistrantFilter = new Set(); // 'local' | 'international' — empty = show all
@@ -5407,7 +5639,8 @@
   // toggleBreakoutFilterGroup(). Empty set = show all.
   let breakoutChurchFilter = new Set();
   let breakoutChurchExpanded = new Set(); // bucket names currently expanded in the nested Church dropdown
-  let breakoutFilterText = '';               // current text-search query for the Unassigned list
+  let breakoutFilterText = '';               // lowercased/trimmed — used for matching
+  let breakoutFilterTextRaw = '';            // as-typed — used to restore the input's value across re-renders
 
   async function loadBreakoutChurchGroups() {
     if (breakoutChurchGroupsLoaded) return;
@@ -5548,20 +5781,18 @@
     const wrap = document.getElementById('breakout-board-wrap');
     if (!wrap) return;
 
-    // Header gradient colors for topics
-    const sessionColors = [
-      'linear-gradient(135deg, #1C2B38, #2E7048)',
-      'linear-gradient(135deg, #1C2B38, #3A8BBF)',
-      'linear-gradient(135deg, #1C2B38, #6D28D9)',
-      'linear-gradient(135deg, #1C2B38, #C49A1A)',
-      'linear-gradient(135deg, #1C2B38, #C0392B)',
-    ];
+    // Header gradient colors for topics — see BREAKOUT_SESSION_GRADIENTS
+    // above (shared with the Round 76 Assign modal).
+    const sessionColors = BREAKOUT_SESSION_GRADIENTS;
 
     let sessionsHtml = '';
 
     // 4 (or however many) Session Lists
     (breakoutData.sessions || []).forEach((sess, idx) => {
-      const pCount = (sess.participants || []).length;
+      // Speakers don't count against the room's attendee capacity — they're
+      // seated in their own session automatically (Round 82) but aren't
+      // taking an audience seat the way a regular attendee is.
+      const pCount = (sess.participants || []).filter(p => !p.isSpeaker).length;
       const isFull = pCount >= sess.capacity;
       const color = sessionColors[idx % sessionColors.length];
 
@@ -5589,17 +5820,44 @@
         sessionsHtml += `<div class="breakout-empty">No participants yet.</div>`;
       } else {
         sess.participants.forEach(p => {
+          const isSpeaker = p.isSpeaker === true;
           const isSelf = p.selfSelected === true;
-          const isDraggable = !isSelf; // Admin-assigned participants can be moved/reassigned
-          const badgeClass = isSelf ? 'self' : 'admin';
-          const badgeLabel = isSelf ? 'Self' : 'Admin';
-          const titleHint = isSelf ? 'Chose their own session (Locked)' : 'Assigned by admin (Drag to reassign)';
+          // Speaker cards are pinned via the session's speaker picker (Round
+          // 82) — locked from drag/move the same way self-selected cards
+          // are, since moving them doesn't make sense; change the session's
+          // speaker in Settings instead.
+          const isDraggable = !isSelf && !isSpeaker;
+          const badgeClass = isSpeaker ? 'speaker' : (isSelf ? 'self' : 'admin');
+          const badgeLabel = isSpeaker ? '🎤 Speaker' : (isSelf ? 'Self' : 'Admin');
+          const titleHint = isSpeaker
+            ? "This session's speaker — change the speaker in Settings to move them."
+            : isSelf
+              ? (adminSession?.is_super_admin ? 'Chose their own session (Locked) — Ctrl+Shift+Click or triple-tap for Super Admin override' : 'Chose their own session (Locked)')
+              : 'Assigned by admin (drag, or use Move on mobile, to reassign — drag to Unassigned to unassign)';
+          // Round 79: hidden super-admin-only override entry point — only
+          // wired up at all when the signed-in admin is a super admin, so a
+          // regular admin's card never gets the onclick (see
+          // onBreakoutSelfCardClick's own is_super_admin check too — this is
+          // defense in depth, the real gate is server-side). Never wired for
+          // a speaker card — there's no "self-selected" lock to override.
+          const selfOverrideAttr = (isSelf && !isSpeaker && adminSession?.is_super_admin)
+            ? `onclick="onBreakoutSelfCardClick(event,'${p.registrationId}')"` : '';
+          const selfCursor = (isSelf && !isSpeaker && adminSession?.is_super_admin) ? 'cursor:pointer;' : '';
+          // Mobile "Move to…" alternative to drag — a circle button that
+          // opens the Assign modal (Round 76). Hidden on desktop via CSS;
+          // never shown for self-selected or speaker (locked) participants.
+          // Session cards have no mail/exclude buttons, so it sits at the
+          // default bottom-right spot (right:8px) instead of the 68px
+          // offset used on Unassigned cards.
+          const moveBtn = isDraggable ? `
+              <button type="button" class="breakout-move-btn" style="right:8px;" onclick="event.stopPropagation();openBreakoutAssignModal('${p.registrationId}')" title="Move to another session">⇄</button>` : '';
 
           sessionsHtml += `
-            <div class="breakout-participant ${isDraggable ? 'draggable' : ''}"
+            <div class="breakout-participant ${isDraggable ? 'draggable' : ''} ${isSpeaker ? 'speaker-card' : ''}"
                  id="bp-${p.registrationId}"
                  ${isDraggable ? `draggable="true" ondragstart="onBreakoutDragStart(event, '${p.registrationId}')" ondragend="onBreakoutDragEnd(event)"` : ''}
-                 style="display:flex;align-items:flex-start;gap:6px;position:relative;">
+                 ${selfOverrideAttr}
+                 style="display:flex;align-items:flex-start;gap:6px;position:relative;flex-wrap:wrap;${selfCursor}">
               <div style="flex:1;min-width:0;">
                 <div class="bp-name" title="${esc(p.name)}">${esc(p.name)}</div>
                 <div class="bp-meta">
@@ -5608,6 +5866,7 @@
                 </div>
               </div>
               <span class="bp-badge ${badgeClass}" title="${titleHint}">${badgeLabel}</span>
+              ${moveBtn}
             </div>`;
         });
       }
@@ -5619,8 +5878,9 @@
     // grid of church cards spanning the full board width) — rendered after
     // the topic columns, per the original layout.
     const unassignedTotal = (breakoutData.unassigned || []).length;
+    const selectableTotal = (breakoutData.unassigned || []).length;
     const selectedCount = breakoutSelectedUnassigned.size;
-    const allSelected = unassignedTotal > 0 && selectedCount === unassignedTotal;
+    const allSelected = selectableTotal > 0 && selectedCount === selectableTotal;
     // Split the unassigned pool by whether they've ever gotten a breakout
     // email — mirrors exactly how the backend classifies invite vs.
     // reminder (see splitBreakoutCandidates in admin-data.js), so clicking
@@ -5657,12 +5917,12 @@
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:14px;font-weight:700;">Unassigned</div>
-              <div style="font-size:11px;opacity:0.85;font-weight:400;margin-top:1px;">Drag to assign (select several to move them together) or select to blast email</div>
+              <div style="font-size:11px;opacity:0.85;font-weight:400;margin-top:1px;" class="breakout-drag-hint">Drag to assign (select several to move them together) or select to blast email</div>
             </div>
             <span class="bcol-count">${unassignedCount}</span>
           </div>
           <div style="display:flex;gap:6px;margin:8px 0;">
-            <input type="text" id="breakout-filter-input" placeholder="Filter by name or email…" style="flex:1.4 1 0;min-width:0;padding:8px 8px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:11px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;" oninput="filterBreakoutUnassigned(this.value)">
+            <input type="text" id="breakout-filter-input" placeholder="Filter by name or email…" value="${esc(breakoutFilterTextRaw)}" style="flex:1.4 1 0;min-width:0;padding:8px 8px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:11px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;" oninput="filterBreakoutUnassigned(this.value)">
             <div style="position:relative;flex:1 1 0;min-width:0;">
               <div id="breakout-registrant-trigger" onclick="toggleBreakoutFilterDropdown('registrant')" style="background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);border-radius:6px;padding:8px 8px;font-size:11px;color:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
                 <span id="breakout-registrant-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">All Types</span><span style="opacity:0.7;font-size:9px;">▾</span>
@@ -5685,7 +5945,7 @@
           <!-- Toolbar with Blast Email split-button & Selection Controls -->
           <div class="breakout-unassigned-toolbar">
             <label class="breakout-select-pill" title="Select or deselect all unassigned participants">
-              <input type="checkbox" ${allSelected ? 'checked' : ''} ${unassignedTotal === 0 ? 'disabled' : ''} onchange="toggleBreakoutSelectAllUnassigned(this.checked)" style="accent-color:var(--sky);cursor:pointer;">
+              <input type="checkbox" ${allSelected ? 'checked' : ''} ${selectableTotal === 0 ? 'disabled' : ''} onchange="toggleBreakoutSelectAllUnassigned(this.checked)" style="accent-color:var(--sky);cursor:pointer;">
               <span>Select All (${selectedCount})</span>
             </label>
             <div style="position:relative;">
@@ -5709,7 +5969,10 @@
             </div>
           </div>
         </div>
-        <div class="breakout-col-body">`;
+        <div class="breakout-col-body"
+             ondragover="onUnassignedDragOver(event)"
+             ondragleave="onUnassignedDragLeave(event)"
+             ondrop="onBreakoutDropUnassign(event)">`;
 
     if (!unassignedTotal) {
       unassignedHtml += `<div class="breakout-empty">All participants have a session! 🎉</div>`;
@@ -5732,15 +5995,13 @@
                  data-registrant="${p.registrantType === 'international' ? 'international' : 'local'}"
                  data-church-bucket="${esc(breakoutChurchBucket(p.church, p.registrantType))}"
                  data-church-literal="${esc(String(p.church || '').trim() || 'Unassigned')}"
-                 draggable="true"
-                 ondragstart="onBreakoutDragStart(event, '${p.registrationId}')"
-                 ondragend="onBreakoutDragEnd(event)"
-                 style="display:flex;align-items:flex-start;gap:8px;">
+                 draggable="true" ondragstart="onBreakoutDragStart(event, '${p.registrationId}')" ondragend="onBreakoutDragEnd(event)"
+                 style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">
               <input type="checkbox"
-                     ${isChecked ? 'checked' : ''}
-                     onchange="toggleBreakoutParticipantSelect('${p.registrationId}', this.checked)"
-                     onclick="event.stopPropagation()"
-                     style="margin-top:3px;accent-color:var(--sky);cursor:pointer;flex-shrink:0;">
+                   ${isChecked ? 'checked' : ''}
+                   onchange="toggleBreakoutParticipantSelect('${p.registrationId}', this.checked)"
+                   onclick="event.stopPropagation()"
+                   style="margin-top:3px;accent-color:var(--sky);cursor:pointer;flex-shrink:0;">
               <div style="flex:1;min-width:0;">
                 <div class="bp-name" title="${esc(p.name)}">${esc(p.name)}</div>
                 <div class="bp-meta">
@@ -5749,7 +6010,8 @@
                 </div>
               </div>
               <button type="button" class="mail-btn" onclick="sendSingleBreakoutEmail('${p.registrationId}')" title="Send breakout email to ${esc(p.name)}">✉️</button>
-              <span class="bp-badge none" title="Did not respond — drag to a topic to assign">None</span>
+              <span class="bp-badge none" title="Did not respond — drag (or use Move on mobile) to assign">None</span>
+              <button type="button" class="breakout-move-btn" onclick="event.stopPropagation();openBreakoutAssignModal('${p.registrationId}')" title="Move to a session">⇄</button>
             </div>`;
         });
 
@@ -5780,7 +6042,8 @@
   }
 
   function filterBreakoutUnassigned(query) {
-    breakoutFilterText = (query || '').toLowerCase().trim();
+    breakoutFilterTextRaw = query || '';
+    breakoutFilterText = breakoutFilterTextRaw.toLowerCase().trim();
     applyBreakoutUnassignedFilters();
   }
 
@@ -5953,7 +6216,7 @@
   // "Send Selected" button next to these still covers custom subsets.
   function sendBreakoutGroupEmail(variant) {
     const pool = breakoutData.unassigned || [];
-    const group = pool.filter(p => variant === 'invite' ? !p.invitedAt : !!p.invitedAt);
+    const group = pool.filter(p => (variant === 'invite' ? !p.invitedAt : !!p.invitedAt));
     if (!group.length) {
       showToast(variant === 'invite' ? 'Everyone unassigned has already been invited.' : 'No one is waiting on a reminder right now.');
       return;
@@ -6073,17 +6336,26 @@
       return;
     }
 
+    const proceed = () => finishBreakoutDrop(moves, sessionId, targetSession);
     if (targetSession) {
-      const currentCount = (targetSession.participants || []).length;
+      // Speakers don't count against attendee capacity (Round 82).
+      const currentCount = (targetSession.participants || []).filter(p => !p.isSpeaker).length;
       const availableSeats = Math.max(0, targetSession.capacity - currentCount);
       if (moves.length > availableSeats) {
         const msg = moves.length > 1
           ? `"${targetSession.title}" has ${availableSeats} seat(s) left, but you're assigning ${moves.length} participants. Assign anyway (over capacity)?`
           : `"${targetSession.title}" is already at full capacity (${targetSession.capacity}). Assign anyway?`;
-        if (!confirm(msg)) return;
+        showBreakoutConfirm(msg, proceed);
+        return;
       }
     }
+    proceed();
+  }
 
+  // Continuation of onBreakoutDrop, split out so the capacity confirmation
+  // above can run through the in-house modal (async, callback-based)
+  // instead of blocking on a native confirm().
+  async function finishBreakoutDrop(moves, sessionId, targetSession) {
     // Optimistic UI update for every move in the batch.
     for (const { participant, fromSession } of moves) {
       if (fromSession) {
@@ -6128,6 +6400,364 @@
     }
   }
 
+  // Sends an admin-assigned participant back to the Unassigned pool.
+  // Self-selected participants never reach this — they're never draggable
+  // and the Move picker never offers "Unassigned" for them — and the
+  // backend enforces the same lock server-side regardless. Triggered by
+  // the mobile Move-to picker's "↩ Unassigned" option (single card only —
+  // dragging one or more admin-assigned cards onto the Unassigned column
+  // itself goes through onBreakoutDropUnassign below instead).
+  async function unassignBreakoutParticipant(registrationId, bypass) {
+    let fromSession = null, participant = null;
+    for (const sess of breakoutData.sessions || []) {
+      const found = (sess.participants || []).find(x => x.registrationId === registrationId);
+      if (found) { participant = found; fromSession = sess; break; }
+    }
+    if (!participant) return;
+    if (participant.selfSelected === true && !bypass) return; // locked — shouldn't be reachable via UI, but guard anyway
+
+    const msg = `Unassign ${participant.name} from "${fromSession ? fromSession.title : 'this session'}"? They'll move back to the Unassigned pool.`;
+    showBreakoutConfirm(msg, () => finishUnassignBreakoutParticipant(registrationId, participant, fromSession));
+  }
+
+  // Continuation of unassignBreakoutParticipant, split out so the confirm
+  // above can run through the in-house modal instead of a native confirm().
+  async function finishUnassignBreakoutParticipant(registrationId, participant, fromSession) {
+    // Optimistic UI update
+    fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== registrationId);
+    participant.sessionId = null;
+    breakoutData.unassigned = breakoutData.unassigned || [];
+    breakoutData.unassigned.push(participant);
+    renderBreakoutResponses();
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId, sessionId: null }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to unassign');
+      showToast(`${participant.name} unassigned.`);
+    } catch (err) {
+      showToast('Error: ' + err.message);
+      loadBreakoutResponses(); // resync — the optimistic update above may not match the server
+    }
+  }
+
+  // ── Round 73: drag an admin-assigned card (or the current multi-select)
+  //    back onto the Unassigned column itself, replacing the old ✕ button
+  //    — mirrors onBreakoutDrop's batch handling, but the destination is
+  //    "no session" instead of a target session, and the confirmation
+  //    prompt is kept (a bigger action than moving between two sessions). ──
+  function onUnassignedDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const col = document.querySelector('#col-unassigned .breakout-col-body');
+    if (col && !col.classList.contains('drag-over')) col.classList.add('drag-over');
+  }
+
+  function onUnassignedDragLeave(e) {
+    const col = document.querySelector('#col-unassigned .breakout-col-body');
+    if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+  }
+
+  async function onBreakoutDropUnassign(e) {
+    e.preventDefault();
+    document.querySelectorAll('.breakout-col-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+    const ids = (draggedRegistrationIds && draggedRegistrationIds.length)
+      ? draggedRegistrationIds.slice()
+      : [draggedRegistrationId || e.dataTransfer.getData('text/plain')].filter(Boolean);
+    draggedRegistrationIds = [];
+    if (!ids.length) return;
+
+    // Only admin-assigned participants currently holding a session can be
+    // unassigned this way — self-selected (locked) cards are never
+    // draggable in the first place, so they can't reach here regardless.
+    const moves = [];
+    for (const regId of ids) {
+      for (const sess of breakoutData.sessions || []) {
+        const found = (sess.participants || []).find(x => x.registrationId === regId);
+        if (found && found.selfSelected !== true) { moves.push({ participant: found, fromSession: sess }); break; }
+      }
+    }
+    if (!moves.length) return;
+
+    const confirmMsg = moves.length === 1
+      ? `Unassign ${moves[0].participant.name} from "${moves[0].fromSession.title}"? They'll move back to the Unassigned pool.`
+      : `Unassign ${moves.length} participants and move them back to the Unassigned pool?`;
+    showBreakoutConfirm(confirmMsg, () => finishBreakoutDropUnassign(moves));
+  }
+
+  // Continuation of onBreakoutDropUnassign, split out so the confirm above
+  // can run through the in-house modal instead of a native confirm().
+  async function finishBreakoutDropUnassign(moves) {
+    for (const { participant, fromSession } of moves) {
+      fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== participant.registrationId);
+      participant.sessionId = null;
+      breakoutData.unassigned = breakoutData.unassigned || [];
+      breakoutData.unassigned.push(participant);
+    }
+    renderBreakoutResponses();
+
+    let succeeded = 0;
+    const failedNames = [];
+    for (const { participant } of moves) {
+      try {
+        const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+          method: 'PATCH',
+          headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ registrationId: participant.registrationId, sessionId: null }),
+        });
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Failed to unassign');
+        succeeded++;
+      } catch (err) {
+        failedNames.push(participant.name);
+      }
+    }
+
+    if (failedNames.length) {
+      showToast(`Unassigned ${succeeded} of ${moves.length}. Failed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? '…' : ''}`);
+      loadBreakoutResponses();
+    } else {
+      showToast(moves.length > 1 ? `Unassigned ${succeeded} participants.` : `${moves[0].participant.name} unassigned.`);
+    }
+  }
+
+  // ── Round 74 (option 4, hybrid): mobile "Move to…" picker — a plain
+  //    <select> per card, hidden on desktop via CSS, standing in for drag
+  //    on touch devices where HTML5 drag-and-drop can't be triggered.
+  //    Assigning/reassigning goes through this single-id helper; sending
+  //    someone back to Unassigned reuses the existing confirm-guarded
+  //    unassignBreakoutParticipant above. ──
+  async function assignBreakoutParticipantToSession(registrationId, sessionId, bypass) {
+    const targetSession = (breakoutData.sessions || []).find(s => s.id === sessionId);
+    if (!targetSession) return;
+
+    let participant = (breakoutData.unassigned || []).find(x => x.registrationId === registrationId);
+    let fromSession = null;
+    if (!participant) {
+      for (const sess of breakoutData.sessions || []) {
+        const found = (sess.participants || []).find(x => x.registrationId === registrationId);
+        if (found) { participant = found; fromSession = sess; break; }
+      }
+    }
+    if (!participant) return;
+    if (participant.selfSelected === true && !bypass) return; // locked
+    if (fromSession && fromSession.id === sessionId) return; // already there
+
+    // Speakers don't count against attendee capacity (Round 82).
+    const currentCount = (targetSession.participants || []).filter(p => !p.isSpeaker).length;
+    const proceed = () => finishAssignBreakoutParticipant(registrationId, sessionId, participant, fromSession, targetSession);
+    if (currentCount >= targetSession.capacity) {
+      showBreakoutConfirm(`"${targetSession.title}" is already at full capacity (${targetSession.capacity}). Assign anyway?`, proceed);
+      return;
+    }
+    proceed();
+  }
+
+  // Continuation of assignBreakoutParticipantToSession, split out so the
+  // capacity confirmation above can run through the in-house modal instead
+  // of a native confirm().
+  async function finishAssignBreakoutParticipant(registrationId, sessionId, participant, fromSession, targetSession) {
+    if (fromSession) {
+      fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== participant.registrationId);
+    } else {
+      breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => x.registrationId !== participant.registrationId);
+      breakoutSelectedUnassigned.delete(participant.registrationId);
+    }
+    participant.sessionId = sessionId;
+    participant.selfSelected = false;
+    targetSession.participants = targetSession.participants || [];
+    targetSession.participants.push(participant);
+    renderBreakoutResponses();
+
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId, sessionId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to assign session');
+      showToast(`Assigned ${participant.name} to ${targetSession.speaker || targetSession.title}.`);
+    } catch (err) {
+      showToast('Error: ' + err.message);
+      loadBreakoutResponses();
+    }
+  }
+
+  // ── Round 76: mobile "Move to…" replaced with a circle button that opens
+  //    this modal — every session as a tappable row, colored with the same
+  //    gradient as that session's column header (BREAKOUT_SESSION_GRADIENTS,
+  //    same array + index renderBreakoutResponses() uses), plus "↩
+  //    Unassigned" (in the Unassigned column's own gradient) when the
+  //    participant currently holds a session. Picking a row closes the
+  //    modal and calls the same single-id assign/unassign helpers the old
+  //    picker's onchange used. ──
+  function openBreakoutAssignModal(registrationId) {
+    let participant = (breakoutData.unassigned || []).find(x => x.registrationId === registrationId);
+    let currentSessionId = null;
+    if (!participant) {
+      for (const sess of breakoutData.sessions || []) {
+        const found = (sess.participants || []).find(x => x.registrationId === registrationId);
+        if (found) { participant = found; currentSessionId = sess.id; break; }
+      }
+    }
+    if (!participant || participant.selfSelected === true) return; // locked or not found — shouldn't be reachable via UI
+
+    document.getElementById('breakoutAssignModalName').textContent = participant.name;
+
+    const rows = (breakoutData.sessions || []).map((s, idx) => {
+      if (s.id === currentSessionId) return ''; // already there — nothing to do by picking it again
+      const gradient = BREAKOUT_SESSION_GRADIENTS[idx % BREAKOUT_SESSION_GRADIENTS.length];
+      return `<div onclick="closeBreakoutAssignModal();assignBreakoutParticipantToSession('${registrationId}','${s.id}')"
+                   style="background:${gradient};color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <span style="min-width:0;font-size:12px;font-weight:700;line-height:1.3;white-space:normal;overflow-wrap:break-word;">${esc(s.title)}</span>
+                  <span style="font-family:'DM Mono';font-size:11px;opacity:0.85;flex-shrink:0;">${(s.participants || []).filter(x => !x.isSpeaker).length}/${s.capacity}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <img src="${bsSpeakerPhotoUrl(s.speaker)}" alt="${esc(s.speaker)}" loading="lazy"
+                       onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                       style="width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.5);flex-shrink:0;">
+                  <div style="display:none;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.5);align-items:center;justify-content:center;font-size:9px;flex-shrink:0;">👤</div>
+                  <div style="font-size:11px;font-weight:600;opacity:0.9;">${esc(bsSpeakerLabel(s.speaker))}</div>
+                </div>
+              </div>`;
+    }).join('');
+
+    const unassignedRow = currentSessionId ? `
+      <div onclick="closeBreakoutAssignModal();unassignBreakoutParticipant('${registrationId}')"
+           style="background:${BREAKOUT_UNASSIGNED_GRADIENT};color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">
+        ↩ Unassigned
+      </div>` : '';
+
+    document.getElementById('breakoutAssignModalList').innerHTML = rows + unassignedRow;
+    document.getElementById('breakoutAssignModal').classList.add('visible');
+  }
+
+  function closeBreakoutAssignModal() {
+    document.getElementById('breakoutAssignModal').classList.remove('visible');
+  }
+
+  // ── Round 79: hidden super-admin-only escape hatch for self-selected
+  //    ("Self" badge) participants — normally fully locked, no drag, no
+  //    Move button, nothing clickable. Reuses the same #breakoutAssignModal
+  //    DOM as openBreakoutAssignModal above (kept as a SEPARATE function,
+  //    not a shared-with-parameter one) so there's zero risk of the
+  //    override path's relaxed rules ever leaking into the normal modal
+  //    used everywhere else. The real gate is the server (admin.is_super_admin
+  //    off the verified JWT, checked in admin-breakout-responses.js) — this
+  //    client-side check is just what keeps the entry point hidden from
+  //    regular admins. ──
+  function openBreakoutOverrideModal(registrationId) {
+    if (!adminSession?.is_super_admin) return;
+
+    let participant = null, currentSessionId = null;
+    for (const sess of breakoutData.sessions || []) {
+      const found = (sess.participants || []).find(x => x.registrationId === registrationId);
+      if (found) { participant = found; currentSessionId = sess.id; break; }
+    }
+    if (!participant || participant.selfSelected !== true) return; // only for self-selected cards
+
+    document.getElementById('breakoutAssignModalName').innerHTML =
+      `${esc(participant.name)}<span style="display:block;font-size:11px;font-weight:700;color:#C0392B;margin-top:4px;">⚠️ Super Admin override — this participant chose their own session.</span>`;
+
+    // Session rows reuse assignBreakoutParticipantToSession's own confirm
+    // wording (via the new bypass param) rather than a separate message —
+    // the warning above already flags this as an override.
+    const rows = (breakoutData.sessions || []).map((s, idx) => {
+      if (s.id === currentSessionId) return '';
+      const gradient = BREAKOUT_SESSION_GRADIENTS[idx % BREAKOUT_SESSION_GRADIENTS.length];
+      return `<div onclick="closeBreakoutAssignModal();assignBreakoutParticipantToSession('${registrationId}','${s.id}',true)"
+                   style="background:${gradient};color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <span style="min-width:0;font-size:12px;font-weight:700;line-height:1.3;white-space:normal;overflow-wrap:break-word;">${esc(s.title)}</span>
+                  <span style="font-family:'DM Mono';font-size:11px;opacity:0.85;flex-shrink:0;">${(s.participants || []).filter(x => !x.isSpeaker).length}/${s.capacity}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <img src="${bsSpeakerPhotoUrl(s.speaker)}" alt="${esc(s.speaker)}" loading="lazy"
+                       onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                       style="width:16px;height:16px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.5);flex-shrink:0;">
+                  <div style="display:none;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.5);align-items:center;justify-content:center;font-size:9px;flex-shrink:0;">👤</div>
+                  <div style="font-size:11px;font-weight:600;opacity:0.9;">${esc(bsSpeakerLabel(s.speaker))}</div>
+                </div>
+              </div>`;
+    }).join('');
+
+    const unassignedRow = `
+      <div onclick="closeBreakoutAssignModal();unassignBreakoutParticipant('${registrationId}',true)"
+           style="background:${BREAKOUT_UNASSIGNED_GRADIENT};color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">
+        ↩ Unassigned
+      </div>`;
+
+    document.getElementById('breakoutAssignModalList').innerHTML = rows + unassignedRow;
+    document.getElementById('breakoutAssignModal').classList.add('visible');
+  }
+
+  // Round 79's "Mark as Speaker" override (overrideBreakoutMarkAsSpeaker /
+  // finishBreakoutMarkAsSpeaker) was removed in Round 82 — the exclude
+  // concept it depended on (PATCH ...{excluded:true}) was retired
+  // entirely; picking someone as a session's speaker in Settings is now
+  // the only path to becoming a speaker, and it seats them automatically
+  // (see admin-breakout-sessions.js). The override modal now offers only
+  // "reassign to another session" and "Unassigned".
+
+  // Ctrl+Shift+Click (desktop — a real click event carries modifier keys)
+  // or triple-tap within 600ms (mobile — a touch tap never carries modifier
+  // keys, so the same handler covers both without a separate touch-only
+  // code path) on a self-selected card. Only ever wired up (see the card
+  // template in renderBreakoutResponses) when adminSession.is_super_admin
+  // is already true, so a regular admin never even gets this onclick — this
+  // check is a second layer of the same guard, not the real security
+  // boundary (that's server-side, see admin-breakout-responses.js).
+  const breakoutSelfTapState = {};
+  function onBreakoutSelfCardClick(e, registrationId) {
+    if (!adminSession?.is_super_admin) return;
+    if (e.ctrlKey && e.shiftKey) { openBreakoutOverrideModal(registrationId); return; }
+
+    const state = breakoutSelfTapState[registrationId] || { count: 0, timer: null };
+    clearTimeout(state.timer);
+    state.count++;
+    if (state.count >= 3) {
+      state.count = 0;
+      breakoutSelfTapState[registrationId] = state;
+      openBreakoutOverrideModal(registrationId);
+      return;
+    }
+    state.timer = setTimeout(() => { state.count = 0; }, 600);
+    breakoutSelfTapState[registrationId] = state;
+  }
+
+  // ── Round 76: in-house replacement for every native confirm() in the
+  //    breakout board — reused by assign/unassign (single, via the modal
+  //    above) and the batch drag-and-drop paths (onBreakoutDrop,
+  //    onBreakoutDropUnassign). One dynamic-message modal + a pending
+  //    callback, rather than four separate themed modals for what's really
+  //    the same "confirm this reassignment" action each time. ──
+  let breakoutConfirmCallback = null;
+  function showBreakoutConfirm(message, onConfirm) {
+    breakoutConfirmCallback = onConfirm;
+    document.getElementById('breakoutConfirmMessage').textContent = message;
+    document.getElementById('breakoutConfirmModal').classList.add('visible');
+  }
+  function closeBreakoutConfirmModal() {
+    breakoutConfirmCallback = null;
+    document.getElementById('breakoutConfirmModal').classList.remove('visible');
+  }
+  function doBreakoutConfirm() {
+    const cb = breakoutConfirmCallback;
+    closeBreakoutConfirmModal();
+    if (cb) cb();
+  }
+
+  // Round 72's "Speaker" exclusion toggle was removed in Round 82 — picking
+  // a session's speaker in Settings now seats them automatically (see
+  // admin-breakout-sessions.js), so there's no separate exclude/include
+  // state left to toggle from a card.
+
   // ── Multi-sheet Excel Export (1 sheet per breakout session + 1 for unassigned) ──
   function exportBreakoutExcel() {
     if (typeof XLSX === 'undefined') {
@@ -6149,7 +6779,9 @@
         ['Topic', sess.title || ''],
         ['Speaker', sess.speaker || ''],
         ['Capacity', sess.capacity || 45],
-        ['Total Placed', (sess.participants || []).length],
+        // Speakers don't count against attendee capacity (Round 82) —
+        // "Total Placed" reflects attendee seats used, matching the board.
+        ['Total Placed', (sess.participants || []).filter(p => !p.isSpeaker).length],
         [], // blank separator line
         ['#', 'Participant Name', 'Age', 'Church', 'Email', 'Type', 'Assignment Mode']
       ];
@@ -6162,7 +6794,7 @@
           p.church || '',
           p.email || '',
           p.registrantType || 'local',
-          p.selfSelected === true ? 'Self-Selected' : 'Admin-Assigned'
+          p.isSpeaker ? 'Speaker' : (p.selfSelected === true ? 'Self-Selected' : 'Admin-Assigned')
         ]);
       });
 
@@ -6299,6 +6931,7 @@
 
   // ── Gathering Around the Gospel ─────────────────────────────────────────
   let gatheringRows = [];
+  let gatheringFlaggedOnly = false;
   let gatheringFilteredRows = [];
   const gatheringMultiSelect = { method: new Set(), car: new Set(), status: new Set() };
   const GATHERING_LABELS = { method: ['All Payment Methods', 'methods selected'], car: ['All', 'selected'], status: ['All Statuses', 'statuses selected'] };
@@ -6424,6 +7057,7 @@
         if (!cars.has(bucket)) return false;
       }
       if (statuses.size && !statuses.has(r.payment_status)) return false;
+      if (gatheringFlaggedOnly && !r.flagged_duplicate) return false;
       return true;
     });
     renderGatheringTable();
@@ -6503,9 +7137,9 @@
 
   function renderGatheringTable() {
     const body = document.getElementById('gathering-body');
-    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="11" class="empty">No registrations yet</td></tr>'; return; }
+    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="12" class="empty">No registrations yet</td></tr>'; return; }
     const rows = gatheringFilteredRows;
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="11" class="empty">No registrations match the current filters</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="12" class="empty">No registrations match the current filters</td></tr>'; return; }
     body.innerHTML = rows.map(r => {
       const methodLabel = r.payment_method === 'gcash' ? '💳 GCash' : '🏠 Venue';
       const receiptCell = r.receipt_url
@@ -6516,20 +7150,21 @@
         : r.payment_method === 'gcash' && r.payment_status === 'pending_review'
         ? `<div style="display:flex;gap:6px;">
             <button onclick="confirmGatheringPayment('${r.id}')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Confirm</button>
-            <button onclick="cancelGatheringPayment('${r.id}')" title="No actual receipt attached / can't verify this payment" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Cancel</button>
+            <button onclick="openGatheringCancelModal('${r.id}')" title="No actual receipt attached / can't verify this payment" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Cancel</button>
           </div>`
         : r.payment_method === 'venue' && r.payment_status === 'unpaid'
         ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
             <span style="color:var(--muted);font-size:11px;">Confirmed at check-in</span>
-            <button onclick="cancelGatheringPayment('${r.id}')" title="Duplicate, no-show, or otherwise shouldn't hold a slot" style="padding:5px 10px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Cancel</button>
+            <button onclick="openGatheringCancelModal('${r.id}')" title="Duplicate, no-show, or otherwise shouldn't hold a slot" style="padding:5px 10px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">Cancel</button>
           </div>`
         : '<span style="color:var(--muted);">—</span>';
       const registered = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
       const carCell = r.bringing_car
         ? `<span title="${esc(r.car_maker || '')} ${esc(r.car_model || '')} · ${esc(r.car_plate || '')}" style="font-size:12px;">🚗 ${esc(r.car_maker || '')} ${esc(r.car_model || '')}<br><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;">${esc(r.car_plate || '')}</span></span>`
         : '<span style="color:var(--muted);">—</span>';
+      const emailsCell = gatheringEmailStatusCell(r);
       return `<tr>
-        <td>${esc(properCaseName(r.name))}</td>
+        <td>${esc(properCaseName(r.name))}${r.flagged_duplicate ? ` <span title="Possible duplicate — same GCash receipt as another registration" style="background:var(--red-light);color:var(--red);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;vertical-align:middle;">⚠️ DUPLICATE</span>` : ''}</td>
         <td style="font-size:11px;color:var(--muted);">${esc(r.email || '—')}<br>${esc(r.mobile || '')}</td>
         <td>${r.participant_count}</td>
         <td>${methodLabel}</td>
@@ -6539,12 +7174,135 @@
         <td>${carCell}</td>
         <td>${registered}</td>
         <td>${r.verified_by ? esc(r.verified_by) : '<span style="color:var(--muted);">—</span>'}</td>
+        <td>${emailsCell}</td>
         <td>${actionCell}</td>
       </tr>`;
     }).join('');
   }
 
-  async function confirmGatheringPayment(id) {
+  // One icon per applicable email type — Registration (📝) always shown
+  // unless the row is cancelled (in which case ONLY the cancellation icon
+  // shows, per the user's spec, since registration/payment status is moot
+  // once cancelled), Payment Confirmation (💳) once confirmed, Cancellation
+  // (🚫) once cancelled with a reason on file. Each icon carries a small
+  // ✓/! badge; failed ones swap to a ↻ retry glyph on hover and spin while
+  // a resend is in flight (see resendGatheringEmail below).
+  const GEM_ICON_GLYPH = { registration: '📝', payment_confirmed: '💳', cancellation: '🚫' };
+  const GEM_TYPE_LABEL = { registration: 'Registration email', payment_confirmed: 'Payment confirmation email', cancellation: 'Cancellation email' };
+  function gatheringEmailIcon(r, type) {
+    const status = r[`${type}_email_status`];
+    const provider = r[`${type}_email_provider`];
+    const statusClass = status === 'sent' ? 'gem-sent' : status === 'failed' ? 'gem-failed' : 'gem-none';
+    const label = GEM_TYPE_LABEL[type];
+    const title = status === 'sent' ? `${label} — sent${provider ? ' via ' + provider : ''}. Click to resend.`
+      : status === 'failed' ? `${label} — failed to send. Click to retry.`
+      : `${label} — not sent yet. Click to send.`;
+    const badge = status === 'sent' ? '<span class="gem-badge gem-badge-sent">✓</span>'
+      : status === 'failed' ? '<span class="gem-badge gem-badge-failed">!</span>'
+      : '';
+    const retryBadge = '<span class="gem-badge gem-badge-retry">↻</span>';
+    return `<span class="gem-icon ${statusClass}" id="gem-${type}-${r.id}" title="${title}" onclick="resendGatheringEmail(event,'${r.id}','${type}')">${GEM_ICON_GLYPH[type]}${badge}${retryBadge}</span>`;
+  }
+  function gatheringEmailStatusCell(r) {
+    // Once cancelled, only the cancellation icon is shown — registration/
+    // payment-confirmed status no longer matters for a cancelled row.
+    if (r.payment_status === 'cancelled' && r.cancellation_reason) {
+      return `<div style="display:flex;gap:4px;">${gatheringEmailIcon(r, 'cancellation')}</div>`;
+    }
+    const icons = [gatheringEmailIcon(r, 'registration')];
+    if (r.payment_status === 'confirmed') icons.push(gatheringEmailIcon(r, 'payment_confirmed'));
+    return `<div style="display:flex;gap:4px;">${icons.join('')}</div>`;
+  }
+
+  let gatheringConfirmActions = null;
+  let gatheringConfirmProvider = 'resend';
+  let gatheringConfirmSendFn = null;
+
+  // General-purpose: renders 1+ colored action buttons plus the modal's
+  // always-present Cancel. `actions` is [{ label, color, onClick }, ...].
+  // Used for plain confirms (Confirm Payment, cancellation email) that
+  // have no provider choice to make.
+  function openGatheringConfirmActions(title, message, actions) {
+    document.getElementById('gathering-confirm-title').textContent = title;
+    document.getElementById('gathering-confirm-message').textContent = message;
+    gatheringConfirmActions = actions;
+    document.getElementById('gathering-confirm-split').style.display = 'none';
+    const wrap = document.getElementById('gathering-confirm-actions');
+    wrap.style.display = 'flex';
+    wrap.innerHTML = actions.map((a, i) =>
+      `<button onclick="runGatheringConfirmAction(${i})" style="flex:1;padding:12px;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;background:${a.color || 'var(--green)'};">${a.label}</button>`
+    ).join('');
+    document.getElementById('gathering-confirm-modal').style.display = 'flex';
+  }
+
+  // Same split-button-plus-caret-menu template as the bulk Gmail/Resend
+  // picker (#bulkProviderBtn/#bulkProviderMenu, renderBulkProvider() etc.)
+  // — reused as-is here rather than inventing a new control. The main
+  // button sends with whichever provider is currently picked; the caret's
+  // menu only changes the pick, it never sends by itself.
+  function openGatheringConfirmProviderChoice(title, message, defaultProvider, onSend) {
+    document.getElementById('gathering-confirm-title').textContent = title;
+    document.getElementById('gathering-confirm-message').textContent = message;
+    document.getElementById('gathering-confirm-actions').style.display = 'none';
+    document.getElementById('gathering-confirm-actions').innerHTML = '';
+    document.getElementById('gathering-confirm-split').style.display = 'flex';
+    gatheringConfirmProvider = defaultProvider === 'gmail' ? 'gmail' : 'resend';
+    gatheringConfirmSendFn = onSend;
+    renderGatheringConfirmProvider();
+    document.getElementById('gathering-confirm-modal').style.display = 'flex';
+  }
+  function renderGatheringConfirmProvider() {
+    document.getElementById('gathering-confirm-send-btn').textContent =
+      gatheringConfirmProvider === 'resend' ? '🚀 Send via Resend' : '💬 Send via Gmail';
+    document.getElementById('gathering-confirm-check-resend').style.display = gatheringConfirmProvider === 'resend' ? 'inline' : 'none';
+    document.getElementById('gathering-confirm-check-gmail').style.display  = gatheringConfirmProvider === 'gmail'  ? 'inline' : 'none';
+  }
+  function toggleGatheringProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('gathering-confirm-provider-menu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+  function selectGatheringProvider(provider) {
+    gatheringConfirmProvider = provider;
+    document.getElementById('gathering-confirm-provider-menu').style.display = 'none';
+    renderGatheringConfirmProvider();
+  }
+  function doGatheringConfirmSend() {
+    document.getElementById('gathering-confirm-provider-menu').style.display = 'none';
+    const fn = gatheringConfirmSendFn;
+    const provider = gatheringConfirmProvider;
+    closeGatheringConfirm();
+    if (fn) fn(provider);
+  }
+  // Back-compat single-action wrapper — kept so confirmGatheringPayment
+  // (and any similar single-button prompt) doesn't need to change.
+  function openGatheringConfirm(title, message, onConfirm, opts) {
+    openGatheringConfirmActions(title, message, [
+      { label: (opts && opts.confirmLabel) || 'Confirm', color: (opts && opts.confirmColor) || 'var(--green)', onClick: onConfirm },
+    ]);
+  }
+  function closeGatheringConfirm() {
+    document.getElementById('gathering-confirm-modal').style.display = 'none';
+    document.getElementById('gathering-confirm-provider-menu').style.display = 'none';
+    gatheringConfirmActions = null;
+    gatheringConfirmSendFn = null;
+  }
+  function runGatheringConfirmAction(i) {
+    const actions = gatheringConfirmActions;
+    closeGatheringConfirm();
+    if (actions && actions[i] && actions[i].onClick) actions[i].onClick();
+  }
+
+  function confirmGatheringPayment(id) {
+    const row = gatheringRows.find(r => r.id === id);
+    openGatheringConfirm(
+      'Confirm Payment',
+      `Confirm this GCash payment for ${row ? row.name : 'this registrant'}? This marks the registration as paid and sends them a confirmation email.`,
+      () => doConfirmGatheringPayment(id),
+      { confirmLabel: 'Confirm Payment', confirmColor: 'var(--green)' }
+    );
+  }
+  async function doConfirmGatheringPayment(id) {
     try {
       const res = await fetch('/.netlify/functions/admin-gathering', {
         method: 'POST',
@@ -6558,20 +7316,80 @@
     } catch (e) { showToast('Error: ' + e.message); }
   }
 
-  async function cancelGatheringPayment(id) {
-    // Destructive-ish — the participant loses their slot against the cap,
-    // so confirm before firing (Confirm has no such prompt since it's not
-    // reversible-by-accident the same way).
-    if (!confirm("Cancel this registration? This frees up their slot against the participant cap. For GCash, use this only when the receipt can't actually be verified — for Pay at Venue, use it for duplicates/no-shows or anyone who otherwise shouldn't hold a slot.")) return;
+  // Always confirms before sending — never fires immediately, regardless
+  // of current status (none/sent/failed). All three email types get the
+  // same Resend/Gmail choice. Registration and Payment Confirmation
+  // default to whichever provider is currently selected in Settings;
+  // Cancellation defaults to Gmail specifically (replies are expected
+  // there, and Gmail is a real monitored inbox — see
+  // sendGatheringCancellationEmail's comment) but can still be overridden
+  // to Resend for one send if needed.
+  function resendGatheringEmail(event, id, type) {
+    const icon = event.currentTarget;
+    const label = GEM_TYPE_LABEL[type] || 'email';
+
+    const defaultProvider = type === 'cancellation' ? 'gmail' : (currentSettings.gathering_email_provider || 'resend');
+    openGatheringConfirmProviderChoice(
+      'Send Email',
+      `${label} — choose which service to send it through.`,
+      defaultProvider,
+      (provider) => doResendGatheringEmail(icon, id, type, provider)
+    );
+  }
+  async function doResendGatheringEmail(icon, id, type, provider) {
+    icon.classList.add('gem-retrying');
     try {
       const res = await fetch('/.netlify/functions/admin-gathering', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-        body: JSON.stringify({ action: 'cancel', id }),
+        body: JSON.stringify({ action: 'resend_email', id, type, provider }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast('Email sent');
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    } finally {
+      // Full re-render picks up the real status/provider from the server
+      // response and naturally replaces this icon (ending the spin) with
+      // one reflecting the outcome, whether it's the same type of failure
+      // or now sent.
+      loadGatheringRegistrations();
+    }
+  }
+
+  let gatheringCancelTargetId = null;
+  const GATHERING_CANCEL_REASONS = [
+    ['duplicate', 'Duplicate Submission'],
+    ['cant_confirm_payment', "Can't Confirm Payment"],
+    ['registrant_requested', 'Registrant Requested'],
+    ['other', 'Other'],
+  ];
+  function openGatheringCancelModal(id) {
+    gatheringCancelTargetId = id;
+    document.getElementById('gathering-cancel-reason').value = 'duplicate';
+    document.getElementById('gathering-cancel-notify').checked = true;
+    document.getElementById('gathering-cancel-modal').style.display = 'flex';
+  }
+  function closeGatheringCancelModal() {
+    document.getElementById('gathering-cancel-modal').style.display = 'none';
+    gatheringCancelTargetId = null;
+  }
+  async function submitGatheringCancel() {
+    const id = gatheringCancelTargetId;
+    const reason = document.getElementById('gathering-cancel-reason').value;
+    const notify = document.getElementById('gathering-cancel-notify').checked;
+    if (!id) return;
+    try {
+      const res = await fetch('/.netlify/functions/admin-gathering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ action: 'cancel', id, reason, notify }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Failed');
       showToast('Registration cancelled');
+      closeGatheringCancelModal();
       loadGatheringRegistrations();
     } catch (e) { showToast('Error: ' + e.message); }
   }
@@ -8721,6 +9539,11 @@
   window.switchGroup          = switchGroup;
   window.loadGatheringRegistrations = loadGatheringRegistrations;
   window.confirmGatheringPayment    = confirmGatheringPayment;
+  window.resendGatheringEmail       = resendGatheringEmail;
+  window.openGatheringCancelModal   = openGatheringCancelModal;
+  window.closeGatheringCancelModal  = closeGatheringCancelModal;
+  window.submitGatheringCancel      = submitGatheringCancel;
+  window.toggleGatheringFlaggedOnly = toggleGatheringFlaggedOnly;
   window.toggleGatheringDropdown    = toggleGatheringDropdown;
   window.toggleGatheringOption      = toggleGatheringOption;
   window.selectAllGathering         = selectAllGathering;
@@ -8825,11 +9648,25 @@
   window.closeGroupScopePicker = closeGroupScopePicker;
   window.chooseGroupScope     = chooseGroupScope;
   window.loadBreakoutResponses = loadBreakoutResponses;
+  window.unassignBreakoutParticipant = unassignBreakoutParticipant;
   window.onBreakoutDragStart   = onBreakoutDragStart;
   window.onBreakoutDragEnd     = onBreakoutDragEnd;
   window.onBreakoutDragOver    = onBreakoutDragOver;
   window.onBreakoutDragLeave   = onBreakoutDragLeave;
   window.onBreakoutDrop        = onBreakoutDrop;
+  window.onUnassignedDragOver  = onUnassignedDragOver;
+  window.onUnassignedDragLeave = onUnassignedDragLeave;
+  window.onBreakoutDropUnassign = onBreakoutDropUnassign;
+  window.assignBreakoutParticipantToSession = assignBreakoutParticipantToSession;
+  window.openBreakoutAssignModal = openBreakoutAssignModal;
+  window.openBreakoutOverrideModal = openBreakoutOverrideModal;
+  window.onBreakoutSelfCardClick = onBreakoutSelfCardClick;
+  window.onBsSpeakerSearch = onBsSpeakerSearch;
+  window.pickBsSpeaker = pickBsSpeaker;
+  window.clearBsSpeakerPick = clearBsSpeakerPick;
+  window.closeBreakoutAssignModal = closeBreakoutAssignModal;
+  window.closeBreakoutConfirmModal = closeBreakoutConfirmModal;
+  window.doBreakoutConfirm = doBreakoutConfirm;
   window.exportBreakoutExcel   = exportBreakoutExcel;
   window.blastBreakoutFromUnassigned = blastBreakoutFromUnassigned;
   window.toggleBreakoutParticipantSelect = toggleBreakoutParticipantSelect;
@@ -8845,7 +9682,8 @@
       ['ph-attendance-presets', 'ph-attendance-caret'],
       ['ph-followup-presets', 'ph-followup-caret'],
       ['ph-merch-variant-menu', 'ph-merch-caret'],
-      ['intl-merch-variant-menu', 'intl-merch-caret']
+      ['intl-merch-variant-menu', 'intl-merch-caret'],
+      ['gathering-confirm-provider-menu', 'gathering-confirm-provider-caret']
     ]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
@@ -8873,6 +9711,8 @@
   })();
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+  document.getElementById('breakoutAssignModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeBreakoutAssignModal(); });
+  document.getElementById('breakoutConfirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeBreakoutConfirmModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 </script>
 </body>

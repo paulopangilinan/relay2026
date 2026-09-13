@@ -17,18 +17,31 @@ function isPastDueDate() {
 async function sessionsWithAvailability(currentSelectionSessionId = null) {
   const { data: sessions, error } = await supabase
     .from('breakout_sessions')
-    .select('id, title, speaker, speaker_post, capacity')
+    .select('id, title, speaker, speaker_post, capacity, speaker_registration_id')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
   if (error) throw error;
 
   const { data: counts, error: countErr } = await supabase
     .from('breakout_selections')
-    .select('session_id');
+    .select('session_id, registration_id');
   if (countErr) throw countErr;
 
+  // Speakers don't count against attendee capacity (Round 82) — a
+  // session's speaker is auto-seated there (admin-breakout-sessions.js)
+  // but isn't taking an audience seat, so their row is excluded from the
+  // tally rather than filling up the room for real self-selecting
+  // registrants.
+  const speakerIdBySession = {};
+  for (const s of sessions || []) {
+    if (s.speaker_registration_id) speakerIdBySession[s.id] = s.speaker_registration_id;
+  }
+
   const tally = {};
-  for (const row of counts || []) tally[row.session_id] = (tally[row.session_id] || 0) + 1;
+  for (const row of counts || []) {
+    if (speakerIdBySession[row.session_id] === row.registration_id) continue;
+    tally[row.session_id] = (tally[row.session_id] || 0) + 1;
+  }
 
   return (sessions || []).map(s => {
     const taken = tally[s.id] || 0;
@@ -126,7 +139,7 @@ export const handler = async (event) => {
 
       const { data: session, error: sessErr } = await supabase
         .from('breakout_sessions')
-        .select('id, capacity, is_active')
+        .select('id, capacity, is_active, speaker_registration_id')
         .eq('id', sessionId)
         .maybeSingle();
       if (sessErr) throw sessErr;
@@ -146,11 +159,17 @@ export const handler = async (event) => {
         return json(409, { error: 'You\u2019ve already picked a breakout session — it can\u2019t be changed.', session_id: existing.session_id, already_selected: true });
       }
 
-      // Capacity check: count current holders of the target session.
-      const { count, error: countErr } = await supabase
+      // Capacity check: count current holders of the target session,
+      // excluding the session's own speaker (Round 82 — a speaker's
+      // auto-assigned seat doesn't count against attendee capacity).
+      let countQuery = supabase
         .from('breakout_selections')
         .select('id', { count: 'exact', head: true })
         .eq('session_id', sessionId);
+      if (session.speaker_registration_id) {
+        countQuery = countQuery.neq('registration_id', session.speaker_registration_id);
+      }
+      const { count, error: countErr } = await countQuery;
       if (countErr) throw countErr;
       if ((count || 0) >= session.capacity) {
         return json(409, { error: 'This session just filled up — please pick another.' });
