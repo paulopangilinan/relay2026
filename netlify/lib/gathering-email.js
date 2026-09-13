@@ -12,6 +12,11 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // admin Settings (`gathering_email_provider` column), independent of the
 // repo-wide mailer default. Falls back to 'resend' (the current hardcoded
 // behavior) if unset or on a read error, so this is purely additive.
+// `sendGatheringPaymentConfirmedEmail`/`sendGatheringRegistrationReceivedEmail`
+// both accept an optional trailing `providerOverride` ('resend' | 'gmail')
+// that skips this lookup entirely — used by admin-gathering.js's manual
+// resend/retry action, where the admin picks the provider per click rather
+// than always using the site-wide setting.
 export async function getGatheringEmailProvider() {
   try {
     const { data } = await supabase.from("site_settings").select("gathering_email_provider").eq("id", true).maybeSingle();
@@ -34,9 +39,28 @@ export function gatheringHeroUrl() {
 
 // Two-tone diagonal gradients — same palette used repo-wide (verify.js,
 // admin-data.js, submit.js): blue for "awaiting/needs confirmation",
-// green for "confirmed / pay-at-venue".
+// green for "confirmed / pay-at-venue". Slate for cancellations — neither
+// "awaiting" nor "confirmed" applies to a cancelled row.
 export const GATHERING_HEADER_GRADIENT_BLUE  = "linear-gradient(135deg,#1C2B38,#3A8BBF)";
 export const GATHERING_HEADER_GRADIENT_GREEN = "linear-gradient(135deg,#1C2B38,#2E7048)";
+export const GATHERING_HEADER_GRADIENT_RED   = "linear-gradient(135deg,#1C2B38,#C0392B)";
+
+// Writes the outcome of a send attempt back onto the row so the admin panel
+// can show a real ✅/❌ indicator and offer a Resend button, instead of the
+// old fire-and-forget "console.error and hope" approach. `kind` picks which
+// column triple to update. Never throws — a failed status write shouldn't
+// crash the caller, it just means the indicator stays stale until next time.
+async function recordGatheringEmailStatus(rowId, kind, status, provider) {
+  try {
+    await supabase.from("gathering_registrations").update({
+      [`${kind}_email_status`]: status,
+      [`${kind}_email_provider`]: provider || null,
+      [`${kind}_email_sent_at`]: new Date().toISOString(),
+    }).eq("id", rowId);
+  } catch (err) {
+    console.error(`Failed to record ${kind} email status:`, err.message);
+  }
+}
 
 /**
  * Base email shell shared by all Gathering emails — hero image, 4px
@@ -72,14 +96,21 @@ export function gatheringPaymentConfirmedEmail(row) {
   });
 }
 
-export async function sendGatheringPaymentConfirmedEmail(sendEmail, row) {
+export async function sendGatheringPaymentConfirmedEmail(sendEmail, row, providerOverride) {
   if (!row.email) return;
-  return sendEmail({
-    to: row.email,
-    subject: "Payment Confirmed — Gathering Around the Gospel",
-    html: gatheringPaymentConfirmedEmail(row),
-    provider: await getGatheringEmailProvider(),
-  }).catch(err => console.error("Gathering payment-confirmed email failed:", err.message));
+  const provider = providerOverride || await getGatheringEmailProvider();
+  try {
+    await sendEmail({
+      to: row.email,
+      subject: "Payment Confirmed — Gathering Around the Gospel",
+      html: gatheringPaymentConfirmedEmail(row),
+      provider,
+    });
+    await recordGatheringEmailStatus(row.id, "payment_confirmed", "sent", provider);
+  } catch (err) {
+    console.error("Gathering payment-confirmed email failed:", err.message);
+    await recordGatheringEmailStatus(row.id, "payment_confirmed", "failed", provider);
+  }
 }
 
 // Shared field list (participants/payment/amount/car) for the
@@ -122,12 +153,89 @@ export function gatheringRegistrationReceivedEmail(row) {
   });
 }
 
-export async function sendGatheringRegistrationReceivedEmail(sendEmail, row) {
+export async function sendGatheringRegistrationReceivedEmail(sendEmail, row, providerOverride) {
   if (!row.email) return;
-  return sendEmail({
-    to: row.email,
-    subject: "You're Registered! — Gathering Around the Gospel",
-    html: gatheringRegistrationReceivedEmail(row),
-    provider: await getGatheringEmailProvider(),
-  }).catch(err => console.error("Gathering registration-received email failed:", err.message));
+  const provider = providerOverride || await getGatheringEmailProvider();
+  try {
+    await sendEmail({
+      to: row.email,
+      subject: "You're Registered! — Gathering Around the Gospel",
+      html: gatheringRegistrationReceivedEmail(row),
+      provider,
+    });
+    await recordGatheringEmailStatus(row.id, "registration", "sent", provider);
+  } catch (err) {
+    console.error("Gathering registration-received email failed:", err.message);
+    await recordGatheringEmailStatus(row.id, "registration", "failed", provider);
+  }
+}
+
+// Fixed set of cancellation reasons — each maps to its own drafted body
+// rather than an admin-typed free-text note, per the user's explicit ask
+// for canned reasons with matching copy. Keys are what's stored in
+// gathering_registrations.cancellation_reason and what the admin panel's
+// dropdown sends.
+export const GATHERING_CANCELLATION_REASONS = {
+  duplicate: {
+    label: "Duplicate Submission",
+    body: (row) => `
+      <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
+      <p style="margin:0 0 10px;">We noticed you had more than one registration for Gathering Around the Gospel using the same GCash payment receipt. To keep things fair for everyone, we've cancelled this duplicate entry — your other registration is still active and doesn't need to be resubmitted.</p>
+      <p style="margin:0;">If you believe this was cancelled by mistake, just reply to this email and we'll sort it out.</p>`,
+  },
+  cant_confirm_payment: {
+    label: "Can't Confirm Payment",
+    body: (row) => `
+      <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
+      <p style="margin:0 0 10px;">We weren't able to verify the GCash receipt submitted with your registration for Gathering Around the Gospel, so we've had to cancel this entry.</p>
+      <p style="margin:0;">If you did complete a valid payment, please reply to this email with a clearer copy of your receipt (or your GCash reference number) and we'll help sort it out. Otherwise, feel free to register again with a valid receipt.</p>`,
+  },
+  registrant_requested: {
+    label: "Registrant Requested",
+    body: (row) => `
+      <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
+      <p style="margin:0;">As requested, we've cancelled your registration for Gathering Around the Gospel. We hope to see you at a future gathering!</p>`,
+  },
+  other: {
+    label: "Other",
+    body: (row) => `
+      <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
+      <p style="margin:0;">Your registration for Gathering Around the Gospel has been cancelled. If you have any questions, please reach out to us.</p>`,
+  },
+};
+
+export function gatheringCancellationEmail(row, reason) {
+  const entry = GATHERING_CANCELLATION_REASONS[reason] || GATHERING_CANCELLATION_REASONS.other;
+  return gatheringEmailShell({
+    heroUrl: gatheringHeroUrl(),
+    headerBg: GATHERING_HEADER_GRADIENT_RED,
+    headerTitle: "Registration Cancelled",
+    body: entry.body(row),
+  });
+}
+
+/**
+ * Cancellation email defaults to Gmail — replies are expected here ("reply
+ * to this email if..."), and Gmail is a real monitored inbox in a way the
+ * Resend-verified domain isn't. An admin can still override to Resend for
+ * one send via the resend/retry picker in the admin panel (providerOverride)
+ * — Reply-To is always set to GMAIL_USER regardless of provider, so replies
+ * land in the real inbox either way.
+ */
+export async function sendGatheringCancellationEmail(sendEmail, row, reason, providerOverride) {
+  if (!row.email) return;
+  const provider = providerOverride === "resend" ? "resend" : "gmail";
+  try {
+    await sendEmail({
+      to: row.email,
+      subject: "Registration Cancelled — Gathering Around the Gospel",
+      html: gatheringCancellationEmail(row, reason),
+      provider,
+      replyTo: process.env.GMAIL_USER,
+    });
+    await recordGatheringEmailStatus(row.id, "cancellation", "sent", provider);
+  } catch (err) {
+    console.error("Gathering cancellation email failed:", err.message);
+    await recordGatheringEmailStatus(row.id, "cancellation", "failed", provider);
+  }
 }

@@ -4,6 +4,7 @@
 // wired into the main `registrations` table or its email/SMS pipeline.
 import { createClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { sendEmail } from "../lib/mailer.js";
 import { gatheringHeroUrl, gatheringEmailShell, escapeHtml, GATHERING_HEADER_GRADIENT_BLUE, GATHERING_HEADER_GRADIENT_GREEN, sendGatheringRegistrationReceivedEmail, getGatheringEmailProvider } from "../lib/gathering-email.js";
 
@@ -260,11 +261,33 @@ export const handler = async (event) => {
     const amountDue  = feePerHead * count;
 
     let receiptUrl = null;
+    let receiptHash = null;
+    let isFlaggedDuplicate = false;
+    let duplicateMatchIds = [];
     if (paymentMethod === "gcash" && receiptBase64) {
       const buf = Buffer.from(receiptBase64, "base64");
       if (buf.length > MAX_RECEIPT_BYTES) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: "Receipt image is too large. Please upload a file under 5MB." }) };
       }
+      // Byte-identical reuse check — catches submitting the same GCash
+      // screenshot twice, which is what actually happened with the
+      // Verastigue duplicate (see Round 63/64 investigation). This never
+      // blocks the submission; it only flags both sides of a match for
+      // admin review, since a hash match could also be an innocent
+      // resubmission (e.g. retrying after not seeing a confirmation email).
+      // Known limitation: a re-crop/re-compress/re-screenshot of the same
+      // receipt changes the hash and won't be caught this way.
+      receiptHash = crypto.createHash("sha256").update(buf).digest("hex");
+      const { data: matches } = await supabase
+        .from("gathering_registrations")
+        .select("id")
+        .eq("receipt_hash", receiptHash)
+        .neq("payment_status", "cancelled");
+      if (matches && matches.length) {
+        isFlaggedDuplicate = true;
+        duplicateMatchIds = matches.map(m => m.id);
+      }
+
       const ext  = receiptName?.split(".").pop() || "jpg";
       const path = `gathering-receipts/${Date.now()}-${cleanName.replace(/\s+/g, "_")}.${ext}`;
       const { error: uploadErr } = await supabase.storage
@@ -291,6 +314,8 @@ export const handler = async (event) => {
         fee_per_head: feePerHead,
         amount_due: amountDue,
         receipt_url: receiptUrl,
+        receipt_hash: receiptHash,
+        flagged_duplicate: isFlaggedDuplicate,
         payment_status: paymentStatus,
         bringing_car: hasCar,
         car_maker: cleanCarMaker,
@@ -302,9 +327,22 @@ export const handler = async (event) => {
 
     if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
 
-    // Non-blocking — a notify/email failure should never fail the participant's submission.
-    notifyAdminsOfGatheringRegistration(row);
-    sendGatheringRegistrationReceivedEmail(sendEmail, row);
+    // Flag the other side(s) of the match too, so admin sees both rows
+    // flagged — not just whichever one happened to submit second.
+    if (duplicateMatchIds.length) {
+      await supabase.from("gathering_registrations")
+        .update({ flagged_duplicate: true })
+        .in("id", duplicateMatchIds)
+        .catch(err => console.error("Failed to flag matched duplicate row(s):", err.message));
+    }
+
+    // Awaited (not fire-and-forget) — Netlify's execution environment can
+    // freeze the moment this handler's promise resolves, so an un-awaited
+    // send here isn't guaranteed to actually finish. Individual failures
+    // still never fail the participant's submission (both functions catch
+    // internally and record status on the row instead of throwing).
+    await notifyAdminsOfGatheringRegistration(row);
+    await sendGatheringRegistrationReceivedEmail(sendEmail, row);
 
     return {
       statusCode: 200,

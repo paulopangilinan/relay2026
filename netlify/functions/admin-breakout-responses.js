@@ -31,7 +31,7 @@ export const handler = async (event) => {
       // Fetch all active breakout sessions
       const { data: sessions, error: sessErr } = await supabase
         .from('breakout_sessions')
-        .select('id, title, speaker, speaker_post, capacity, sort_order')
+        .select('id, title, speaker, speaker_post, speaker_registration_id, capacity, sort_order')
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
         .order('title', { ascending: true });
@@ -99,6 +99,23 @@ export const handler = async (event) => {
         }
       }
 
+      // Round 82: the registrant picked as a session's speaker (set in
+      // admin-breakout-sessions.js, which also seats them there — see that
+      // file's POST handler) is pinned to the top of that session's list
+      // and flagged isSpeaker, computed here at read time rather than
+      // stored as a separate column — a session only ever has the one
+      // speaker_registration_id, so this is always a single lookup, not a
+      // join.
+      for (const sess of Object.values(sessionMap)) {
+        if (!sess.speaker_registration_id) continue;
+        const idx = sess.participants.findIndex(p => p.registrationId === sess.speaker_registration_id);
+        if (idx > -1) {
+          const [speakerParticipant] = sess.participants.splice(idx, 1);
+          speakerParticipant.isSpeaker = true;
+          sess.participants.unshift(speakerParticipant);
+        }
+      }
+
       return json(200, {
         sessions: Object.values(sessionMap),
         unassigned,
@@ -107,13 +124,21 @@ export const handler = async (event) => {
       });
     }
 
-    // ── PATCH: admin manually assigns an unassigned participant to a session ──
+    // ── PATCH: admin manually assigns an unassigned participant to a
+    //           session, reassigns an admin-assigned participant to a
+    //           different session, OR unassigns one back to the pool
+    //           (sessionId: null) — self-selected participants are locked
+    //           and can never be touched by any of these three. ──
     if (event.httpMethod === 'PATCH') {
       const body = JSON.parse(event.body || '{}');
       const { registrationId, sessionId } = body;
 
-      if (!registrationId || !sessionId) {
-        return json(400, { error: 'Missing registrationId or sessionId' });
+      if (!registrationId) {
+        return json(400, { error: 'Missing registrationId' });
+      }
+
+      if (sessionId === undefined) {
+        return json(400, { error: 'Missing sessionId' });
       }
 
       // Confirm the participant exists and is not cancelled
@@ -127,8 +152,15 @@ export const handler = async (event) => {
         return json(404, { error: 'Registration not found or cancelled' });
       }
 
-      // Only allow reassignment of participants with NO existing selection —
-      // those who self-selected are locked and cannot be moved by admins.
+      // Only allow reassignment/unassignment of participants with NO
+      // existing self-selection — those who chose their own session are
+      // locked and cannot be moved OR unassigned by admins, UNLESS the
+      // requesting admin is a super admin (Round 79's hidden override
+      // escape hatch). admin.is_super_admin comes from the verified JWT
+      // (getAdmin() above) on every request — never a client-supplied
+      // flag — so this is a real security boundary, not just a UI
+      // convenience; a regular admin hitting this endpoint directly still
+      // gets the 409 no matter what the client sends.
       let existing = null;
       const { data: existData, error: existErr } = await supabase
         .from('breakout_selections')
@@ -148,23 +180,43 @@ export const handler = async (event) => {
         existing = existData;
       }
 
-      if (existing && existing.selected_by_admin === false) {
+      if (existing && existing.selected_by_admin === false && !admin.is_super_admin) {
         return json(409, { error: 'This participant chose their own session and cannot be reassigned.' });
+      }
+
+      // sessionId === null means "unassign" — delete the admin-assigned
+      // selection row entirely, sending them back to the Unassigned pool.
+      if (sessionId === null) {
+        if (!existing) return json(200, { success: true, alreadyUnassigned: true });
+        const { error: delErr } = await supabase
+          .from('breakout_selections')
+          .delete()
+          .eq('id', existing.id);
+        if (delErr) throw delErr;
+        return json(200, { success: true });
       }
 
       // Confirm target session exists and has capacity
       const { data: session, error: sessErr } = await supabase
         .from('breakout_sessions')
-        .select('id, capacity, is_active')
+        .select('id, capacity, is_active, speaker_registration_id')
         .eq('id', sessionId)
         .maybeSingle();
       if (sessErr) throw sessErr;
       if (!session || !session.is_active) return json(404, { error: 'Session not found' });
 
-      const { count, error: countErr } = await supabase
+      // Speakers don't count against attendee capacity (Round 82) — the
+      // speaker's own seat (auto-assigned in admin-breakout-sessions.js) is
+      // excluded from this count so it never fills the room for real
+      // attendees.
+      let countQuery = supabase
         .from('breakout_selections')
         .select('id', { count: 'exact', head: true })
         .eq('session_id', sessionId);
+      if (session.speaker_registration_id) {
+        countQuery = countQuery.neq('registration_id', session.speaker_registration_id);
+      }
+      const { count, error: countErr } = await countQuery;
       if (countErr) throw countErr;
       if ((count || 0) >= session.capacity) {
         return json(409, { error: 'This session is already at capacity.' });
