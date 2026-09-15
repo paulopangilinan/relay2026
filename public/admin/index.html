@@ -7164,31 +7164,66 @@
       showToast('Export library is still loading, please try again in a second.');
       return;
     }
+    // Round 92: one row per vehicle instead of up to 10 "Vehicle N"
+    // columns — matches how the admin list itself already presents this
+    // (a stacked line per vehicle) rather than a wide, mostly-empty grid.
+    // Every other column for that registrant is real-merged via
+    // ws['!merges'] (a structural feature, not a paid-only style one, so
+    // it works fine on the community xlsx library used here) across
+    // however many vehicle rows they have, with the repeat rows left
+    // blank underneath the merge — same convention Excel itself uses for
+    // a merged block.
     const rows = [
-      ['Name', 'Email', 'Mobile', 'Participants', 'Payment Method', 'Amount Due', 'Payment Status', 'Car Info', 'Registered', 'Verified By']
+      ['Name', 'Email', 'Mobile', 'Participants', 'Payment Method', 'Amount Due', 'Payment Status', 'Vehicles', 'Vehicle', 'Registered', 'Verified By']
     ];
+    const merges = [];
+    let rowIndex = 1; // row 0 is the header
+
     gatheringFilteredRows.forEach(r => {
-      const carInfo = r.bringing_car
-        ? `${r.car_maker || ''} ${r.car_model || ''} · ${r.car_plate || ''}`.trim()
-        : 'No';
+      const carsList = r.bringing_car && Array.isArray(r.cars) ? r.cars : [];
+      // Registrants not bringing a car (or with no cars recorded) still
+      // get exactly one row, with the Vehicle cell left blank — the merge
+      // logic below only kicks in when there's more than one row to merge.
+      const vehicleLines = carsList.length
+        ? carsList.map(c => `${c.maker || ''} ${c.model || ''} — ${c.plate || ''}`.trim())
+        : [''];
       const statusLabel = r.payment_status === 'confirmed' ? 'Confirmed'
         : r.payment_status === 'pending_review' ? 'Pending Review'
         : r.payment_status === 'cancelled' ? 'Cancelled' : 'Unpaid';
-      rows.push([
-        properCaseName(r.name) || '',
-        r.email || '',
-        r.mobile || '',
-        r.participant_count || 0,
-        r.payment_method === 'gcash' ? 'GCash' : 'Pay at Venue',
-        r.amount_due || 0,
-        statusLabel,
-        carInfo,
-        r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
-        r.verified_by || '',
-      ]);
+      const registeredLabel = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+      const startRow = rowIndex;
+
+      vehicleLines.forEach((vLine, i) => {
+        rows.push([
+          i === 0 ? (properCaseName(r.name) || '') : '',
+          i === 0 ? (r.email || '') : '',
+          i === 0 ? (r.mobile || '') : '',
+          i === 0 ? (r.participant_count || 0) : '',
+          i === 0 ? (r.payment_method === 'gcash' ? 'GCash' : 'Pay at Venue') : '',
+          i === 0 ? (r.amount_due || 0) : '',
+          i === 0 ? statusLabel : '',
+          i === 0 ? carsList.length : '',
+          vLine,
+          i === 0 ? registeredLabel : '',
+          i === 0 ? (r.verified_by || '') : '',
+        ]);
+        rowIndex++;
+      });
+
+      if (vehicleLines.length > 1) {
+        const endRow = rowIndex - 1;
+        [0, 1, 2, 3, 4, 5, 6, 7, 9, 10].forEach(col => {
+          merges.push({ s: { r: startRow, c: col }, e: { r: endRow, c: col } });
+        });
+      }
     });
+
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{ wch: 24 }, { wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 28 }, { wch: 12 }, { wch: 18 }];
+    ws['!merges'] = merges;
+    ws['!cols'] = [
+      { wch: 24 }, { wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 10 },
+      { wch: 30 }, { wch: 12 }, { wch: 18 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Gathering');
     const filename = `relay2026-gathering-registrations-${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -7250,8 +7285,18 @@
           </div>`
         : '<span style="color:var(--muted);">—</span>';
       const registered = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
-      const carCell = r.bringing_car
-        ? `<span title="${esc(r.car_maker || '')} ${esc(r.car_model || '')} · ${esc(r.car_plate || '')}" style="font-size:12px;">🚗 ${esc(r.car_maker || '')} ${esc(r.car_model || '')}<br><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;">${esc(r.car_plate || '')}</span></span>`
+      // Round 88: cars is an array — stacked list, one vehicle per line
+      // (per user's chosen presentation), since a registrant can now
+      // bring more than one. The old single car_maker/car_model/car_plate
+      // fields are no longer written to on new submissions, but old rows
+      // inserted before this change never got backfilled into `cars` if
+      // they had no car at all — only bringing_car=true rows were
+      // backfilled by the migration, so this only ever reads `cars`.
+      const carsList = Array.isArray(r.cars) ? r.cars : [];
+      const carCell = r.bringing_car && carsList.length
+        ? `<span style="font-size:12px;">${carsList.map(c =>
+            `<span title="${esc(c.maker || '')} ${esc(c.model || '')} · ${esc(c.plate || '')}" style="display:block;margin-bottom:3px;">🚗 ${esc(c.maker || '')} ${esc(c.model || '')}<br><span style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;">${esc(c.plate || '')}</span></span>`
+          ).join('')}</span>`
         : '<span style="color:var(--muted);">—</span>';
       const emailsCell = gatheringEmailStatusCell(r);
       return `<tr>

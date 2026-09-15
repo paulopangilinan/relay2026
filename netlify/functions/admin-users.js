@@ -6,19 +6,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { sendEmail } from '../lib/mailer.js';
+import { getAdmin } from '../lib/admin-auth.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || 'relay2026secret';
 
-function getAdmin(event) {
-  try {
-    const token = (event.headers.authorization || '').replace('Bearer ', '');
-    return jwt.verify(token, JWT_SECRET);
-  } catch { return null; }
-}
 
 function generatePassword() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
@@ -28,7 +22,7 @@ function generatePassword() {
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
 
-  const requester = getAdmin(event);
+  const requester = await getAdmin(event, supabase);
   if (!requester) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
   if (!requester.permissions?.manage_admins) return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to manage admins' }) };
 

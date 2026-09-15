@@ -1,24 +1,18 @@
 // netlify/functions/admin-gathering.js
 import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
 import { sendEmail } from "../lib/mailer.js";
 import { sendGatheringPaymentConfirmedEmail, sendGatheringCancellationEmail, sendGatheringRegistrationReceivedEmail, GATHERING_CANCELLATION_REASONS } from "../lib/gathering-email.js";
+import { getAdmin } from "../lib/admin-auth.js";
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || "relay2026secret";
 
-function getAdmin(event) {
-  try {
-    const token = (event.headers.authorization || "").replace("Bearer ", "");
-    return jwt.verify(token, JWT_SECRET);
-  } catch { return null; }
-}
 
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers };
 
-  const admin = getAdmin(event);
+  const admin = await getAdmin(event, supabase);
   if (!admin) return { statusCode: 401, headers, body: JSON.stringify({ error: "Unauthorized" }) };
 
   try {
@@ -112,7 +106,16 @@ export const handler = async (event) => {
         // Lets an admin manually retry a failed (or force-retry a
         // successful) delivery straight from the table, now that every
         // send records its own outcome instead of failing silently.
-        if (!admin.permissions?.gathering_email_updates || admin.force_password_change) {
+        //
+        // Was gated on `gathering_email_updates`, which is actually the
+        // unrelated "receive Gathering registration-alert emails"
+        // subscription toggle (see submit-gathering.js) — an admin without
+        // that flag but WITH verify_payment (the permission that gates
+        // every other action in this file, and the one that actually
+        // governs managing the Gathering tab) got a spurious "No
+        // permission" error just for clicking resend/retry. Fixed to match
+        // the rest of this file's convention.
+        if (!admin.permissions?.verify_payment || admin.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: "No permission" }) };
         }
         const { type, provider } = body;

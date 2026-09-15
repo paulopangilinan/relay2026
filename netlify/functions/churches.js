@@ -1,17 +1,11 @@
 // netlify/functions/churches.js
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { getAdmin } from '../lib/admin-auth.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 const JWT_SECRET = process.env.JWT_SECRET || 'relay2026secret';
 
-function getAdmin(event) {
-  try {
-    const token = (event.headers.authorization || '').replace('Bearer ', '');
-    return jwt.verify(token, JWT_SECRET);
-  } catch { return null; }
-}
 
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
@@ -45,7 +39,7 @@ export const handler = async (event) => {
   }
 
   // All write ops require manage_churches
-  const admin = getAdmin(event);
+  const admin = await getAdmin(event, supabase);
   if (!admin) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
   if (!admin.permissions?.manage_churches) {
     return { statusCode: 403, headers, body: JSON.stringify({ error: 'No permission to manage churches' }) };

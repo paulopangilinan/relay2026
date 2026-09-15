@@ -1,18 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { getAdmin } from '../lib/admin-auth.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || 'relay2026secret';
 
-function getAdmin(event) {
-  try {
-    const token = (event.headers.authorization || '').replace('Bearer ', '');
-    return jwt.verify(token, JWT_SECRET);
-  } catch {
-    return null;
-  }
-}
 
 function json(statusCode, body) {
   return { statusCode, headers, body: JSON.stringify(body) };
@@ -21,7 +13,7 @@ function json(statusCode, body) {
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
 
-  const admin = getAdmin(event);
+  const admin = await getAdmin(event, supabase);
   if (!admin) return json(401, { error: 'Unauthorized' });
   if (!admin.permissions?.verify_payment && !admin.is_super_admin) return json(403, { error: 'No permission' });
 

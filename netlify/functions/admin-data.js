@@ -1,6 +1,5 @@
 // netlify/functions/admin-data.js
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 import { sendEmail, normalizeProvider, resendConfigured } from '../lib/mailer.js';
 import { sendToDistinctMobiles, sendAndLogSMS, smsConfigured, smsReady, smsSenderName, estimateSegments, getSMSAccount } from '../lib/sms.js';
 import { getNotificationSettings, smsAllowed, templateFor } from '../lib/notification-settings.js';
@@ -8,18 +7,13 @@ import { followUpSMS, followUpPartialSMS, confirmedSMS, cancelledSMS, attendance
 import { attendanceLinks } from '../lib/attendance.js';
 import { merchLink, fetchLiveMerchFx, approxConversion } from '../lib/merch.js';
 import { breakoutLink, breakoutFollowupUrgency, BREAKOUT_DUE_DATE } from '../lib/breakout.js';
+import { getAdmin } from '../lib/admin-auth.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || 'relay2026secret';
 
-function getAdmin(event) {
-  try {
-    const token = (event.headers.authorization || '').replace('Bearer ', '');
-    return jwt.verify(token, JWT_SECRET);
-  } catch { return null; }
-}
 
 /**
  * Base URL for links we put in emails.
@@ -47,7 +41,7 @@ async function getAdminsWithPermission(permission) {
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
 
-  const requester = getAdmin(event);
+  const requester = await getAdmin(event, supabase);
   if (!requester) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
 
   // ── GET ?sms_balance=1 : just the Semaphore credit balance ────────────────

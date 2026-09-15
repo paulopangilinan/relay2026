@@ -1408,6 +1408,8 @@
     if (schoolFile) {
       fileToBase64(document.getElementById('m-schoolIdFile')).then(function(data) {
         _commitParticipant(name, age, mobile, status.value, gender.value, data?.base64||null, data?.name||null);
+      }).catch(function(err) {
+        showToast('⚠️ ' + err.message, true);
       });
     } else {
       const schoolIdBase64 = existingId || null;
@@ -1509,16 +1511,66 @@
     return true;
   }
 
-  // Convert a file input to base64 string
-  function fileToBase64(fileInput) {
+  // Convert a file input to base64 string. Images are downscaled and
+  // re-encoded as JPEG first — camera photos and screenshots routinely land
+  // in the 3-8MB range, and AWS Lambda (which Netlify Functions run on) has
+  // a hard ~6MB limit on the total request body. Base64 inflates size by
+  // ~33%, and a group registration can carry several of these in one
+  // request (the shared receipt + one school ID per student), so sending
+  // the original file as-is was the actual cause of the "Unexpected end of
+  // JSON input" crash on submit — the platform was rejecting the oversized
+  // request outright before submit.js ever ran; it was never a slow
+  // function on the server side.
+  const MAX_IMAGE_DIMENSION      = 1600; // px, longest side — plenty to keep a receipt/ID legible
+  const IMAGE_JPEG_QUALITY       = 0.75;
+  const MAX_UPLOAD_BASE64_CHARS  = 4 * 1024 * 1024; // ~4MB of base64 per file — safely under the 6MB total-request limit even with a second file (receipt + one school ID) in the same payload
+
+  function compressImageFile(file) {
     return new Promise((resolve, reject) => {
-      const file = fileInput?.files?.[0];
-      if (!file) { resolve(null); return; }
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        let { width, height } = img;
+        if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+          const scale = MAX_IMAGE_DIMENSION / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY);
+        resolve({ base64: dataUrl.split(',')[1], name: file.name.replace(/\.[^.]+$/, '') + '.jpg' });
+      };
+      img.onerror = () => reject(new Error(`Could not read "${file.name}" as an image — please try a different file.`));
+      img.src = objectUrl;
+    });
+  }
+
+  function readFileRaw(file) {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve({ base64: reader.result.split(',')[1], name: file.name });
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  async function fileToBase64(fileInput) {
+    const file = fileInput?.files?.[0];
+    if (!file) return null;
+
+    // Non-image files (e.g. a PDF receipt) can't be downscaled the same
+    // way — passed through as-is, still subject to the size cap below.
+    const result = file.type.startsWith('image/')
+      ? await compressImageFile(file)
+      : await readFileRaw(file);
+
+    if (result.base64.length > MAX_UPLOAD_BASE64_CHARS) {
+      throw new Error(`"${file.name}" is too large even after compression — please choose a smaller file or a different photo.`);
+    }
+    return result;
   }
 
   async function buildPayload(withReceipt) {
