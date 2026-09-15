@@ -4,11 +4,11 @@
 // PUT → update settings (super admin only)
 
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 import { NOTIFICATION_DEFAULTS, NOTIFICATION_TEXT_DEFAULTS } from '../lib/notification-settings.js';
 import { smsConfigured, smsReady, smsSenderName, getSMSAccount, getSenderNames } from '../lib/sms.js';
 import { resendConfigured } from '../lib/mailer.js';
 import { smsEventCatalogue, replyNumber } from '../lib/sms-templates.js';
+import { getAdmin } from '../lib/admin-auth.js';
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const headers    = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
@@ -50,18 +50,12 @@ async function getGatheringParticipantTotal() {
 // accident can't quietly burn the balance across a whole bulk run.
 const MAX_TEMPLATE_LENGTH = 1600;
 
-function getAdmin(event) {
-  try {
-    const token = (event.headers.authorization || '').replace('Bearer ', '');
-    return jwt.verify(token, JWT_SECRET);
-  } catch { return null; }
-}
 
 export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
 
   if (event.httpMethod === 'GET') {
-    const requester = getAdmin(event);
+    const requester = await getAdmin(event, supabase);
 
     // Notification columns arrive across two migrations. Step down one tier at
     // a time so a half-migrated database still reports everything it does have,
@@ -195,7 +189,7 @@ export const handler = async (event) => {
   }
 
   if (event.httpMethod === 'PUT') {
-    const requester = getAdmin(event);
+    const requester = await getAdmin(event, supabase);
     if (!requester)                return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     if (!requester.is_super_admin) return { statusCode: 403, headers, body: JSON.stringify({ error: 'Super admin only' }) };
 

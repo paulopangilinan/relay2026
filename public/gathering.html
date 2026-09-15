@@ -239,6 +239,49 @@
   }
   .toggle-btn.active { border-color: var(--sky); background: var(--sky-light); color: var(--sky); }
 
+  /* Round 88: one or more vehicles per registrant — a static "Vehicle 1"
+     row plus JS-appended rows for "+ Add Vehicle" (up to MAX_VEHICLES). */
+  .vehicle-row { padding: 14px 0; border-top: 1px solid var(--border); }
+  .vehicle-row:first-child { border-top: none; padding-top: 0; }
+  .vehicle-row-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .add-vehicle-btn {
+    width: 100%; margin-top: 4px; padding: 10px; border: 1.5px dashed var(--sky); border-radius: 9px;
+    background: var(--sky-light); color: var(--sky); font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  /* Round 91 follow-up: each vehicle is explicitly Saved (or Cancelled)
+     rather than becoming "done" just by clicking Add Another Vehicle —
+     that button only exists at all once every row on screen is saved and
+     collapsed, so there's never a half-filled row left behind that could
+     otherwise slip through to submission. */
+  .vehicle-row.collapsed .field { display: none; }
+  .vehicle-row-summary { flex: 1; min-width: 0; font-size: 13px; color: var(--dark); font-weight: 600; }
+  .vehicle-row.collapsed .vehicle-row-header { margin-bottom: 0; }
+  .vehicle-row-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .edit-vehicle-btn {
+    background: none; border: none; color: var(--sky); font-size: 16px;
+    cursor: pointer; padding: 2px 6px; line-height: 1;
+  }
+  .save-vehicle-btn {
+    background: var(--sky); color: #fff; border: none; border-radius: 8px; padding: 11px;
+    font-size: 13px; font-weight: 700; cursor: pointer; flex: 1;
+  }
+  .cancel-vehicle-btn {
+    background: #fff; color: #C0392B; border: 1.5px solid #C0392B; border-radius: 8px; padding: 11px;
+    font-size: 13px; font-weight: 700; cursor: pointer; flex: 1;
+  }
+  .delete-vehicle-btn {
+    background: #fff; border: 1.5px solid #C0392B; color: #C0392B; border-radius: 8px;
+    font-size: 15px; cursor: pointer; padding: 0 14px; line-height: 1; flex: 0 0 auto;
+  }
+  /* Round 94: Save/Cancel (and Delete, when re-editing a saved vehicle)
+     moved below the Plate field instead of sitting in the row header —
+     full-width, matching the width of the fields above them, so they read
+     as the row's primary actions rather than small header controls.
+     Hidden entirely once collapsed (nothing to act on until it's
+     re-opened via the pencil icon, which stays in the header). */
+  .vehicle-row-bottom-actions { display: flex; gap: 8px; margin-top: 6px; }
+  .vehicle-row.collapsed .vehicle-row-bottom-actions { display: none; }
+
   /* Map / directions */
   .map-embed { border-radius:12px; overflow:hidden; margin-bottom:16px; border:1px solid var(--border); }
   .map-embed iframe { width:100%; height:250px; border:0; display:block; }
@@ -369,18 +412,28 @@
 
       <div class="slide-panel" id="carPanel">
         <div class="car-notice">⚠️ Parking inside CCT Tagaytay is subject to availability — a lot of participants may be bringing a car. We'll do our best to accommodate everyone, but a spot isn't guaranteed.</div>
-        <div class="field">
-          <label for="carMaker">Car Maker</label>
-          <input type="text" id="carMaker" name="carMaker" placeholder="e.g. Toyota">
+        <div id="vehicleRows">
+          <div class="vehicle-row" data-vehicle-index="0" data-saved="0">
+            <div class="vehicle-row-header">
+              <div class="vehicle-row-summary"></div>
+              <div class="vehicle-row-actions"></div>
+            </div>
+            <div class="field">
+              <label>Car Maker</label>
+              <input type="text" class="vehicle-maker" placeholder="e.g. Toyota">
+            </div>
+            <div class="field">
+              <label>Car Model</label>
+              <input type="text" class="vehicle-model" placeholder="e.g. Vios">
+            </div>
+            <div class="field">
+              <label>Plate Number</label>
+              <input type="text" class="vehicle-plate" placeholder="e.g. ABC 1234">
+            </div>
+            <div class="vehicle-row-bottom-actions"></div>
+          </div>
         </div>
-        <div class="field">
-          <label for="carModel">Car Model</label>
-          <input type="text" id="carModel" name="carModel" placeholder="e.g. Vios">
-        </div>
-        <div class="field">
-          <label for="carPlate">Plate Number</label>
-          <input type="text" id="carPlate" name="carPlate" placeholder="e.g. ABC 1234">
-        </div>
+        <button type="button" id="addVehicleBtn" class="add-vehicle-btn" onclick="addVehicleRow()">🚗 Add Another Vehicle</button>
       </div>
     </div>
 
@@ -558,6 +611,209 @@
     document.getElementById('carPanel').classList.toggle('open', val);
   }
 
+  // Round 88: one or more vehicles per registrant. Vehicle 1 is always the
+  // static row already in the HTML; "Add Another Vehicle" appends more
+  // (capped at MAX_VEHICLES) so a large group splitting across several
+  // cars can list all of them, instead of the previous single-car-only
+  // form, which is exactly why one 18-participant group ended up cramming
+  // 6 vehicles' worth of data into 3 single text fields as comma-separated
+  // lists.
+  //
+  // Round 91 follow-up: each row is explicitly Saved or Cancelled rather
+  // than becoming "done" as a side effect of clicking Add Another Vehicle.
+  // "Add Another Vehicle" itself only appears once every row on screen is
+  // saved and collapsed — never while a row is unsaved or mid-edit — so a
+  // half-filled row can never slip through to submission unnoticed, and
+  // the main Submit button is guarded the same way (see the submit
+  // handler below).
+  const MAX_VEHICLES = 10;
+
+  function vehicleRowHtml(index) {
+    return `
+      <div class="vehicle-row" data-vehicle-index="${index}" data-saved="0">
+        <div class="vehicle-row-header">
+          <div class="vehicle-row-summary"></div>
+          <div class="vehicle-row-actions"></div>
+        </div>
+        <div class="field">
+          <label>Car Maker</label>
+          <input type="text" class="vehicle-maker" placeholder="e.g. Toyota">
+        </div>
+        <div class="field">
+          <label>Car Model</label>
+          <input type="text" class="vehicle-model" placeholder="e.g. Vios">
+        </div>
+        <div class="field">
+          <label>Plate Number</label>
+          <input type="text" class="vehicle-plate" placeholder="e.g. ABC 1234">
+        </div>
+        <div class="vehicle-row-bottom-actions"></div>
+      </div>`;
+  }
+
+  function vehicleRowIsFilled(row) {
+    return !!(row.querySelector('.vehicle-maker').value.trim()
+      && row.querySelector('.vehicle-model').value.trim()
+      && row.querySelector('.vehicle-plate').value.trim());
+  }
+
+  function vehicleRowSummaryText(row) {
+    const maker = row.querySelector('.vehicle-maker').value.trim();
+    const model = row.querySelector('.vehicle-model').value.trim();
+    const plate = row.querySelector('.vehicle-plate').value.trim();
+    return `${maker} ${model} — ${plate}`;
+  }
+
+  function vehicleRowIsFirst(row) {
+    return row === document.querySelector('#vehicleRows .vehicle-row');
+  }
+
+  // Round 94: block the exact abuse pattern that corrupted registrant
+  // 46e18386-...'s data — 6 vehicles' worth of comma-separated values
+  // crammed into the 3 single fields, since the form only supported one
+  // car at the time. Now that each vehicle has its own row, a comma or
+  // semicolon in any field is never legitimate for a single
+  // maker/model/plate — it means someone's trying to list several values
+  // in one field again. Also blocks obviously-too-short "lazy fill" junk
+  // and a plate with no digits at all (a real plate always has some).
+  function vehicleFieldValidationError(maker, model, plate) {
+    if (/[,;]/.test(maker) || /[,;]/.test(model) || /[,;]/.test(plate)) {
+      return 'Please enter just ONE vehicle per row — use "Add Another Vehicle" for more, not commas or semicolons in a single field.';
+    }
+    if (maker.length < 2 || model.length < 2) {
+      return 'Car Maker and Model look too short — please enter the full name.';
+    }
+    if (plate.length < 4 || !/[A-Za-z]/.test(plate) || !/[0-9]/.test(plate)) {
+      return 'Plate number looks invalid — it should include both letters and numbers.';
+    }
+    return null;
+  }
+
+  // A row only counts as "settled" once it's both saved AND collapsed —
+  // this is the single check that gates the Add Another Vehicle button
+  // and the main Submit button, so the two can never disagree about
+  // whether a vehicle is actually done.
+  function vehicleRowIsSettled(row) {
+    return row.dataset.saved === '1' && row.classList.contains('collapsed');
+  }
+
+  function allVehicleRowsSettled() {
+    return Array.from(document.querySelectorAll('#vehicleRows .vehicle-row')).every(vehicleRowIsSettled);
+  }
+
+  // Rebuilds the Save/Cancel/Edit/Delete button set for one row based on
+  // its current state — called any time that state changes. The pencil
+  // (collapsed state) stays in the row header; Save/Cancel/Delete (any
+  // editing state) render in the full-width bar below the Plate field
+  // instead (Round 94) — only one of the two containers is ever populated
+  // at a time, so there's no risk of both showing at once.
+  function refreshVehicleRowActions(row) {
+    const headerActions = row.querySelector('.vehicle-row-actions');
+    const bottomActions = row.querySelector('.vehicle-row-bottom-actions');
+    const saved = row.dataset.saved === '1';
+    const collapsed = row.classList.contains('collapsed');
+    const isFirst = vehicleRowIsFirst(row);
+
+    if (saved && collapsed) {
+      headerActions.innerHTML = `<button type="button" class="edit-vehicle-btn" onclick="expandVehicleRow(this.closest('.vehicle-row'))" title="Edit vehicle">✏️</button>`;
+      bottomActions.innerHTML = '';
+    } else if (!saved) {
+      headerActions.innerHTML = '';
+      bottomActions.innerHTML = `<button type="button" class="save-vehicle-btn" onclick="saveVehicleRow(this.closest('.vehicle-row'))">💾 Save</button>`
+        + (isFirst ? '' : `<button type="button" class="cancel-vehicle-btn" onclick="cancelVehicleRow(this.closest('.vehicle-row'))">✕ Cancel</button>`);
+    } else {
+      // saved, currently expanded for editing
+      headerActions.innerHTML = '';
+      bottomActions.innerHTML = `<button type="button" class="save-vehicle-btn" onclick="saveVehicleRow(this.closest('.vehicle-row'))">💾 Save</button>`
+        + `<button type="button" class="cancel-vehicle-btn" onclick="cancelVehicleRow(this.closest('.vehicle-row'))">✕ Cancel</button>`
+        + (isFirst ? '' : `<button type="button" class="delete-vehicle-btn" onclick="deleteVehicleRow(this.closest('.vehicle-row'))" title="Remove this vehicle">🗑</button>`);
+    }
+  }
+
+  function saveVehicleRow(row) {
+    if (!vehicleRowIsFilled(row)) {
+      showToast('⚠️ Fill in this vehicle’s Maker, Model, and Plate before saving.', true);
+      return;
+    }
+    const maker = row.querySelector('.vehicle-maker').value.trim();
+    const model = row.querySelector('.vehicle-model').value.trim();
+    const plate = row.querySelector('.vehicle-plate').value.trim();
+    const validationError = vehicleFieldValidationError(maker, model, plate);
+    if (validationError) {
+      showToast('⚠️ ' + validationError, true);
+      return;
+    }
+    row.dataset.saved = '1';
+    row.dataset.savedMaker = maker;
+    row.dataset.savedModel = model;
+    row.dataset.savedPlate = plate;
+    row.classList.add('collapsed');
+    row.querySelector('.vehicle-row-summary').textContent = vehicleRowSummaryText(row);
+    refreshVehicleRowActions(row);
+    updateVehicleRowChrome();
+  }
+
+  // Unsaved row (never saved before) → discarding it means removing it
+  // outright, except Vehicle 1, which always exists — Cancel there just
+  // clears whatever was typed and leaves it expanded, ready to try again.
+  // Already-saved row being re-edited → reverts the fields to their last
+  // saved values instead of removing anything.
+  function cancelVehicleRow(row) {
+    if (row.dataset.saved === '1') {
+      row.querySelector('.vehicle-maker').value = row.dataset.savedMaker || '';
+      row.querySelector('.vehicle-model').value = row.dataset.savedModel || '';
+      row.querySelector('.vehicle-plate').value = row.dataset.savedPlate || '';
+      row.classList.add('collapsed');
+      row.querySelector('.vehicle-row-summary').textContent = vehicleRowSummaryText(row);
+      refreshVehicleRowActions(row);
+    } else if (vehicleRowIsFirst(row)) {
+      row.querySelector('.vehicle-maker').value = '';
+      row.querySelector('.vehicle-model').value = '';
+      row.querySelector('.vehicle-plate').value = '';
+    } else {
+      row.remove();
+    }
+    updateVehicleRowChrome();
+  }
+
+  function deleteVehicleRow(row) {
+    row.remove();
+    updateVehicleRowChrome();
+  }
+
+  function expandVehicleRow(row) {
+    if (!row.classList.contains('collapsed')) return;
+    row.classList.remove('collapsed');
+    refreshVehicleRowActions(row);
+    updateVehicleRowChrome();
+  }
+
+  function addVehicleRow() {
+    const rows = document.querySelectorAll('#vehicleRows .vehicle-row');
+    if (rows.length >= MAX_VEHICLES || !allVehicleRowsSettled()) return;
+    document.getElementById('vehicleRows').insertAdjacentHTML('beforeend', vehicleRowHtml(rows.length));
+    const newRow = document.getElementById('vehicleRows').lastElementChild;
+    refreshVehicleRowActions(newRow);
+    updateVehicleRowChrome();
+  }
+
+  function updateVehicleRowChrome() {
+    const rows = document.querySelectorAll('#vehicleRows .vehicle-row');
+    rows.forEach((row, i) => row.setAttribute('data-vehicle-index', i));
+    const addBtn = document.getElementById('addVehicleBtn');
+    addBtn.style.display = (rows.length < MAX_VEHICLES && allVehicleRowsSettled()) ? '' : 'none';
+  }
+  refreshVehicleRowActions(document.querySelector('#vehicleRows .vehicle-row'));
+  updateVehicleRowChrome();
+
+  function collectVehicles() {
+    return Array.from(document.querySelectorAll('#vehicleRows .vehicle-row')).map(row => ({
+      maker: row.querySelector('.vehicle-maker').value.trim(),
+      model: row.querySelector('.vehicle-model').value.trim(),
+      plate: row.querySelector('.vehicle-plate').value.trim(),
+    }));
+  }
+
   function handlePaymentChange() {
     const gcash = document.querySelector('input[name="paymentMethod"]:checked').value === 'gcash';
     document.getElementById('gcashPanel').classList.toggle('open', gcash);
@@ -693,11 +949,19 @@
       return;
     }
 
-    const carMaker = document.getElementById('carMaker').value.trim();
-    const carModel = document.getElementById('carModel').value.trim();
-    const carPlate = document.getElementById('carPlate').value.trim();
-    if (bringingCar && (!carMaker || !carModel || !carPlate)) {
-      showToast('⚠️ Please fill in your car maker, model, and plate number.', true); return;
+    // Round 91: Save/Cancel per vehicle means submission could otherwise
+    // read stale/incomplete values straight out of a row someone's still
+    // mid-edit on (or a brand-new row they never got around to saving) —
+    // this catches that case with a clear message before the generic
+    // "fill in every field" check below even runs.
+    if (bringingCar && !allVehicleRowsSettled()) {
+      showToast('⚠️ Please save or cancel the vehicle you’re currently editing before submitting.', true);
+      return;
+    }
+
+    const vehicles = bringingCar ? collectVehicles() : [];
+    if (bringingCar && (!vehicles.length || vehicles.some(v => !v.maker || !v.model || !v.plate))) {
+      showToast('⚠️ Please fill in maker, model, and plate number for every vehicle.', true); return;
     }
 
     let receipt = null;
@@ -728,9 +992,7 @@
           receiptBase64: receipt?.base64 || null,
           receiptName: receipt?.name || null,
           bringingCar,
-          carMaker: bringingCar ? carMaker : null,
-          carModel: bringingCar ? carModel : null,
-          carPlate: bringingCar ? carPlate : null,
+          cars: bringingCar ? vehicles : [],
         }),
       });
       const data = await res.json();

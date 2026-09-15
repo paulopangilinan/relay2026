@@ -106,8 +106,9 @@ async function isRegistrationClosed() {
 // Builds the shared info body (participants/payment/contact/car) used by
 // both the venue and GCash admin-notify variants below.
 function gatheringNotifyBody(row) {
-  const carRow = row.bringing_car
-    ? `<p style="margin:0 0 4px;">Car: <strong>${escapeHtml(row.car_maker || "")} ${escapeHtml(row.car_model || "")}</strong> — Plate <strong>${escapeHtml(row.car_plate || "")}</strong></p>`
+  const cars = Array.isArray(row.cars) ? row.cars : [];
+  const carRow = row.bringing_car && cars.length
+    ? `<p style="margin:0 0 4px;">Car${cars.length > 1 ? "s" : ""}:</p><ul style="margin:0 0 4px;padding-left:20px;">${cars.map(c => `<li><strong>${escapeHtml(c.maker || "")} ${escapeHtml(c.model || "")}</strong> — Plate <strong>${escapeHtml(c.plate || "")}</strong></li>`).join("")}</ul>`
     : `<p style="margin:0 0 4px;">Bringing a car: <strong>No</strong></p>`;
   return `
     <p style="margin:0 0 10px;"><strong>${escapeHtml(row.name)}</strong> just registered for Gathering Around the Gospel.</p>
@@ -206,7 +207,7 @@ export const handler = async (event) => {
 
     const body = JSON.parse(event.body || "{}");
     const { name, email, mobile, participantCount, paymentMethod, receiptBase64, receiptName,
-            bringingCar, carMaker, carModel, carPlate } = body;
+            bringingCar, cars } = body;
 
     const cleanName  = String(name || "").trim();
     const cleanEmail = String(email || "").trim();
@@ -250,11 +251,42 @@ export const handler = async (event) => {
     if (paymentMethod === "venue" && !(await isVenuePaymentEnabled())) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Pay at Venue is not available. Please pay via GCash." }) };
     }
-    const cleanCarMaker = hasCar ? String(carMaker || "").trim() : null;
-    const cleanCarModel = hasCar ? String(carModel || "").trim() : null;
-    const cleanCarPlate = hasCar ? String(carPlate || "").trim() : null;
-    if (hasCar && (!cleanCarMaker || !cleanCarModel || !cleanCarPlate)) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: "Car maker, model, and plate number are required for parking." }) };
+    // Round 88: a registrant can bring more than one vehicle (a large
+    // group splitting across several cars) — `cars` is an array of
+    // {maker, model, plate}, capped at 10 client-side; re-validated here
+    // since the client is bypassable. The old single car_maker/car_model/
+    // car_plate columns are no longer written to on new submissions —
+    // kept in the schema, unused, as a read-only historical fallback for
+    // rows inserted before this change (see migration
+    // 20260915_gathering_cars_array.sql).
+    const cleanCars = hasCar
+      ? (Array.isArray(cars) ? cars : []).map(c => ({
+          maker: String(c?.maker || "").trim(),
+          model: String(c?.model || "").trim(),
+          plate: String(c?.plate || "").trim(),
+        })).slice(0, 10)
+      : [];
+    if (hasCar && (!cleanCars.length || cleanCars.some(c => !c.maker || !c.model || !c.plate))) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "Maker, model, and plate number are required for every vehicle." }) };
+    }
+    // Round 94: re-validate the same "one vehicle per row" rules enforced
+    // client-side — a comma or semicolon in any field is never legitimate
+    // for a single maker/model/plate, and is exactly the abuse pattern
+    // that corrupted registrant 46e18386-...'s data (6 vehicles' worth of
+    // comma-separated values crammed into what was then a single set of
+    // 3 fields). Re-checked here since the client is bypassable.
+    if (hasCar) {
+      for (const c of cleanCars) {
+        if (/[,;]/.test(c.maker) || /[,;]/.test(c.model) || /[,;]/.test(c.plate)) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Please enter one vehicle per row — no commas or semicolons in a single field." }) };
+        }
+        if (c.maker.length < 2 || c.model.length < 2) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Car maker and model must be at least 2 characters." }) };
+        }
+        if (c.plate.length < 4 || !/[A-Za-z]/.test(c.plate) || !/[0-9]/.test(c.plate)) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Plate number looks invalid — it should include both letters and numbers." }) };
+        }
+      }
     }
 
     const feePerHead = parseInt(process.env.GATHERING_FEE_PHP, 10) || DEFAULT_FEE_PHP;
@@ -318,9 +350,7 @@ export const handler = async (event) => {
         flagged_duplicate: isFlaggedDuplicate,
         payment_status: paymentStatus,
         bringing_car: hasCar,
-        car_maker: cleanCarMaker,
-        car_model: cleanCarModel,
-        car_plate: cleanCarPlate,
+        cars: cleanCars,
       })
       .select()
       .single();
