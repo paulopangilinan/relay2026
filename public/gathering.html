@@ -266,19 +266,25 @@
     font-size: 13px; font-weight: 700; cursor: pointer; flex: 1;
   }
   .cancel-vehicle-btn {
-    background: #fff; color: #C0392B; border: 1.5px solid #C0392B; border-radius: 8px; padding: 11px;
+    background: #C0392B; color: #fff; border: none; border-radius: 8px; padding: 11px;
     font-size: 13px; font-weight: 700; cursor: pointer; flex: 1;
   }
-  .delete-vehicle-btn {
-    background: #fff; border: 1.5px solid #C0392B; color: #C0392B; border-radius: 8px;
-    font-size: 15px; cursor: pointer; padding: 0 14px; line-height: 1; flex: 0 0 auto;
+  /* Round 95: Delete moved up into the row header, beside Edit — both act
+     on a collapsed (already-saved) vehicle directly, no need to expand it
+     first just to remove it. Small icon-only buttons, matching size/
+     weight, sitting at the header's right edge (vehicle-row-summary's
+     flex:1 pushes them there). Never shown for Vehicle 1 (isFirst) —
+     there must always be at least one vehicle. */
+  .edit-vehicle-btn, .delete-vehicle-header-btn {
+    background: none; border: none; font-size: 16px; cursor: pointer; padding: 2px 4px; line-height: 1;
   }
-  /* Round 94: Save/Cancel (and Delete, when re-editing a saved vehicle)
-     moved below the Plate field instead of sitting in the row header —
-     full-width, matching the width of the fields above them, so they read
-     as the row's primary actions rather than small header controls.
-     Hidden entirely once collapsed (nothing to act on until it's
-     re-opened via the pencil icon, which stays in the header). */
+  .edit-vehicle-btn { color: var(--sky); }
+  .delete-vehicle-header-btn { color: #C0392B; }
+  /* Round 94: Save/Cancel moved below the Plate field instead of sitting
+     in the row header — full-width, matching the width of the fields
+     above them. Delete (Round 95) no longer appears here — it's a
+     header-level action on the collapsed row instead (see above), so a
+     row being actively edited only ever needs Save or Cancel. */
   .vehicle-row-bottom-actions { display: flex; gap: 8px; margin-top: 6px; }
   .vehicle-row.collapsed .vehicle-row-bottom-actions { display: none; }
 
@@ -702,11 +708,11 @@
   }
 
   // Rebuilds the Save/Cancel/Edit/Delete button set for one row based on
-  // its current state — called any time that state changes. The pencil
-  // (collapsed state) stays in the row header; Save/Cancel/Delete (any
-  // editing state) render in the full-width bar below the Plate field
-  // instead (Round 94) — only one of the two containers is ever populated
-  // at a time, so there's no risk of both showing at once.
+  // its current state — called any time that state changes. Edit + Delete
+  // (collapsed state) render together in the header, top-right (Round 95);
+  // Save/Cancel (any editing state) render in the full-width bar below the
+  // Plate field instead (Round 94). Only one of the two containers is ever
+  // populated at a time.
   function refreshVehicleRowActions(row) {
     const headerActions = row.querySelector('.vehicle-row-actions');
     const bottomActions = row.querySelector('.vehicle-row-bottom-actions');
@@ -715,18 +721,19 @@
     const isFirst = vehicleRowIsFirst(row);
 
     if (saved && collapsed) {
-      headerActions.innerHTML = `<button type="button" class="edit-vehicle-btn" onclick="expandVehicleRow(this.closest('.vehicle-row'))" title="Edit vehicle">✏️</button>`;
+      headerActions.innerHTML = `<button type="button" class="edit-vehicle-btn" onclick="expandVehicleRow(this.closest('.vehicle-row'))" title="Edit vehicle">✏️</button>`
+        + (isFirst ? '' : `<button type="button" class="delete-vehicle-header-btn" onclick="deleteVehicleRow(this.closest('.vehicle-row'))" title="Remove this vehicle">🗑️</button>`);
       bottomActions.innerHTML = '';
     } else if (!saved) {
       headerActions.innerHTML = '';
-      bottomActions.innerHTML = `<button type="button" class="save-vehicle-btn" onclick="saveVehicleRow(this.closest('.vehicle-row'))">💾 Save</button>`
+      bottomActions.innerHTML = `<button type="button" class="save-vehicle-btn" onclick="saveVehicleRow(this.closest('.vehicle-row'))">💾 Save Vehicle Details</button>`
         + (isFirst ? '' : `<button type="button" class="cancel-vehicle-btn" onclick="cancelVehicleRow(this.closest('.vehicle-row'))">✕ Cancel</button>`);
     } else {
-      // saved, currently expanded for editing
+      // saved, currently expanded for editing — Delete lives on the
+      // collapsed header instead (Round 95), so only Save/Cancel here.
       headerActions.innerHTML = '';
-      bottomActions.innerHTML = `<button type="button" class="save-vehicle-btn" onclick="saveVehicleRow(this.closest('.vehicle-row'))">💾 Save</button>`
-        + `<button type="button" class="cancel-vehicle-btn" onclick="cancelVehicleRow(this.closest('.vehicle-row'))">✕ Cancel</button>`
-        + (isFirst ? '' : `<button type="button" class="delete-vehicle-btn" onclick="deleteVehicleRow(this.closest('.vehicle-row'))" title="Remove this vehicle">🗑</button>`);
+      bottomActions.innerHTML = `<button type="button" class="save-vehicle-btn" onclick="saveVehicleRow(this.closest('.vehicle-row'))">💾 Save Vehicle Details</button>`
+        + `<button type="button" class="cancel-vehicle-btn" onclick="cancelVehicleRow(this.closest('.vehicle-row'))">✕ Cancel</button>`;
     }
   }
 
