@@ -209,7 +209,7 @@
     .btn-cancel-row .btn-label-icon{display:inline;}
     .btn-actions .btn-label-text{display:none;}
     .btn-actions .btn-label-icon{display:inline;}
-    .btn-confirm-row,.btn-cancel-row,.btn-followup-row,.btn-partial-row{padding:6px 8px;font-size:14px;margin-bottom:0;}
+    .btn-confirm-row,.btn-cancel-row,.btn-followup-row,.btn-partial-row,.btn-hotel-row{padding:6px 8px;font-size:14px;margin-bottom:0;}
     .btn-followup-row .btn-label-text{display:none;}
     .btn-followup-row .btn-label-icon{display:inline;}
     .btn-partial-row .btn-label-text{display:none;}
@@ -282,6 +282,8 @@
   .btn-followup-row .btn-label-icon{display:none;}
   .btn-partial-row{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;}
   .btn-partial-row:hover{background:var(--purple);color:#fff;}
+  .btn-hotel-row{background:var(--amber-light);color:var(--amber);border:1px solid var(--amber);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;padding:5px 10px;display:block;width:100%;text-align:center;white-space:nowrap;}
+  .btn-hotel-row:hover{background:var(--amber);color:#fff;}
   .btn-partial-row .btn-label-text{display:inline;}
   .btn-partial-row .btn-label-icon{display:none;}
   /* Merch order row actions — same icon/text pattern as the registration
@@ -2389,6 +2391,112 @@
   </div>
 </div>
 
+<!-- HOTEL CONFIRMATION MODAL (Round 97) — venue, address, and dates are
+     fixed constants shown read-only; only the genuinely per-registrant
+     fields are editable. -->
+<div class="modal-overlay" id="hotelModal">
+  <div class="modal" style="max-width:420px;">
+    <h3>🏨 Send Accommodation Confirmation</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">A printable confirmation will be emailed to <strong id="hotelModalName"></strong>.</p>
+
+    <div style="background:#F7FAFB;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--muted);line-height:1.6;">
+      <strong style="color:var(--dark);">CCT Tagaytay Retreat &amp; Training Center</strong><br>
+      Sept 23 &ndash; 26, 2026 &middot; 3 nights
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Confirmation ID <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+      <input type="text" id="hotel-external-no" placeholder="Hotel's own ID — blank to generate" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      <p style="margin:6px 0 0;padding:8px 10px;background:var(--sky-light);color:var(--sky);border-radius:6px;font-size:11px;line-height:1.5;">
+        ⚠️ Leave this blank and one is generated (SGC-RLY-…).
+      </p>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1.2;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Booking Date</label>
+        <input type="date" id="hotel-booking-date" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Booking Time</label>
+        <input type="time" id="hotel-booking-time" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+    </div>
+    <p style="margin:6px 0 14px;padding:8px 10px;background:var(--sky-light);color:var(--sky);border-radius:6px;font-size:11px;line-height:1.5;">
+      ⚠️ Defaults to the registration date and time.
+    </p>
+
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Room Type</label>
+      <input type="text" id="hotel-room-type" placeholder="e.g. Twin Sharing, Dormitory" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Max Occupancy</label>
+        <input type="number" id="hotel-occupancy" min="1" value="2" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Check-in Time</label>
+        <input type="text" id="hotel-checkin-time" value="2:00 PM" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+      <div style="flex:1;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Check-out Time</label>
+        <input type="text" id="hotel-checkout-time" value="11:00 AM" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Roommates <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+      <input type="text" id="hotel-roommates" placeholder="e.g. Sharing with Juan Dela Cruz" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Notes <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+      <textarea id="hotel-notes" rows="2" placeholder="Anything the registrant should know on arrival" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;resize:vertical;"></textarea>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:12.5px;color:var(--dark);">Include banner image</span>
+        <div onclick="toggleHotelSwitch('banner')" id="hotel-show-banner-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+          <div id="hotel-show-banner-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12.5px;color:var(--dark);">Include &ldquo;Sovereign Grace Churches&rdquo; subtitle</span>
+        <div onclick="toggleHotelSwitch('subtitle')" id="hotel-show-subtitle-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
+          <div id="hotel-show-subtitle-thumb" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeHotelModal()">Cancel</button>
+      <!-- Same split-button-plus-caret-menu template as the bulk Gmail/Resend
+           picker and the gathering confirm modal (#gathering-confirm-split)
+           — main button sends with whichever provider is currently picked,
+           caret only changes the pick, it never sends by itself. -->
+      <div style="flex:1;position:relative;">
+        <div style="display:flex;width:100%;">
+          <button class="btn-confirm-modal" id="hotel-send-btn" onclick="submitHotelConfirmation()" style="flex:1;border-radius:8px 0 0 8px;">🏨 Send via Resend</button>
+          <button onclick="toggleHotelProviderMenu(event)" id="hotel-provider-caret" title="Choose email provider" style="padding:12px 11px;background:var(--green);color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.3);border-radius:0 8px 8px 0;font-weight:700;cursor:pointer;font-size:11px;line-height:1;flex-shrink:0;">▾</button>
+        </div>
+        <div id="hotel-provider-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:5;">
+          <button onclick="selectHotelProvider('resend')" id="hotel-provider-opt-resend" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;">
+            <div style="font-size:13px;font-weight:700;color:#2A3D4A;">🚀 Resend <span id="hotel-provider-check-resend" style="color:#2E7048;display:none;">✓</span></div>
+            <div style="font-size:11px;color:#8098A8;font-weight:500;margin-top:1px;">Fast, reliable delivery via our transactional email service</div>
+          </button>
+          <button onclick="selectHotelProvider('gmail')" id="hotel-provider-opt-gmail" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid #EDF2F5;cursor:pointer;font-family:inherit;">
+            <div style="font-size:13px;font-weight:700;color:#2A3D4A;">💬 Gmail <span id="hotel-provider-check-gmail" style="color:#2E7048;display:none;">✓</span></div>
+            <div style="font-size:11px;color:#8098A8;font-weight:500;margin-top:1px;">Sent from the team Gmail account — replies land in a real inbox</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- BREAKOUT ASSIGN MODAL (Round 76) -->
 <div class="modal-overlay" id="breakoutAssignModal">
   <div class="modal" style="max-width:360px;">
@@ -2885,19 +2993,33 @@
         <td style="font-size:11px;color:var(--muted);">${r.cancelled_by ? `<span title="${esc(r.cancelled_by)}">${adminName(r.cancelled_by)}</span><br><span style="font-size:10px;">${formatDate(r.cancelled_at)}</span>${r.cancellation_reason ? `<br><span style="font-size:10px;font-style:italic;">${esc(r.cancellation_reason)}</span>` : ''}` : '—'}</td>
         <td style="min-width:120px;">
           <div class="btn-actions">
-          ${r.status === 'cancelled'
-            ? '<span style="color:#aaa;font-size:12px;font-style:italic;">Cancelled</span>'
-            : r.payment_verified
-              ? confirmedActions(r, canVerify)
-              : canVerify
-                ? `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">₱</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${FOLLOWUP_STATUSES.includes(r.status) ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`
-                : '—'
-          }
+          ${actionCell(r, canVerify)}
           </div>
         </td>
         <td style="min-width:120px;">${attendanceCell(r, canVerify)}</td>
       </tr>
     `).join('');
+  }
+
+  // Single owner of the Action column. Split out of the row template so the
+  // accommodation button can be appended once, for every non-cancelled row,
+  // instead of being buried in the payment_verified branch.
+  function actionCell(r, canVerify) {
+    if (r.status === 'cancelled') {
+      return '<span style="color:#aaa;font-size:12px;font-style:italic;">Cancelled</span>';
+    }
+    const main = r.payment_verified
+      ? confirmedActions(r, canVerify)
+      : canVerify ? pendingActions(r) : '';
+    // Appended here rather than inside the branches: the accommodation
+    // confirmation is independent of where payment stands.
+    const out = main + hotelAction(r, canVerify);
+    return out || '—';
+  }
+
+  // Payment operations for a row that hasn't been verified yet.
+  function pendingActions(r) {
+    return `<button class="btn-confirm-row" onclick="openModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">✅</span><span class="btn-label-text">Mark as Paid</span></button><button class="btn-cancel-row" onclick="openCancelModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">🚫</span><span class="btn-label-text">Mark as Cancelled</span></button>${(r.status === 'awaiting_payment' || r.status === 'partially_paid') ? `<button class="btn-partial-row" onclick="openPartialModal('${r.id}','${esc(r.name)}','${r.group_id||''}')"><span class="btn-label-icon">₱</span><span class="btn-label-text">Partial Payment</span></button>` : ''}${FOLLOWUP_STATUSES.includes(r.status) ? `<button class="btn-followup-row" onclick="openFollowUpModal('${r.id}','${esc(r.name)}','${r.group_id||''}','${r.last_followup_at||''}')"><span class="btn-label-icon">💬</span><span class="btn-label-text">Follow Up</span></button>` : ''}`;
   }
 
   // Owns the Pre-Con column: the send control while an answer is outstanding,
@@ -2907,6 +3029,18 @@
     const label = '<span style="color:#4BAE6A;font-size:12px;font-weight:600;">Confirmed</span>';
     if (!canVerify) return label;
     return label + `<button class="btn-followup-row" onclick="sendMerchInvite('${r.id}','${esc(r.name)}')"><span class="btn-label-icon">🛍️</span><span class="btn-label-text">Merch Link</span></button>`;
+  }
+
+  // Accommodation confirmation is an international-registrant thing (the
+  // venue is the lodging), so the button only renders on those rows — at any
+  // status except cancelled, since rooming is settled independently of
+  // payment. Still hidden from read-only admins, matching every other
+  // send control in this column.
+  function hotelAction(r, canVerify) {
+    if (!canVerify) return '';
+    if (r.registrant_type !== 'international') return '';
+    if (r.status === 'cancelled') return '';
+    return `<button class="btn-hotel-row" onclick="openHotelModal('${r.id}','${esc(r.name)}','${r.created_at||''}')"><span class="btn-label-icon">🏨</span><span class="btn-label-text">Hotel Confirmation</span></button>`;
   }
 
   function attendanceCell(r, canVerify) {
@@ -4534,6 +4668,154 @@
   async function sendMerchInvite(id, name) {
     if (!id) return;
     openSingleMerchModal(id, name, 'invite');
+  }
+
+  // --- Hotel/accommodation confirmation (Round 97) ------------------------
+  let hotelTargetId = null;
+  let hotelSending = false;
+  // Same provider split-button pattern as gathering-confirm-split — Resend
+  // is the default, the caret only changes the pick, it never sends by
+  // itself.
+  let hotelProvider = 'resend';
+  // Local UI state for the two toggle switches — not tied to input.checked
+  // since these render as track/thumb divs, same visual pattern as the
+  // Settings-page toggles, but flip instantly with no server round-trip
+  // (those call toggleSetting(), which PUTs to site-settings; these are
+  // per-send choices submitted with the rest of the modal).
+  const hotelSwitchState = { banner: false, subtitle: false };
+
+  function renderHotelSwitch(key) {
+    const on = hotelSwitchState[key];
+    document.getElementById(`hotel-show-${key}-track`).style.background = on ? 'var(--green)' : '#D4E2EA';
+    document.getElementById(`hotel-show-${key}-thumb`).style.left = on ? '22px' : '2px';
+  }
+
+  function toggleHotelSwitch(key) {
+    hotelSwitchState[key] = !hotelSwitchState[key];
+    renderHotelSwitch(key);
+  }
+
+  function renderHotelProvider() {
+    document.getElementById('hotel-send-btn').textContent =
+      hotelProvider === 'resend' ? '🏨 Send via Resend' : '🏨 Send via Gmail';
+    document.getElementById('hotel-provider-check-resend').style.display = hotelProvider === 'resend' ? 'inline' : 'none';
+    document.getElementById('hotel-provider-check-gmail').style.display  = hotelProvider === 'gmail'  ? 'inline' : 'none';
+  }
+  function toggleHotelProviderMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('hotel-provider-menu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+  function selectHotelProvider(provider) {
+    hotelProvider = provider;
+    document.getElementById('hotel-provider-menu').style.display = 'none';
+    renderHotelProvider();
+  }
+
+  // { date: 'YYYY-MM-DD', time: 'HH:mm' } in Manila time, for the separate
+  // date/time inputs (they render more consistently across browsers than the
+  // combined datetime-local widget). created_at is stored UTC, so a
+  // late-evening Manila registration would land on the previous day — and the
+  // wrong hour — if we just sliced the ISO string.
+  function manilaDateTimeParts(ts) {
+    if (!ts) return { date: '', time: '' };
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return { date: '', time: '' };
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(d).reduce((o, p) => (o[p.type] = p.value, o), {});
+    return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+  }
+
+  function openHotelModal(id, name, createdAt) {
+    hotelTargetId = id;
+    document.getElementById('hotelModalName').textContent = name;
+    // Reset every time — a modal that remembers the previous registrant's
+    // room type is how the wrong details get emailed to someone.
+    document.getElementById('hotel-external-no').value = '';
+    // Defaults to when this person registered. The server recomputes the same
+    // default if the field comes back blank, so an empty picker is still safe.
+    const bookingDefault = manilaDateTimeParts(createdAt);
+    document.getElementById('hotel-booking-date').value = bookingDefault.date;
+    document.getElementById('hotel-booking-time').value = bookingDefault.time;
+    hotelSwitchState.banner = false;
+    hotelSwitchState.subtitle = false;
+    renderHotelSwitch('banner');
+    renderHotelSwitch('subtitle');
+    hotelProvider = 'resend';
+    renderHotelProvider();
+    document.getElementById('hotel-room-type').value = '';
+    document.getElementById('hotel-occupancy').value = '2';
+    document.getElementById('hotel-checkin-time').value = '2:00 PM';
+    document.getElementById('hotel-checkout-time').value = '11:00 AM';
+    document.getElementById('hotel-roommates').value = '';
+    document.getElementById('hotel-notes').value = '';
+    document.getElementById('hotelModal').classList.add('visible');
+  }
+
+  function closeHotelModal() {
+    document.getElementById('hotelModal').classList.remove('visible');
+    hotelTargetId = null;
+  }
+
+  // Recombines the two separate pickers into the "YYYY-MM-DDTHH:mm" string
+  // the function expects — the split into date+time inputs is a display
+  // choice only; the wire format didn't change. No date means no opinion:
+  // leave it blank and let the server fall back to the registration date.
+  // A date with no time defaults that time to midnight rather than blocking
+  // send over it.
+  function combineBookingDateTime() {
+    const date = document.getElementById('hotel-booking-date').value;
+    if (!date) return '';
+    const time = document.getElementById('hotel-booking-time').value || '00:00';
+    return `${date}T${time}`;
+  }
+
+  async function submitHotelConfirmation() {
+    if (!hotelTargetId || hotelSending) return;
+
+    const roomType = document.getElementById('hotel-room-type').value.trim();
+    if (!roomType) { showToast('Room type is required.'); return; }
+    const occupancy = parseInt(document.getElementById('hotel-occupancy').value, 10);
+    if (!Number.isFinite(occupancy) || occupancy < 1) { showToast('Max occupancy must be 1 or more.'); return; }
+
+    hotelSending = true;
+    const btn = document.getElementById('hotel-send-btn');
+    const original = btn.textContent;
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/.netlify/functions/send-hotel-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({
+          registrationId: hotelTargetId,
+          externalConfirmationNo: document.getElementById('hotel-external-no').value.trim(),
+          bookingDate: combineBookingDateTime(),
+          showBanner: hotelSwitchState.banner,
+          showSubtitle: hotelSwitchState.subtitle,
+          roomType,
+          maxOccupancy: occupancy,
+          checkInTime: document.getElementById('hotel-checkin-time').value.trim(),
+          checkOutTime: document.getElementById('hotel-checkout-time').value.trim(),
+          roommates: document.getElementById('hotel-roommates').value.trim(),
+          notes: document.getElementById('hotel-notes').value.trim(),
+          provider: hotelProvider,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to send');
+      showToast(`Confirmation ${json.confirmationNo} sent to ${json.sentTo}`);
+      closeHotelModal();
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    } finally {
+      hotelSending = false;
+      btn.textContent = original;
+      btn.disabled = false;
+    }
   }
 
   async function blastMerchInvite(variant = 'invite') {
@@ -9726,6 +10008,12 @@
   window.openCancelModal      = openCancelModal;
   window.toggleCancelNotify   = toggleCancelNotify;
   window.closeCancelModal     = closeCancelModal;
+  window.openHotelModal            = openHotelModal;
+  window.closeHotelModal           = closeHotelModal;
+  window.submitHotelConfirmation   = submitHotelConfirmation;
+  window.toggleHotelSwitch         = toggleHotelSwitch;
+  window.toggleHotelProviderMenu   = toggleHotelProviderMenu;
+  window.selectHotelProvider       = selectHotelProvider;
   window.openAddChurchModal   = openAddChurchModal;
   window.openEditChurchModal  = openEditChurchModal;
   window.closeChurchModal     = closeChurchModal;
@@ -9847,7 +10135,8 @@
       ['ph-followup-presets', 'ph-followup-caret'],
       ['ph-merch-variant-menu', 'ph-merch-caret'],
       ['intl-merch-variant-menu', 'intl-merch-caret'],
-      ['gathering-confirm-provider-menu', 'gathering-confirm-provider-caret']
+      ['gathering-confirm-provider-menu', 'gathering-confirm-provider-caret'],
+      ['hotel-provider-menu', 'hotel-provider-caret']
     ]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;
@@ -9875,6 +10164,7 @@
   })();
 
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+  document.getElementById('hotelModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeHotelModal(); });
   document.getElementById('breakoutAssignModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeBreakoutAssignModal(); });
   document.getElementById('breakoutConfirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeBreakoutConfirmModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
