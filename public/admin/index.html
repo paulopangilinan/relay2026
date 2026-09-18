@@ -488,6 +488,7 @@
   .bp-badge.admin{background:var(--sky-light);color:var(--sky);border:1px solid rgba(58,139,191,0.2);}
   .bp-badge.none{background:var(--amber-light);color:var(--amber);border:1px solid rgba(217,119,6,0.2);}
   .bp-badge.speaker{background:#F1E8FF;color:#6D28D9;border:1px solid rgba(109,40,217,0.25);}
+  .bp-badge.manual{background:#FDEBD3;color:#B8600C;border:1px solid rgba(184,96,12,0.25);}
   /* Round 82: a session's speaker (picked in Settings, seated here
      automatically) gets a subtle tint so their pinned-to-top card reads as
      distinct at a glance, same purple family as the badge above. Replaces
@@ -554,6 +555,13 @@
   .breakout-summary-stat .n{font-family:'DM Mono';font-size:16px;font-weight:700;color:var(--dark);line-height:1.1;}
   .breakout-summary-stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
   .breakout-summary-legend{display:flex;align-items:center;gap:10px;padding:0 16px;flex-wrap:wrap;}
+  /* Search now lives inside the same bar as its own full-width row —
+     forced onto a new line by flex-wrap the same way the mobile legend
+     row is (flex-basis:100%), so it sits directly under the stats/legend
+     on every screen size instead of floating as a separate block below. */
+  .breakout-summary-search{flex:1 1 100%;border-top:1px solid var(--border);padding:10px 14px;box-sizing:border-box;position:relative;}
+  .breakout-summary-search input{width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box;}
+  .breakout-summary-search .icon{position:absolute;left:26px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none;}
   /* Mobile: 4 stats become a clean 2x2 grid instead of wrapping unevenly,
      and the legend drops to its own full-width row below instead of
      crowding beside the stats. */
@@ -564,6 +572,11 @@
     .breakout-summary-stat:nth-child(n+3){border-bottom:none;}
     .breakout-summary-spacer{display:none;}
     .breakout-summary-legend{flex:1 1 100%;border-top:1px solid var(--border);padding:10px 12px;justify-content:flex-start;}
+    .breakout-summary-search{padding:10px 12px;}
+    /* 16px, not 13px, on the search input specifically — anything smaller
+       makes iOS Safari auto-zoom the page on focus, which is exactly the
+       kind of thing "mobile optimized" is supposed to fix, not add. */
+    .breakout-summary-search input{font-size:16px;padding:10px 12px 10px 34px;}
   }
 </style>
 </head>
@@ -1758,6 +1771,14 @@
             <span style="font-size:11px;color:var(--text);font-weight:600;">No response <span style="color:var(--muted);font-weight:400;">(Draggable)</span></span>
           </div>
         </div>
+        <!-- Round 109: search now lives inside the summary bar as its own
+             full-width row, instead of floating as a separate block below
+             it — same functionality (Round 105), just visually part of
+             the same section. -->
+        <div class="breakout-summary-search">
+          <span class="icon">🔎</span>
+          <input type="text" id="breakout-search-input" placeholder="Search name or email…" oninput="filterBreakoutSearch(this.value)">
+        </div>
       </div>
 
       <!-- Board (rendered by JS) -->
@@ -2505,6 +2526,49 @@
     <div id="breakoutAssignModalList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
     <div class="modal-actions" style="margin-top:14px;">
       <button class="btn-cancel" onclick="closeBreakoutAssignModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add a participant with no registrations row at all — Round 103,
+     reworked in Round 106: the "+ Add" button now lives only on the
+     Unassigned column, so this normally lands the new participant there
+     (session left null); it still accepts a sessionId when called some
+     other way, in which case it's assigned straight to that session. -->
+<div class="modal-overlay" id="breakoutManualModal">
+  <div class="modal" style="max-width:380px;">
+    <h3 style="margin-bottom:2px;">Add Participant</h3>
+    <p style="margin:0 0 14px;color:var(--muted);font-size:13px;">
+      No registration needed — for a walk-in or anyone registered outside this system.
+      Goes to: <strong id="breakoutManualModalSession">Unassigned</strong>
+    </p>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Name</label>
+      <input type="text" id="breakout-manual-name" placeholder="Full name" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Church</label>
+      <select id="breakout-manual-church" onchange="document.getElementById('breakout-manual-church-other-wrap').style.display = this.value === 'others' ? 'block' : 'none';" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;background:#fff;">
+        <option value="" disabled selected>Select church…</option>
+      </select>
+      <div id="breakout-manual-church-other-wrap" style="display:none;margin-top:8px;">
+        <input type="text" id="breakout-manual-church-other" placeholder="Church name" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Age <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+      <input type="number" id="breakout-manual-age" min="0" max="120" placeholder="Age" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;">Email <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+      <input type="email" id="breakout-manual-email" placeholder="Only if you want it on file" style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>
+    <p style="margin:0 0 14px;padding:8px 10px;background:var(--sky-light);color:var(--sky);border-radius:6px;font-size:11px;line-height:1.5;">
+      They won't receive a breakout invite email either way — being added here IS their session assignment.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddManualParticipantModal()">Cancel</button>
+      <button class="btn-confirm-modal" id="breakout-manual-submit-btn" onclick="submitAddManualParticipant()">Add to Session</button>
     </div>
   </div>
 </div>
@@ -5965,6 +6029,12 @@
 
   let breakoutChurchGroupMap = {}; // lowercased church name -> group name (from /churches), for grouping + the Church filter
   let breakoutChurchGroupsLoaded = false;
+  // Raw churches/groups from the same fetch, kept for the "Add Participant"
+  // modal's church dropdown (Round 108) — avoids a second request to the
+  // same endpoint just to get what loadChurches() already fetches
+  // separately for the Churches admin tab.
+  let breakoutChurchesRaw = [];
+  let breakoutChurchGroupsRaw = [];
   let breakoutRegistrantFilter = new Set(); // 'local' | 'international' — empty = show all
   // Holds literal church names now (not group/bucket names) — 'Others' and
   // 'Unassigned' are themselves valid literal values here, since a person
@@ -5988,6 +6058,8 @@
         if (c.group_name) map[c.name.trim().toLowerCase()] = c.group_name;
       });
       breakoutChurchGroupMap = map;
+      breakoutChurchesRaw = json.churches || [];
+      breakoutChurchGroupsRaw = json.groups || [];
       breakoutChurchGroupsLoaded = true;
     } catch (e) { /* fail quiet — grouping just falls back to "Others" for everyone */ }
   }
@@ -6040,6 +6112,35 @@
   // Escapes a value for safe embedding inside a single-quoted string in an
   // inline onclick attribute (backslashes first, then quotes).
   function breakoutJsAttr(v) { return String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+  // Every drag/drop/DOM/lookup helper below identifies a participant by a
+  // single string key. For a real registrant that's just their
+  // registrationId, unchanged from before. A manually-added participant
+  // (Round 103 — no registrations row at all) has registrationId: null, so
+  // it gets a synthetic 'm:<selectionId>' key instead — kept OUT of the
+  // registrationId field itself so every existing comparison against a
+  // real registration id (the speaker pin, the self-selected lock, capacity
+  // math) still sees a real UUID or a clean null, never this synthetic
+  // string. Anywhere a lookup or a PATCH/DELETE body needs to know which
+  // case it's in, check `.isManual` / `.selectionId`, not the key's shape.
+  function bpKey(p) { return p.isManual ? ('m:' + p.selectionId) : p.registrationId; }
+  function findBreakoutParticipant(key) {
+    let participant = (breakoutData.unassigned || []).find(x => bpKey(x) === key);
+    let fromSession = null;
+    if (!participant) {
+      for (const sess of breakoutData.sessions || []) {
+        const found = (sess.participants || []).find(x => bpKey(x) === key);
+        if (found) { participant = found; fromSession = sess; break; }
+      }
+    }
+    return { participant, fromSession };
+  }
+  // { registrationId } for a real registrant, { selectionId } for a
+  // manually-added one — admin-breakout-responses.js's PATCH/DELETE accept
+  // either.
+  function breakoutIdentityBody(participant) {
+    return participant.isManual ? { selectionId: participant.selectionId } : { registrationId: participant.registrationId };
+  }
 
   async function loadBreakoutResponses() {
     const wrap = document.getElementById('breakout-board-wrap');
@@ -6151,13 +6252,13 @@
               <div style="min-width:0;line-height:1.3;flex:1;" title="${esc(sess.title)}">${esc(sess.title)}</div>
               <span class="bcol-count" style="flex-shrink:0;${isFull ? 'color:#FFB4B4;font-weight:700;' : ''}">${pCount}/${sess.capacity}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <img src="${bsSpeakerPhotoUrl(sess.speaker)}" alt="${esc(sess.speaker)}" loading="lazy"
-                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                   style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.5);flex-shrink:0;">
-              <div style="display:none;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.5);align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">👤</div>
-              <div style="font-size:12px;font-weight:600;">${esc(bsSpeakerLabel(sess.speaker))}</div>
-            </div>
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                <img src="${bsSpeakerPhotoUrl(sess.speaker)}" alt="${esc(sess.speaker)}" loading="lazy"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                     style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.5);flex-shrink:0;">
+                <div style="display:none;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.5);align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">👤</div>
+                <div style="font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bsSpeakerLabel(sess.speaker))}</div>
+              </div>
           </div>
           <div class="breakout-col-body"
                ondragover="onBreakoutDragOver(event, '${sess.id}')"
@@ -6170,18 +6271,22 @@
         sess.participants.forEach(p => {
           const isSpeaker = p.isSpeaker === true;
           const isSelf = p.selfSelected === true;
+          const isManual = p.isManual === true;
+          const key = bpKey(p);
           // Speaker cards are pinned via the session's speaker picker (Round
           // 82) — locked from drag/move the same way self-selected cards
           // are, since moving them doesn't make sense; change the session's
           // speaker in Settings instead.
           const isDraggable = !isSelf && !isSpeaker;
-          const badgeClass = isSpeaker ? 'speaker' : (isSelf ? 'self' : 'admin');
-          const badgeLabel = isSpeaker ? '🎤 Speaker' : (isSelf ? 'Self' : 'Admin');
+          const badgeClass = isSpeaker ? 'speaker' : isManual ? 'manual' : (isSelf ? 'self' : 'admin');
+          const badgeLabel = isSpeaker ? '🎤 Speaker' : isManual ? '🚫 Not Registered' : (isSelf ? 'Self' : 'Admin');
           const titleHint = isSpeaker
             ? "This session's speaker — change the speaker in Settings to move them."
             : isSelf
               ? (adminSession?.is_super_admin ? 'Chose their own session (Locked) — Ctrl+Shift+Click or triple-tap for Super Admin override' : 'Chose their own session (Locked)')
-              : 'Assigned by admin (drag, or use Move on mobile, to reassign — drag to Unassigned to unassign)';
+              : isManual
+                ? 'Added manually, no registration on file (drag, or use Move on mobile, to reassign or send back to Unassigned — use Remove to delete them permanently)'
+                : 'Assigned by admin (drag, or use Move on mobile, to reassign — drag to Unassigned to unassign)';
           // Round 79: hidden super-admin-only override entry point — only
           // wired up at all when the signed-in admin is a super admin, so a
           // regular admin's card never gets the onclick (see
@@ -6198,12 +6303,13 @@
           // default bottom-right spot (right:8px) instead of the 68px
           // offset used on Unassigned cards.
           const moveBtn = isDraggable ? `
-              <button type="button" class="breakout-move-btn" style="right:8px;" onclick="event.stopPropagation();openBreakoutAssignModal('${p.registrationId}')" title="Move to another session">⇄</button>` : '';
+              <button type="button" class="breakout-move-btn" style="right:8px;" onclick="event.stopPropagation();openBreakoutAssignModal('${key}')" title="Move to another session">⇄</button>` : '';
 
           sessionsHtml += `
             <div class="breakout-participant ${isDraggable ? 'draggable' : ''} ${isSpeaker ? 'speaker-card' : ''}"
-                 id="bp-${p.registrationId}"
-                 ${isDraggable ? `draggable="true" ondragstart="onBreakoutDragStart(event, '${p.registrationId}')" ondragend="onBreakoutDragEnd(event)"` : ''}
+                 id="bp-${key}"
+                 data-search="${esc((p.name + ' ' + (p.email || '')).toLowerCase())}"
+                 ${isDraggable ? `draggable="true" ondragstart="onBreakoutDragStart(event, '${key}')" ondragend="onBreakoutDragEnd(event)"` : ''}
                  ${selfOverrideAttr}
                  style="display:flex;align-items:flex-start;gap:6px;position:relative;flex-wrap:wrap;${selfCursor}">
               <div style="flex:1;min-width:0;">
@@ -6226,15 +6332,20 @@
     // grid of church cards spanning the full board width) — rendered after
     // the topic columns, per the original layout.
     const unassignedTotal = (breakoutData.unassigned || []).length;
-    const selectableTotal = (breakoutData.unassigned || []).length;
+    // Manual participants can't receive a breakout invite email (no
+    // self-selection link exists for someone with no registration), so
+    // they're excluded from every selection/blast aggregate below even
+    // though they now share the same Unassigned pool (Round 106).
+    const selectableParticipants = (breakoutData.unassigned || []).filter(p => !p.isManual);
+    const selectableTotal = selectableParticipants.length;
     const selectedCount = breakoutSelectedUnassigned.size;
     const allSelected = selectableTotal > 0 && selectedCount === selectableTotal;
     // Split the unassigned pool by whether they've ever gotten a breakout
     // email — mirrors exactly how the backend classifies invite vs.
     // reminder (see splitBreakoutCandidates in admin-data.js), so clicking
     // one of these buttons always targets the group its label promises.
-    const neverInvited = (breakoutData.unassigned || []).filter(p => !p.invitedAt);
-    const alreadyInvited = (breakoutData.unassigned || []).filter(p => !!p.invitedAt);
+    const neverInvited = selectableParticipants.filter(p => !p.invitedAt);
+    const alreadyInvited = selectableParticipants.filter(p => !!p.invitedAt);
     const neverInvitedCount = neverInvited.length;
     const alreadyInvitedCount = alreadyInvited.length;
 
@@ -6270,7 +6381,10 @@
                 <div style="font-size:11px;opacity:0.85;font-weight:400;margin-top:1px;" class="breakout-drag-hint">Drag to assign (select several to move them together) or select to blast email</div>
               </div>
             </div>
-            <span class="bcol-count">${unassignedCount}</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <button type="button" onclick="openAddManualParticipantModal(null)" title="Add a participant with no registration on file" style="background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;line-height:1.4;">+ Add</button>
+              <span class="bcol-count">${unassignedCount}</span>
+            </div>
           </div>
           <div style="display:flex;gap:6px;margin:8px 0;">
             <input type="text" id="breakout-filter-input" placeholder="Filter by name or email…" value="${esc(breakoutFilterTextRaw)}" style="flex:1.4 1 0;min-width:0;padding:8px 8px;border:1.5px solid #D4E2EA;border-radius:6px;font-size:11px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;" oninput="filterBreakoutUnassigned(this.value)">
@@ -6339,10 +6453,40 @@
             <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">`;
 
         pList.forEach(p => {
+          const isManual = p.isManual === true;
+          const key = bpKey(p);
+          if (isManual) {
+            // No checkbox (never selectable for blast email — no invite
+            // path exists for someone with no registration), no mail
+            // button, a distinct "Not Registered" pill instead of "None",
+            // and a Remove button alongside the usual Move-to-session one.
+            unassignedHtml += `
+              <div class="breakout-participant draggable"
+                   id="bp-${key}"
+                   data-search="${esc((p.name + ' ' + (p.email || '')).toLowerCase())}"
+                   data-registrant="${p.registrantType === 'international' ? 'international' : 'local'}"
+                   data-church-bucket="${esc(breakoutChurchBucket(p.church, p.registrantType))}"
+                   data-church-literal="${esc(String(p.church || '').trim() || 'Unassigned')}"
+                   draggable="true" ondragstart="onBreakoutDragStart(event, '${key}')" ondragend="onBreakoutDragEnd(event)"
+                   style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:0;">
+                  <div class="bp-name" title="${esc(p.name)}">${esc(p.name)}</div>
+                  <div class="bp-meta">
+                    ${p.age ? `<span class="bp-age-tag">Age ${p.age}</span>` : ''}
+                    <span title="${esc(p.email || '')}">${esc(p.church || 'No registration on file')}</span>
+                  </div>
+                </div>
+                <span class="bp-badge manual" title="Added manually, no registration on file — drag, or use Move on mobile, to assign to a session">🚫 Not Registered</span>
+                <button type="button" class="breakout-move-btn" style="right:38px;" onclick="event.stopPropagation();openBreakoutAssignModal('${key}')" title="Move to a session">⇄</button>
+                <button type="button" class="mail-btn" style="background:#7A2E2E;" onclick="event.stopPropagation();removeManualBreakoutParticipant('${p.selectionId}')" title="Remove ${esc(p.name)} permanently">🗑</button>
+              </div>`;
+            return;
+          }
           const isChecked = breakoutSelectedUnassigned.has(p.registrationId);
           unassignedHtml += `
             <div class="breakout-participant draggable ${isChecked ? 'selected' : ''}"
                  id="bp-${p.registrationId}"
+                 data-search="${esc((p.name + ' ' + (p.email || '')).toLowerCase())}"
                  data-registrant="${p.registrantType === 'international' ? 'international' : 'local'}"
                  data-church-bucket="${esc(breakoutChurchBucket(p.church, p.registrantType))}"
                  data-church-literal="${esc(String(p.church || '').trim() || 'Unassigned')}"
@@ -6375,6 +6519,7 @@
     wrap.innerHTML = `<div class="breakout-board">${sessionsHtml}${unassignedHtml}</div>`;
     populateBreakoutFilterOptions();
     applyBreakoutUnassignedFilters();
+    applyBreakoutSessionSearchFilter();
   }
 
   function toggleBreakoutParticipantSelect(regId, checked) {
@@ -6520,6 +6665,25 @@
   // DOM show/hide (same lightweight approach the text filter already used)
   // rather than a full re-render — cheap at this scale and keeps drag/drop
   // state and scroll position intact while filtering.
+  // Round 105: global search box above the board — filters name/email
+  // across every session column AND Unassigned in one go. Reuses the
+  // existing per-column Unassigned filter state/logic (breakoutFilterText/
+  // Raw, filterBreakoutUnassigned) rather than tracking a second, separate
+  // search value, so the two search boxes never disagree with each other;
+  // it just additionally sweeps the session columns, which the Unassigned-
+  // only filter never touched.
+  function filterBreakoutSearch(value) {
+    filterBreakoutUnassigned(value); // updates breakoutFilterText/Raw + filters Unassigned
+    applyBreakoutSessionSearchFilter();
+  }
+
+  function applyBreakoutSessionSearchFilter() {
+    const q = breakoutFilterText;
+    document.querySelectorAll('.breakout-col:not(.unassigned) .breakout-participant[data-search]').forEach(card => {
+      card.style.display = (!q || card.dataset.search.includes(q)) ? '' : 'none';
+    });
+  }
+
   function applyBreakoutUnassignedFilters() {
     const q = breakoutFilterText;
     document.querySelectorAll('#col-unassigned .breakout-participant').forEach(card => {
@@ -6676,15 +6840,8 @@
     // Resolve each id to its participant + current location, and filter out
     // anything that can't actually move (locked, already there, not found).
     const moves = [];
-    for (const regId of ids) {
-      let participant = (breakoutData.unassigned || []).find(x => x.registrationId === regId);
-      let fromSession = null;
-      if (!participant) {
-        for (const sess of breakoutData.sessions || []) {
-          const found = (sess.participants || []).find(x => x.registrationId === regId);
-          if (found) { participant = found; fromSession = sess; break; }
-        }
-      }
+    for (const key of ids) {
+      const { participant, fromSession } = findBreakoutParticipant(key);
       if (!participant) continue;
       if (participant.selfSelected === true) continue; // locked — skip silently in a batch
       if (fromSession && fromSession.id === sessionId) continue; // already there
@@ -6723,9 +6880,9 @@
     // Optimistic UI update for every move in the batch.
     for (const { participant, fromSession } of moves) {
       if (fromSession) {
-        fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== participant.registrationId);
+        fromSession.participants = (fromSession.participants || []).filter(x => bpKey(x) !== bpKey(participant));
       } else {
-        breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => x.registrationId !== participant.registrationId);
+        breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => bpKey(x) !== bpKey(participant));
         breakoutSelectedUnassigned.delete(participant.registrationId);
       }
       participant.sessionId = sessionId;
@@ -6744,7 +6901,7 @@
         const res = await fetch('/.netlify/functions/admin-breakout-responses', {
           method: 'PATCH',
           headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ registrationId: participant.registrationId, sessionId }),
+          body: JSON.stringify({ ...breakoutIdentityBody(participant), sessionId }),
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'Failed to assign session');
@@ -6764,31 +6921,31 @@
     }
   }
 
-  // Sends an admin-assigned participant back to the Unassigned pool.
-  // Self-selected participants never reach this — they're never draggable
-  // and the Move picker never offers "Unassigned" for them — and the
-  // backend enforces the same lock server-side regardless. Triggered by
-  // the mobile Move-to picker's "↩ Unassigned" option (single card only —
-  // dragging one or more admin-assigned cards onto the Unassigned column
-  // itself goes through onBreakoutDropUnassign below instead).
-  async function unassignBreakoutParticipant(registrationId, bypass) {
-    let fromSession = null, participant = null;
-    for (const sess of breakoutData.sessions || []) {
-      const found = (sess.participants || []).find(x => x.registrationId === registrationId);
-      if (found) { participant = found; fromSession = sess; break; }
-    }
-    if (!participant) return;
+  // Sends an admin-assigned participant (real or manually-added — Round
+  // 106) back to the Unassigned pool. Self-selected participants never
+  // reach this — they're never draggable and the Move picker never offers
+  // "Unassigned" for them — and the backend enforces the same lock
+  // server-side regardless. Triggered by the mobile Move-to picker's
+  // "↩ Unassigned" option (single card only — dragging one or more
+  // admin-assigned cards onto the Unassigned column itself goes through
+  // onBreakoutDropUnassign below instead). `key` is whatever bpKey()
+  // produced — a raw registrationId for a real registrant, or 'm:<id>'
+  // for a manual one; findBreakoutParticipant/breakoutIdentityBody handle
+  // either transparently.
+  async function unassignBreakoutParticipant(key, bypass) {
+    const { participant, fromSession } = findBreakoutParticipant(key);
+    if (!participant || !fromSession) return;
     if (participant.selfSelected === true && !bypass) return; // locked — shouldn't be reachable via UI, but guard anyway
 
-    const msg = `Unassign ${participant.name} from "${fromSession ? fromSession.title : 'this session'}"? They'll move back to the Unassigned pool.`;
-    showBreakoutConfirm(msg, () => finishUnassignBreakoutParticipant(registrationId, participant, fromSession));
+    const msg = `Unassign ${participant.name} from "${fromSession.title}"? They'll move back to the Unassigned pool.`;
+    showBreakoutConfirm(msg, () => finishUnassignBreakoutParticipant(participant, fromSession));
   }
 
   // Continuation of unassignBreakoutParticipant, split out so the confirm
   // above can run through the in-house modal instead of a native confirm().
-  async function finishUnassignBreakoutParticipant(registrationId, participant, fromSession) {
+  async function finishUnassignBreakoutParticipant(participant, fromSession) {
     // Optimistic UI update
-    fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== registrationId);
+    fromSession.participants = (fromSession.participants || []).filter(x => bpKey(x) !== bpKey(participant));
     participant.sessionId = null;
     breakoutData.unassigned = breakoutData.unassigned || [];
     breakoutData.unassigned.push(participant);
@@ -6798,7 +6955,7 @@
       const res = await fetch('/.netlify/functions/admin-breakout-responses', {
         method: 'PATCH',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ registrationId, sessionId: null }),
+        body: JSON.stringify({ ...breakoutIdentityBody(participant), sessionId: null }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Failed to unassign');
@@ -6835,13 +6992,15 @@
     draggedRegistrationIds = [];
     if (!ids.length) return;
 
-    // Only admin-assigned participants currently holding a session can be
-    // unassigned this way — self-selected (locked) cards are never
-    // draggable in the first place, so they can't reach here regardless.
+    // Only admin-assigned participants currently holding a session (real or
+    // manually-added — Round 106 made Unassigned a legitimate resting place
+    // for manual participants too) can be sent to Unassigned this way —
+    // self-selected (locked) cards are never draggable in the first place,
+    // so they can't reach here regardless.
     const moves = [];
-    for (const regId of ids) {
+    for (const key of ids) {
       for (const sess of breakoutData.sessions || []) {
-        const found = (sess.participants || []).find(x => x.registrationId === regId);
+        const found = (sess.participants || []).find(x => bpKey(x) === key);
         if (found && found.selfSelected !== true) { moves.push({ participant: found, fromSession: sess }); break; }
       }
     }
@@ -6857,7 +7016,7 @@
   // can run through the in-house modal instead of a native confirm().
   async function finishBreakoutDropUnassign(moves) {
     for (const { participant, fromSession } of moves) {
-      fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== participant.registrationId);
+      fromSession.participants = (fromSession.participants || []).filter(x => bpKey(x) !== bpKey(participant));
       participant.sessionId = null;
       breakoutData.unassigned = breakoutData.unassigned || [];
       breakoutData.unassigned.push(participant);
@@ -6871,7 +7030,7 @@
         const res = await fetch('/.netlify/functions/admin-breakout-responses', {
           method: 'PATCH',
           headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ registrationId: participant.registrationId, sessionId: null }),
+          body: JSON.stringify({ ...breakoutIdentityBody(participant), sessionId: null }),
         });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error || 'Failed to unassign');
@@ -6895,18 +7054,11 @@
   //    Assigning/reassigning goes through this single-id helper; sending
   //    someone back to Unassigned reuses the existing confirm-guarded
   //    unassignBreakoutParticipant above. ──
-  async function assignBreakoutParticipantToSession(registrationId, sessionId, bypass) {
+  async function assignBreakoutParticipantToSession(key, sessionId, bypass) {
     const targetSession = (breakoutData.sessions || []).find(s => s.id === sessionId);
     if (!targetSession) return;
 
-    let participant = (breakoutData.unassigned || []).find(x => x.registrationId === registrationId);
-    let fromSession = null;
-    if (!participant) {
-      for (const sess of breakoutData.sessions || []) {
-        const found = (sess.participants || []).find(x => x.registrationId === registrationId);
-        if (found) { participant = found; fromSession = sess; break; }
-      }
-    }
+    const { participant, fromSession } = findBreakoutParticipant(key);
     if (!participant) return;
     if (participant.selfSelected === true && !bypass) return; // locked
     if (fromSession && fromSession.id === sessionId) return; // already there
@@ -6921,17 +7073,17 @@
       showToast(`"${targetSession.title}" is at full capacity (${targetSession.capacity}/${targetSession.capacity}).`);
       return;
     }
-    finishAssignBreakoutParticipant(registrationId, sessionId, participant, fromSession, targetSession);
+    finishAssignBreakoutParticipant(sessionId, participant, fromSession, targetSession);
   }
 
   // Continuation of assignBreakoutParticipantToSession, split out so the
   // capacity confirmation above can run through the in-house modal instead
   // of a native confirm().
-  async function finishAssignBreakoutParticipant(registrationId, sessionId, participant, fromSession, targetSession) {
+  async function finishAssignBreakoutParticipant(sessionId, participant, fromSession, targetSession) {
     if (fromSession) {
-      fromSession.participants = (fromSession.participants || []).filter(x => x.registrationId !== participant.registrationId);
+      fromSession.participants = (fromSession.participants || []).filter(x => bpKey(x) !== bpKey(participant));
     } else {
-      breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => x.registrationId !== participant.registrationId);
+      breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => bpKey(x) !== bpKey(participant));
       breakoutSelectedUnassigned.delete(participant.registrationId);
     }
     participant.sessionId = sessionId;
@@ -6944,7 +7096,7 @@
       const res = await fetch('/.netlify/functions/admin-breakout-responses', {
         method: 'PATCH',
         headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ registrationId, sessionId }),
+        body: JSON.stringify({ ...breakoutIdentityBody(participant), sessionId }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Failed to assign session');
@@ -6963,15 +7115,9 @@
   //    participant currently holds a session. Picking a row closes the
   //    modal and calls the same single-id assign/unassign helpers the old
   //    picker's onchange used. ──
-  function openBreakoutAssignModal(registrationId) {
-    let participant = (breakoutData.unassigned || []).find(x => x.registrationId === registrationId);
-    let currentSessionId = null;
-    if (!participant) {
-      for (const sess of breakoutData.sessions || []) {
-        const found = (sess.participants || []).find(x => x.registrationId === registrationId);
-        if (found) { participant = found; currentSessionId = sess.id; break; }
-      }
-    }
+  function openBreakoutAssignModal(key) {
+    const { participant, fromSession } = findBreakoutParticipant(key);
+    const currentSessionId = fromSession ? fromSession.id : null;
     if (!participant || participant.selfSelected === true) return; // locked or not found — shouldn't be reachable via UI
 
     document.getElementById('breakoutAssignModalName').textContent = participant.name;
@@ -6981,7 +7127,7 @@
       const seatCount = (s.participants || []).filter(x => !x.isSpeaker).length;
       const isFull = seatCount >= s.capacity;
       const gradient = BREAKOUT_SESSION_GRADIENTS[idx % BREAKOUT_SESSION_GRADIENTS.length];
-      return `<div ${isFull ? '' : `onclick="closeBreakoutAssignModal();assignBreakoutParticipantToSession('${registrationId}','${s.id}')"`}
+      return `<div ${isFull ? '' : `onclick="closeBreakoutAssignModal();assignBreakoutParticipantToSession('${key}','${s.id}')"`}
                    class="${isFull ? 'full-capacity-stamp' : ''}"
                    style="background:${gradient};color:#fff;padding:10px 12px;border-radius:8px;position:relative;${isFull ? 'cursor:not-allowed;' : 'cursor:pointer;'}display:flex;flex-direction:column;gap:6px;">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
@@ -6998,18 +7144,155 @@
               </div>`;
     }).join('');
 
-    const unassignedRow = currentSessionId ? `
-      <div onclick="closeBreakoutAssignModal();unassignBreakoutParticipant('${registrationId}')"
-           style="background:${BREAKOUT_UNASSIGNED_GRADIENT};color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">
+  // A manually-added participant now has an Unassigned home too (Round
+  // 106) — "↩ Unassigned" works for them like anyone else currently in a
+  // session. "🗑 Remove" is the separate, permanent-delete action, offered
+  // whenever the participant is manual (whether they're currently in a
+  // session or already sitting in Unassigned).
+  const bottomRow = (currentSessionId ? `
+      <div onclick="closeBreakoutAssignModal();unassignBreakoutParticipant('${key}')"
+           style="background:${BREAKOUT_UNASSIGNED_GRADIENT};color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:${participant.isManual ? '8px' : '0'};">
         ↩ Unassigned
-      </div>` : '';
+      </div>` : '') + (participant.isManual ? `
+      <div onclick="closeBreakoutAssignModal();removeManualBreakoutParticipant('${participant.selectionId}')"
+           style="background:#7A2E2E;color:#fff;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;">
+        🗑 Remove
+      </div>` : '');
 
-    document.getElementById('breakoutAssignModalList').innerHTML = rows + unassignedRow;
+    document.getElementById('breakoutAssignModalList').innerHTML = rows + bottomRow;
     document.getElementById('breakoutAssignModal').classList.add('visible');
   }
 
   function closeBreakoutAssignModal() {
     document.getElementById('breakoutAssignModal').classList.remove('visible');
+  }
+
+  // Deletes a manually-added participant's breakout_selections row outright
+  // — this is the only way to actually delete one now that Unassigned is a
+  // legitimate resting place for them too (Round 106; sessionId:null via
+  // PATCH now means "move to Unassigned", not delete). Works whether the
+  // participant currently sits in a session or already in Unassigned.
+  // Confirm-gated the same way every other breakout removal is
+  // (showBreakoutConfirm), since it can't be undone from the UI.
+  function removeManualBreakoutParticipant(selectionId) {
+    const { participant, fromSession } = findBreakoutParticipant('m:' + selectionId);
+    if (!participant) return;
+    const where = fromSession ? `from "${fromSession.title}"` : 'from Unassigned';
+    showBreakoutConfirm(
+      `Remove ${participant.name} ${where}? This permanently deletes their record.`,
+      () => finishRemoveManualBreakoutParticipant(selectionId, participant, fromSession)
+    );
+  }
+
+  async function finishRemoveManualBreakoutParticipant(selectionId, participant, fromSession) {
+    if (fromSession) {
+      fromSession.participants = (fromSession.participants || []).filter(x => bpKey(x) !== bpKey(participant));
+    } else {
+      breakoutData.unassigned = (breakoutData.unassigned || []).filter(x => bpKey(x) !== bpKey(participant));
+    }
+    renderBreakoutResponses();
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectionId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to remove participant');
+      showToast(`${participant.name} removed.`);
+    } catch (err) {
+      showToast('Error: ' + err.message);
+      loadBreakoutResponses(); // resync — the optimistic removal above may not match the server
+    }
+  }
+
+  // ── Round 103: add a participant with no registrations row at all (a
+  //    walk-in, a guest's companion, someone registered on paper) straight
+  //    onto a session — the only way they get a session, since there's no
+  //    self-selection link to send someone who was never registered. Email
+  //    is optional: filling it in does NOT queue a breakout invite (that
+  //    invite IS the self-selection flow this bypasses) — it's just kept on
+  //    file if the admin wants to reach them some other way later. ──
+  let breakoutManualSessionId = null;
+  function populateBreakoutManualChurchSelect() {
+    const sel = document.getElementById('breakout-manual-church');
+    const groupOrder = breakoutChurchGroupsRaw.map(g => g.name);
+    const grouped = {};
+    breakoutChurchesRaw.filter(c => !c.is_archived).forEach(c => {
+      if (!grouped[c.group_name]) grouped[c.group_name] = [];
+      grouped[c.group_name].push(c.name);
+    });
+    const orderedGroups = [...groupOrder.filter(g => grouped[g]), ...Object.keys(grouped).filter(g => !groupOrder.includes(g))];
+    let html = '<option value="" disabled selected>Select church…</option>';
+    orderedGroups.forEach(grp => {
+      html += `<optgroup label="${esc(grp)}">`;
+      (grouped[grp] || []).forEach(n => { html += `<option value="${esc(n)}">${esc(n)}</option>`; });
+      html += '</optgroup>';
+    });
+    html += '<optgroup label="Other"><option value="others">Others (please specify)</option></optgroup>';
+    sel.innerHTML = html;
+  }
+
+  function openAddManualParticipantModal(sessionId) {
+    breakoutManualSessionId = sessionId || null;
+    const sess = sessionId ? (breakoutData.sessions || []).find(s => s.id === sessionId) : null;
+    document.getElementById('breakoutManualModalSession').textContent = sess ? sess.title : 'Unassigned';
+    document.getElementById('breakout-manual-name').value = '';
+    document.getElementById('breakout-manual-age').value = '';
+    document.getElementById('breakout-manual-email').value = '';
+    document.getElementById('breakout-manual-church-other').value = '';
+    document.getElementById('breakout-manual-church-other-wrap').style.display = 'none';
+    // Same catalog fetch used for the Church filter/grouping elsewhere on
+    // this tab — loadBreakoutChurchGroups() is a no-op after its first
+    // successful call, so this is cheap on every subsequent open.
+    loadBreakoutChurchGroups().then(populateBreakoutManualChurchSelect);
+    document.getElementById('breakoutManualModal').classList.add('visible');
+  }
+  function closeAddManualParticipantModal() {
+    document.getElementById('breakoutManualModal').classList.remove('visible');
+  }
+  async function submitAddManualParticipant() {
+    const name = document.getElementById('breakout-manual-name').value.trim();
+    const churchSel = document.getElementById('breakout-manual-church').value;
+    const church = churchSel === 'others'
+      ? document.getElementById('breakout-manual-church-other').value.trim()
+      : churchSel;
+    const age = document.getElementById('breakout-manual-age').value.trim();
+    const email = document.getElementById('breakout-manual-email').value.trim();
+    if (!name) { showToast('Name is required.'); return; }
+    if (!church) { showToast('Church is required.'); return; }
+    if (age && (isNaN(parseInt(age, 10)) || parseInt(age, 10) < 0 || parseInt(age, 10) > 120)) {
+      showToast('Enter a valid age.'); return;
+    }
+    const sessionId = breakoutManualSessionId; // null → lands in Unassigned
+    if (sessionId) {
+      const targetSession = (breakoutData.sessions || []).find(s => s.id === sessionId);
+      if (targetSession) {
+        const currentCount = (targetSession.participants || []).filter(p => !p.isSpeaker).length;
+        if (currentCount >= targetSession.capacity) {
+          showToast(`"${targetSession.title}" is at full capacity (${targetSession.capacity}/${targetSession.capacity}).`);
+          return;
+        }
+      }
+    }
+    const btn = document.getElementById('breakout-manual-submit-btn');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/.netlify/functions/admin-breakout-responses', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, church, age: age || null, email, sessionId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to add participant');
+      closeAddManualParticipantModal();
+      showToast(`${name} added.`);
+      loadBreakoutResponses(); // full resync — simplest way to pick up the new row with its real selectionId
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   // ── Round 79: hidden super-admin-only escape hatch for self-selected
@@ -7166,8 +7449,8 @@
           p.age ?? '',
           p.church || '',
           p.email || '',
-          p.registrantType || 'local',
-          p.isSpeaker ? 'Speaker' : (p.selfSelected === true ? 'Self-Selected' : 'Admin-Assigned')
+          p.isManual ? 'Manual' : (p.registrantType || 'local'),
+          p.isSpeaker ? 'Speaker' : p.isManual ? 'Manual (No Registration)' : (p.selfSelected === true ? 'Self-Selected' : 'Admin-Assigned')
         ]);
       });
 
@@ -7191,7 +7474,7 @@
         p.age ?? '',
         p.church || '',
         p.email || '',
-        p.registrantType || 'local'
+        p.isManual ? 'Manual' : (p.registrantType || 'local')
       ]);
     });
 
@@ -10111,12 +10394,16 @@
   window.onBreakoutDropUnassign = onBreakoutDropUnassign;
   window.assignBreakoutParticipantToSession = assignBreakoutParticipantToSession;
   window.openBreakoutAssignModal = openBreakoutAssignModal;
+  window.closeBreakoutAssignModal = closeBreakoutAssignModal;
+  window.removeManualBreakoutParticipant = removeManualBreakoutParticipant;
+  window.openAddManualParticipantModal = openAddManualParticipantModal;
+  window.closeAddManualParticipantModal = closeAddManualParticipantModal;
+  window.submitAddManualParticipant = submitAddManualParticipant;
   window.openBreakoutOverrideModal = openBreakoutOverrideModal;
   window.onBreakoutSelfCardClick = onBreakoutSelfCardClick;
   window.onBsSpeakerSearch = onBsSpeakerSearch;
   window.pickBsSpeaker = pickBsSpeaker;
   window.clearBsSpeakerPick = clearBsSpeakerPick;
-  window.closeBreakoutAssignModal = closeBreakoutAssignModal;
   window.closeBreakoutConfirmModal = closeBreakoutConfirmModal;
   window.doBreakoutConfirm = doBreakoutConfirm;
   window.exportBreakoutExcel   = exportBreakoutExcel;
@@ -10166,6 +10453,7 @@
   document.getElementById('confirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
   document.getElementById('hotelModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeHotelModal(); });
   document.getElementById('breakoutAssignModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeBreakoutAssignModal(); });
+  document.getElementById('breakoutManualModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeAddManualParticipantModal(); });
   document.getElementById('breakoutConfirmModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeBreakoutConfirmModal(); });
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 </script>
