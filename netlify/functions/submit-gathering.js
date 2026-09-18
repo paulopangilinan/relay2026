@@ -52,6 +52,31 @@ async function isGatheringCapped() {
   }
 }
 
+// Round 110: food-pack claim codes. Same alphabet as the migration's
+// backfill (excludes 0/O/1/I — hand-typed at a table) so old and new rows
+// are indistinguishable to the person reading one off a printout. QR token
+// is wider and never typed, only scanned, so it's plain random hex.
+const PASSCODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateFoodPasscode() {
+  return Array.from({ length: 6 }, () => PASSCODE_CHARS[crypto.randomInt(PASSCODE_CHARS.length)]).join("");
+}
+async function generateUniqueFoodCodes() {
+  // Collisions are astronomically unlikely (33^6 passcode space / 16-byte
+  // hex token) but the DB has unique indexes on both, so retry rather than
+  // trust probability alone.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const passcode = generateFoodPasscode();
+    const qrCode = crypto.randomBytes(16).toString("hex");
+    const { data: clash } = await supabase
+      .from("gathering_registrations")
+      .select("id")
+      .or(`food_passcode.eq.${passcode},food_qr_code.eq.${qrCode}`)
+      .maybeSingle();
+    if (!clash) return { foodPasscode: passcode, foodQrCode: qrCode };
+  }
+  throw new Error("Could not generate a unique food claim code.");
+}
+
 // Round 32: config switch to hide/disable "Pay at Venue" — defaults OFF,
 // opposite of isGatheringCapped()/isPastGatheringCutoff() above. This is the
 // one Gathering check that fails CLOSED on a read error: those checks guard
@@ -335,6 +360,11 @@ export const handler = async (event) => {
     // confirmation happens when they show up at the venue, not here.
     const paymentStatus = paymentMethod === "gcash" ? "pending_review" : "unpaid";
 
+    // Every registration gets a claim code pair regardless of payment
+    // method or status — food distribution is a venue check-in concern,
+    // independent of payment_status (see plan's Confirmed Rule #1).
+    const { foodPasscode, foodQrCode } = await generateUniqueFoodCodes();
+
     const { data: row, error: dbErr } = await supabase
       .from("gathering_registrations")
       .insert({
@@ -351,6 +381,8 @@ export const handler = async (event) => {
         payment_status: paymentStatus,
         bringing_car: hasCar,
         cars: cleanCars,
+        food_passcode: foodPasscode,
+        food_qr_code: foodQrCode,
       })
       .select()
       .single();

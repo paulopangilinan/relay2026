@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Food Distribution — RELAY 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #3A8BBF; --sky-light: #EBF5FB;
+    --gold: #C49A1A; --gold-bg: #FDF6E0;
+    --green: #2E7048; --green-bg: #EAF5EE; --green-bright: #4BAE6A;
+    --red: #C0392B; --red-bg: #FDECEA;
+    --page: #E4EAEE; --card: #fff; --dark: #1C2B38; --text: #2A3D4A; --muted: #6B8A9A; --border: #D4E2EA;
+    --shadow: 0 2px 12px rgba(26,58,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "DM Sans", sans-serif; background: var(--page); color: var(--text); min-height: 100vh; }
+  h1 { font-family: "Bebas Neue", sans-serif; letter-spacing: .04em; color: var(--dark); }
+
+  /* ── Login screen ── */
+  #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg,#1C2B38,#2A3D4A); padding: 20px; }
+  .login-card { background: var(--card); border-radius: 14px; padding: 32px 28px; max-width: 360px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
+  .login-card h1 { font-size: 26px; margin-bottom: 4px; }
+  .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .login-card input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none; }
+  .login-card input:focus { border-color: var(--sky); }
+  .login-card button { width: 100%; padding: 13px; background: var(--sky); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .login-err { color: var(--red); font-size: 12.5px; margin-bottom: 10px; min-height: 16px; }
+
+  /* ── Main app ── */
+  #app { display: none; max-width: 480px; margin: 0 auto; padding: 16px 16px 60px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 18px; }
+  .topbar .who { font-size: 12px; color: var(--muted); }
+  .topbar button { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 12px; color: var(--text); cursor: pointer; }
+
+  .card { background: var(--card); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px; }
+
+  .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .search-row input { flex: 1; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 15px; font-family: inherit; outline: none; }
+  .search-row input:focus { border-color: var(--sky); }
+  .tab-row { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab-btn { flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .tab-btn.active { background: var(--sky); border-color: var(--sky); color: #fff; }
+
+  .scan-btn { width: 100%; padding: 14px; background: var(--dark); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  .result-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .result-item { padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; }
+  .result-item:hover { border-color: var(--sky); background: var(--sky-light); }
+  .result-item .n { font-weight: 700; color: var(--dark); font-size: 14px; }
+  .result-item .m { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .food-result h2 { font-size: 22px; margin-bottom: 4px; }
+  .food-result .count { font-size: 15px; color: var(--text); margin-bottom: 14px; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 14px; }
+  .badge.unclaimed { background: var(--gold-bg); color: var(--gold); }
+  .badge.claimed { background: var(--green-bg); color: var(--green); }
+  .claim-meta { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 6px; }
+  .btn-claim { background: var(--green); color: #fff; }
+  .btn-undo { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
+  .btn-back { background: none; color: var(--muted); text-decoration: underline; font-weight: 500; font-size: 13px; padding: 8px; }
+
+  /* ── Scanner overlay ── */
+  #scannerOverlay { display: none; position: fixed; inset: 0; background: #000; z-index: 999; flex-direction: column; align-items: center; justify-content: center; }
+  #scannerOverlay video { width: 100%; max-width: 480px; }
+  #scannerOverlay .scan-hint { color: #fff; font-size: 13px; margin-top: 16px; text-align: center; padding: 0 20px; }
+  #scannerOverlay .close-scan { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; z-index: 1000; display: none; max-width: 90%; text-align: center; }
+
+  /* ── Confirm modal (undo / admin_override) ── */
+  #confirmModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+  #confirmModal .box { background: #fff; border-radius: 14px; padding: 24px; max-width: 340px; width: 100%; }
+  #confirmModal h3 { font-size: 16px; margin-bottom: 10px; color: var(--dark); }
+  #confirmModal p { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  #confirmModal .row { display: flex; gap: 10px; }
+  #confirmModal button { flex: 1; padding: 11px; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>🍱 Food Distribution</h1>
+    <p>Sign in with your admin account to start scanning.</p>
+    <div class="login-err" id="loginErr"></div>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <button onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="who">Signed in as <strong id="whoName"></strong></div>
+    <button onclick="doLogout()">Log Out</button>
+  </div>
+
+  <div class="card" id="searchCard">
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabNameBtn" onclick="switchTab('name')">🔎 Name</button>
+      <button class="tab-btn" id="tabCodeBtn" onclick="switchTab('code')">🔢 Passcode</button>
+    </div>
+    <div id="tabName">
+      <div class="search-row"><input type="text" id="nameInput" placeholder="Type a name…" oninput="onNameInput()"></div>
+      <div class="result-list" id="nameResults"></div>
+    </div>
+    <div id="tabCode" style="display:none;">
+      <div class="search-row">
+        <input type="text" id="codeInput" placeholder="6-character passcode" maxlength="6" style="text-transform:uppercase;letter-spacing:0.1em;font-family:'DM Mono',monospace;">
+        <button class="tab-btn active" style="flex:none;padding:0 16px;" onclick="lookupByCode()">Go</button>
+      </div>
+    </div>
+    <button class="scan-btn" onclick="openScanner()" style="margin-top:10px;">📷 Scan QR Code</button>
+  </div>
+
+  <div class="card food-result" id="resultCard" style="display:none;"></div>
+</div>
+
+<div id="scannerOverlay">
+  <button class="close-scan" onclick="closeScanner()">✕</button>
+  <video id="scanVideo" playsinline muted></video>
+  <div class="scan-hint">Point the camera at the participant's QR code</div>
+</div>
+
+<div id="confirmModal">
+  <div class="box">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMessage"></p>
+    <div class="row">
+      <button onclick="closeConfirm()" style="background:#f0f4f7;color:var(--text);">Cancel</button>
+      <button id="confirmBtn" style="background:var(--red);color:#fff;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+  let distroToken = localStorage.getItem('distroToken') || '';
+  let distroName = localStorage.getItem('distroName') || '';
+  let currentResult = null;   // the currently displayed registration
+  let currentMethod = null;   // 'qr' | 'passcode' | 'admin_override' — how the current result was resolved
+  let currentCode = null;     // the raw code, if resolved via qr/passcode
+  let nameDebounce = null;
+  let scanStream = null;
+  let scanRAF = null;
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, 3200);
+  }
+
+  function init() {
+    if (distroToken) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('whoName').textContent = distroName;
+    }
+    // If opened as /distro?code=XXXX (e.g. a QR scanned by the phone's own
+    // camera app rather than this page's in-app scanner), auto-run the
+    // lookup on load.
+    const params = new URLSearchParams(window.location.search);
+    const urlCode = params.get('code');
+    if (urlCode && distroToken) {
+      switchTab('code');
+      document.getElementById('codeInput').value = urlCode;
+      lookupByCode();
+    }
+  }
+
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const err = document.getElementById('loginErr');
+    err.textContent = '';
+    if (!email || !password) { err.textContent = 'Enter your email and password.'; return; }
+    try {
+      const res = await fetch('/.netlify/functions/admin-login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Login failed');
+      if (!(json.permissions?.food_distribution || json.is_super_admin)) {
+        err.textContent = "This account doesn't have Food Distribution access.";
+        return;
+      }
+      distroToken = json.token;
+      distroName = json.name || json.email;
+      localStorage.setItem('distroToken', distroToken);
+      localStorage.setItem('distroName', distroName);
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('whoName').textContent = distroName;
+    } catch (e) {
+      err.textContent = e.message;
+    }
+  }
+
+  function doLogout() {
+    localStorage.removeItem('distroToken');
+    localStorage.removeItem('distroName');
+    window.location.href = '/distro';
+  }
+
+  function switchTab(tab) {
+    document.getElementById('tabName').style.display = tab === 'name' ? 'block' : 'none';
+    document.getElementById('tabCode').style.display = tab === 'code' ? 'block' : 'none';
+    document.getElementById('tabNameBtn').classList.toggle('active', tab === 'name');
+    document.getElementById('tabCodeBtn').classList.toggle('active', tab === 'code');
+  }
+
+  function onNameInput() {
+    clearTimeout(nameDebounce);
+    const q = document.getElementById('nameInput').value.trim();
+    const list = document.getElementById('nameResults');
+    if (q.length < 2) { list.innerHTML = ''; return; }
+    nameDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch('/.netlify/functions/distro-lookup?query=' + encodeURIComponent(q), {
+          headers: { 'Authorization': 'Bearer ' + distroToken },
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Lookup failed');
+        list.innerHTML = (json.results || []).map(r => `
+          <div class="result-item" onclick='selectResult(${JSON.stringify(r).replace(/'/g, "&#39;")}, null, null)'>
+            <div class="n">${escapeHtml(r.name)}</div>
+            <div class="m">${r.participantCount} pack${r.participantCount === 1 ? '' : 's'} · ${r.foodClaimed ? '✅ Claimed' : '⏳ Not yet claimed'}</div>
+          </div>`).join('') || '<div class="m" style="padding:8px;">No matches.</div>';
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      }
+    }, 300);
+  }
+
+  async function lookupByCode(codeOverride) {
+    const code = (codeOverride || document.getElementById('codeInput').value).trim();
+    if (!code) return;
+    try {
+      const res = await fetch('/.netlify/functions/distro-lookup?code=' + encodeURIComponent(code), {
+        headers: { 'Authorization': 'Bearer ' + distroToken },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No match found.');
+      const r = json.results[0];
+      // A code-based lookup pre-verifies the method — the claim call still
+      // re-checks it server-side, this is just what pre-fills the button.
+      const method = /^[A-Z0-9]{6}$/i.test(code) ? 'passcode' : 'qr';
+      selectResult(r, method, code);
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  function selectResult(r, method, code) {
+    currentResult = r;
+    currentMethod = method;
+    currentCode = code;
+    renderResult();
+  }
+
+  function renderResult() {
+    const card = document.getElementById('resultCard');
+    const r = currentResult;
+    if (!r) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    if (r.foodClaimed) {
+      card.innerHTML = `
+        <h2>${escapeHtml(r.name)}</h2>
+        <div class="badge claimed">✅ Claimed</div>
+        <div class="claim-meta">
+          Claimed ${r.foodClaimedAt ? new Date(r.foodClaimedAt).toLocaleString() : ''}<br>
+          By ${escapeHtml(r.foodClaimedBy || 'unknown')} · via ${methodLabel(r.foodClaimedMethod)}
+        </div>
+        <button class="btn btn-undo" onclick="confirmUndo()">↩ Undo Claim</button>
+        <button class="btn btn-back" onclick="clearResult()">← Back to search</button>`;
+    } else {
+      const via = currentMethod ? `Verified via ${methodLabel(currentMethod)}.` : 'No QR or passcode was scanned — found by name only.';
+      card.innerHTML = `
+        <h2>${escapeHtml(r.name)}</h2>
+        <div class="food-result count">🍱 Entitled to <strong>${r.participantCount} food pack${r.participantCount === 1 ? '' : 's'}</strong></div>
+        <div class="badge unclaimed">⏳ Not yet claimed</div>
+        <div class="claim-meta">${via}</div>
+        <button class="btn btn-claim" onclick="${currentMethod ? 'submitClaim()' : 'confirmOverrideClaim()'}">✅ Mark Claimed</button>
+        <button class="btn btn-back" onclick="clearResult()">← Back to search</button>`;
+    }
+  }
+
+  function methodLabel(m) {
+    return m === 'qr' ? 'QR code' : m === 'passcode' ? 'passcode' : m === 'admin_override' ? 'name only (admin override)' : m || '—';
+  }
+
+  function clearResult() {
+    currentResult = null; currentMethod = null; currentCode = null;
+    renderResult();
+    document.getElementById('nameInput').value = '';
+    document.getElementById('nameResults').innerHTML = '';
+    document.getElementById('codeInput').value = '';
+  }
+
+  async function submitClaim() {
+    try {
+      const res = await fetch('/.netlify/functions/distro-claim', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + distroToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: currentResult.id, method: currentMethod, code: currentCode }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        showToast(json.error || 'Failed to claim');
+        if (json.registration) { currentResult = toCamel(json.registration); renderResult(); }
+        return;
+      }
+      currentResult = toCamel(json.registration);
+      currentMethod = null; currentCode = null;
+      renderResult();
+      showToast('Marked claimed ✅');
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  function confirmOverrideClaim() {
+    openConfirm(
+      'No Code Verified',
+      `No QR or passcode was checked for ${currentResult.name} — you're marking this claimed based on name alone. Are you sure this is the right person?`,
+      'Yes, Mark Claimed', 'var(--green)',
+      () => { currentMethod = 'admin_override'; submitClaimOverride(); }
+    );
+  }
+  async function submitClaimOverride() {
+    try {
+      const res = await fetch('/.netlify/functions/distro-claim', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + distroToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: currentResult.id, method: 'admin_override', confirmed: true }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) { showToast(json.error || 'Failed to claim'); return; }
+      currentResult = toCamel(json.registration);
+      currentMethod = null;
+      renderResult();
+      showToast('Marked claimed ✅');
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  function confirmUndo() {
+    openConfirm(
+      'Undo Claim?',
+      `This will mark ${currentResult.name}'s food pack as unclaimed again.`,
+      'Undo Claim', 'var(--red)',
+      submitUndo
+    );
+  }
+  async function submitUndo() {
+    try {
+      const res = await fetch('/.netlify/functions/distro-claim', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + distroToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: currentResult.id, action: 'unclaim' }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) { showToast(json.error || 'Failed to undo'); return; }
+      currentResult = toCamel(json.registration);
+      renderResult();
+      showToast('Claim undone');
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  function toCamel(row) {
+    return {
+      id: row.id, name: row.name, participantCount: row.participant_count,
+      foodClaimed: row.food_claimed, foodClaimedAt: row.food_claimed_at,
+      foodClaimedBy: row.food_claimed_by, foodClaimedMethod: row.food_claimed_method,
+    };
+  }
+
+  let pendingConfirmCb = null;
+  function openConfirm(title, msg, label, color, cb) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = msg;
+    const btn = document.getElementById('confirmBtn');
+    btn.textContent = label; btn.style.background = color;
+    pendingConfirmCb = cb;
+    document.getElementById('confirmModal').style.display = 'flex';
+  }
+  function closeConfirm() {
+    document.getElementById('confirmModal').style.display = 'none';
+    pendingConfirmCb = null;
+  }
+  document.getElementById('confirmBtn').addEventListener('click', () => {
+    const cb = pendingConfirmCb;
+    closeConfirm();
+    if (cb) cb();
+  });
+
+  // ── QR scanning ──
+  async function openScanner() {
+    const overlay = document.getElementById('scannerOverlay');
+    const video = document.getElementById('scanVideo');
+    if (!navigator.mediaDevices?.getUserMedia) { showToast('Camera not available on this device — use the passcode instead.'); return; }
+    try {
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = scanStream;
+      await video.play();
+      overlay.style.display = 'flex';
+      scanFrame();
+    } catch (e) {
+      showToast('Camera access denied or unavailable.');
+    }
+  }
+  function closeScanner() {
+    document.getElementById('scannerOverlay').style.display = 'none';
+    if (scanRAF) cancelAnimationFrame(scanRAF);
+    if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  }
+  function scanFrame() {
+    const video = document.getElementById('scanVideo');
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const decoded = jsQR(imageData.data, imageData.width, imageData.height);
+      if (decoded && decoded.data) {
+        // QR encodes a full https://<site>/distro?code=... URL — extract
+        // the code param if present, else fall back to the raw text
+        // (covers the unlikely case of a plain-token QR from elsewhere).
+        let code = decoded.data;
+        try {
+          const u = new URL(decoded.data);
+          const c = u.searchParams.get('code');
+          if (c) code = c;
+        } catch { /* not a URL — use decoded.data as-is */ }
+        closeScanner();
+        switchTab('code');
+        document.getElementById('codeInput').value = code;
+        lookupByCode(code);
+        return;
+      }
+    }
+    scanRAF = requestAnimationFrame(scanFrame);
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  init();
+</script>
+</body>
+</html>

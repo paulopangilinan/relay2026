@@ -1824,6 +1824,7 @@
           </div>
         </div>
         <div class="tile gathering-tile-actions">
+          <button onclick="blastGatheringFoodCodes()" style="width:100%;padding:9px 15px;background:#C49A1A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">🍱</span> Send Food Codes to Everyone</button>
           <button onclick="exportGatheringExcel()" style="width:100%;padding:9px 15px;background:#2E7048;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">📊</span> Export Excel</button>
           <button onclick="loadGatheringRegistrations()" style="width:100%;padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">🔄</span> Refresh</button>
         </div>
@@ -1876,9 +1877,9 @@
         <div class="table-scroll">
           <table style="min-width:820px;">
             <thead><tr>
-              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Registered</th><th>Verified By</th><th>Emails</th><th>Action</th>
+              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Food Code</th><th>Registered</th><th>Verified By</th><th>Emails</th><th>Action</th>
             </tr></thead>
-            <tbody id="gathering-body"><tr><td colspan="12" class="loading">Loading...</td></tr></tbody>
+            <tbody id="gathering-body"><tr><td colspan="13" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1898,10 +1899,10 @@
           <table style="min-width:900px;">
             <thead><tr>
               <th>Name</th><th>Email</th>
-              <th>Receive Updates</th><th>Verify Payment</th><th>Merch Order Notify</th><th>Gathering Updates</th><th>Manage Admins</th><th>Manage Churches</th>
+              <th>Receive Updates</th><th>Verify Payment</th><th>Merch Order Notify</th><th>Gathering Updates</th><th>Manage Admins</th><th>Manage Churches</th><th>Food Distribution</th>
               <th>Super Admin</th><th>Status</th><th>Action</th>
             </tr></thead>
-            <tbody id="admins-body"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+            <tbody id="admins-body"><tr><td colspan="10" class="loading">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2375,8 +2376,11 @@
         <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-manage"> Manage Admin Users
         </label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;cursor:pointer;">
           <input type="checkbox" id="am-perm-churches"> Manage Church List
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="am-perm-food-distro"> Food Distribution (/distro scanner)
         </label>
       </div>
       <div id="am-super-wrap" style="display:none;">
@@ -5646,7 +5650,7 @@
   function renderAdminsTable() {
     const tbody = document.getElementById('admins-body');
     if (!tbody) return;
-    if (!adminsList.length) { tbody.innerHTML = '<tr><td colspan="9" class="loading">No admins found.</td></tr>'; return; }
+    if (!adminsList.length) { tbody.innerHTML = '<tr><td colspan="10" class="loading">No admins found.</td></tr>'; return; }
     const isSuperAdmin = adminSession?.is_super_admin;
     tbody.innerHTML = adminsList.map(a => {
       const perm  = a.permissions || {};
@@ -5661,6 +5665,7 @@
         <td style="text-align:center;">${check(perm.gathering_email_updates)}</td>
         <td style="text-align:center;">${check(perm.manage_admins)}</td>
         <td style="text-align:center;">${check(perm.manage_churches)}</td>
+        <td style="text-align:center;">${check(perm.food_distribution)}</td>
         <td style="text-align:center;">${a.is_super_admin ? '⭐' : '—'}</td>
         <td style="text-align:center;">${a.force_password_change ? '<span style="font-size:11px;color:#E8B830;font-weight:600;">Pending</span>' : '<span style="font-size:11px;color:#4BAE6A;font-weight:600;">Active</span>'}</td>
         <td style="white-space:nowrap;">
@@ -5689,6 +5694,7 @@
     document.getElementById('am-perm-gathering-notify').checked = false;
     document.getElementById('am-perm-manage').checked   = false;
     document.getElementById('am-perm-churches').checked = false;
+    document.getElementById('am-perm-food-distro').checked = false;
     document.getElementById('am-super').checked = false;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
     document.getElementById('am-save-btn').disabled = false;
@@ -5712,6 +5718,7 @@
     document.getElementById('am-perm-gathering-notify').checked = !!perm.gathering_email_updates;
     document.getElementById('am-perm-manage').checked    = !!perm.manage_admins;
     document.getElementById('am-perm-churches').checked  = !!perm.manage_churches;
+    document.getElementById('am-perm-food-distro').checked = !!perm.food_distribution;
     document.getElementById('am-super').checked = !!admin.is_super_admin;
     document.getElementById('am-super-wrap').style.display = adminSession?.is_super_admin ? 'block' : 'none';
     document.getElementById('am-save-btn').disabled = false;
@@ -5739,6 +5746,7 @@
       gathering_email_updates: document.getElementById('am-perm-gathering-notify').checked,
       manage_admins:    document.getElementById('am-perm-manage').checked,
       manage_churches:  document.getElementById('am-perm-churches').checked,
+      food_distribution: document.getElementById('am-perm-food-distro').checked,
     };
     const is_super_admin = document.getElementById('am-super').checked;
     const isEditing = !!editingAdminId;
@@ -7828,9 +7836,9 @@
 
   function renderGatheringTable() {
     const body = document.getElementById('gathering-body');
-    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="12" class="empty">No registrations yet</td></tr>'; return; }
+    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="13" class="empty">No registrations yet</td></tr>'; return; }
     const rows = gatheringFilteredRows;
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="12" class="empty">No registrations match the current filters</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="13" class="empty">No registrations match the current filters</td></tr>'; return; }
     body.innerHTML = rows.map(r => {
       const methodLabel = r.payment_method === 'gcash' ? '💳 GCash' : '🏠 Venue';
       const receiptCell = r.receipt_url
@@ -7864,6 +7872,12 @@
           ).join('')}</span>`
         : '<span style="color:var(--muted);">—</span>';
       const emailsCell = gatheringEmailStatusCell(r);
+      const foodCodeCell = r.food_passcode
+        ? `<span style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:12px;">
+            <span id="gfc-${r.id}" data-code="${esc(r.food_passcode)}" style="letter-spacing:0.08em;">••••••</span>
+            <button type="button" onclick="toggleGatheringFoodCode('${r.id}')" title="Show/hide passcode" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1;">👁️</button>
+          </span>`
+        : '<span style="color:var(--muted);">—</span>';
       return `<tr>
         <td>${esc(properCaseName(r.name))}${r.flagged_duplicate ? ` <span title="Possible duplicate — same GCash receipt as another registration" style="background:var(--red-light);color:var(--red);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;vertical-align:middle;">⚠️ DUPLICATE</span>` : ''}</td>
         <td style="font-size:11px;color:var(--muted);">${esc(r.email || '—')}<br>${esc(r.mobile || '')}</td>
@@ -7873,12 +7887,23 @@
         <td>${receiptCell}</td>
         <td>${gatheringStatusBadge(r)}</td>
         <td>${carCell}</td>
+        <td>${foodCodeCell}</td>
         <td>${registered}</td>
         <td>${r.verified_by ? esc(r.verified_by) : '<span style="color:var(--muted);">—</span>'}</td>
         <td>${emailsCell}</td>
         <td>${actionCell}</td>
       </tr>`;
     }).join('');
+  }
+
+  // Passcode is masked by default (same instinct as a password field — it's
+  // a claim credential, not display data) — click the eye to reveal/hide
+  // just that one row's, in place, no re-render needed.
+  function toggleGatheringFoodCode(id) {
+    const el = document.getElementById('gfc-' + id);
+    if (!el) return;
+    const revealed = el.textContent !== '••••••';
+    el.textContent = revealed ? '••••••' : el.dataset.code;
   }
 
   // One icon per applicable email type — Registration (📝) always shown
@@ -7888,8 +7913,8 @@
   // (🚫) once cancelled with a reason on file. Each icon carries a small
   // ✓/! badge; failed ones swap to a ↻ retry glyph on hover and spin while
   // a resend is in flight (see resendGatheringEmail below).
-  const GEM_ICON_GLYPH = { registration: '📝', payment_confirmed: '💳', cancellation: '🚫' };
-  const GEM_TYPE_LABEL = { registration: 'Registration email', payment_confirmed: 'Payment confirmation email', cancellation: 'Cancellation email' };
+  const GEM_ICON_GLYPH = { registration: '📝', payment_confirmed: '💳', cancellation: '🚫', food_code: '🍱' };
+  const GEM_TYPE_LABEL = { registration: 'Registration email', payment_confirmed: 'Payment confirmation email', cancellation: 'Cancellation email', food_code: 'Food code email' };
   function gatheringEmailIcon(r, type) {
     const status = r[`${type}_email_status`];
     const provider = r[`${type}_email_provider`];
@@ -7912,6 +7937,10 @@
     }
     const icons = [gatheringEmailIcon(r, 'registration')];
     if (r.payment_status === 'confirmed') icons.push(gatheringEmailIcon(r, 'payment_confirmed'));
+    // Food code isn't gated on payment status — same reasoning as the
+    // blast/resend backend: it's a venue check-in credential, valid the
+    // moment the row exists.
+    icons.push(gatheringEmailIcon(r, 'food_code'));
     return `<div style="display:flex;gap:4px;">${icons.join('')}</div>`;
   }
 
@@ -8056,6 +8085,36 @@
       // one reflecting the outcome, whether it's the same type of failure
       // or now sent.
       loadGatheringRegistrations();
+    }
+  }
+
+  // Round 110: retroactive send for everyone who registered before food
+  // codes existed on the registration/payment-confirmed emails. Same
+  // provider-choice modal as a single resend; skips cancelled rows
+  // server-side (see admin-gathering.js's blast_food_codes).
+  function blastGatheringFoodCodes() {
+    const count = gatheringRows.filter(r => r.payment_status !== 'cancelled').length;
+    openGatheringConfirmProviderChoice(
+      'Send Food Codes to Everyone',
+      `This emails the QR code + passcode to all ${count} non-cancelled registrant(s). Choose which service to send through.`,
+      currentSettings.gathering_email_provider || 'resend',
+      (provider) => doBlastGatheringFoodCodes(provider)
+    );
+  }
+  async function doBlastGatheringFoodCodes(provider) {
+    showToast('Sending food codes…');
+    try {
+      const res = await fetch('/.netlify/functions/admin-gathering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ action: 'blast_food_codes', provider }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast(`Sent to ${json.sent} registrant(s)${json.skipped ? `, skipped ${json.skipped}` : ''}.`);
+      loadGatheringRegistrations();
+    } catch (e) {
+      showToast('Error: ' + e.message);
     }
   }
 
@@ -10277,6 +10336,8 @@
   window.selectAllGathering         = selectAllGathering;
   window.applyGatheringFilters      = applyGatheringFilters;
   window.exportGatheringExcel       = exportGatheringExcel;
+  window.blastGatheringFoodCodes    = blastGatheringFoodCodes;
+  window.toggleGatheringFoodCode    = toggleGatheringFoodCode;
   window.backToDashboard      = backToDashboard;
   window.tileFilter           = tileFilter;
   window.resetFilters         = resetFilters;
