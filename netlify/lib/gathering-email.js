@@ -35,10 +35,28 @@ export async function getGatheringEmailProvider() {
 // regardless of this setting). Fails closed (false) on a read error,
 // matching the column's own DEFAULT false.
 export async function isGatheringFoodCodeInEmailEnabled() {
+  // TEMP DEBUG (Round —): remove once the local-override issue is
+  // confirmed fixed. Prints exactly what this function sees so we can
+  // tell which branch is actually failing.
+  console.log("[food-code-debug] NETLIFY_DEV=" + JSON.stringify(process.env.NETLIFY_DEV) + " LOCAL_FORCE_GATHERING_FOOD_CODE_EMAIL=" + JSON.stringify(process.env.LOCAL_FORCE_GATHERING_FOOD_CODE_EMAIL));
+  // Local-dev-only override — lets you test the food-code-in-email flow
+  // on your machine without flipping the live site_settings row (which
+  // would turn it on for real, for everyone). Gated behind BOTH
+  // LOCAL_FORCE_GATHERING_FOOD_CODE_EMAIL *and* NETLIFY_DEV, which the
+  // Netlify CLI sets automatically for `netlify dev` and is never present
+  // on a deployed function — so this can't fire in production even if
+  // the first var got left set in a shared .env file. On live, the DB
+  // row below is always the sole determining factor.
+  if (process.env.NETLIFY_DEV === "true" && process.env.LOCAL_FORCE_GATHERING_FOOD_CODE_EMAIL === "true") {
+    console.log("[food-code-debug] override fired -> true");
+    return true;
+  }
   try {
     const { data } = await supabase.from("site_settings").select("gathering_food_code_in_email_enabled").eq("id", true).maybeSingle();
+    console.log("[food-code-debug] falling through to DB row ->", !!data?.gathering_food_code_in_email_enabled);
     return !!data?.gathering_food_code_in_email_enabled;
-  } catch {
+  } catch (e) {
+    console.log("[food-code-debug] DB read threw, failing closed ->", e.message);
     return false;
   }
 }
@@ -142,6 +160,9 @@ export async function sendGatheringPaymentConfirmedEmail(sendEmail, row, provide
   if (!row.email) return;
   const provider = providerOverride || await getGatheringEmailProvider();
   const includeFoodCode = await isGatheringFoodCodeInEmailEnabled();
+  // TEMP DEBUG (Round —): remove once the local-override issue is
+  // confirmed fixed.
+  console.log("[food-code-debug] includeFoodCode=" + includeFoodCode + " row.food_qr_code=" + JSON.stringify(row.food_qr_code) + " row.food_passcode=" + JSON.stringify(row.food_passcode));
   try {
     await sendEmail({
       to: row.email,
