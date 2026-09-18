@@ -61,11 +61,20 @@
   .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .search-row input { flex: 1; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 15px; font-family: inherit; outline: none; }
   .search-row input:focus { border-color: var(--sky); }
-  /* Round 96: Go (code tab) turns into a ✕ once a result is showing, so
-     clearing it doesn't require scrolling down to "← Back to search"; the
-     name tab gets a matching ✕ alongside its input for the same reason,
-     hidden until there's a result to clear. */
-  .search-row .clear-btn { flex: none; padding: 0 16px; border-radius: 8px; border: 1.5px solid var(--red); background: #fff; color: var(--red); font-weight: 700; font-size: 15px; cursor: pointer; }
+  /* Round: the clear action lives inside the input itself now (like a
+     standard search field's reset ×) instead of as its own button beside
+     it — hidden until there's a result to clear. The code tab keeps a real
+     "Go" button since submitting a passcode is a distinct action from
+     clearing, not the same control wearing two hats. */
+  .search-input-wrap { position: relative; flex: 1; }
+  .search-input-wrap input { width: 100%; padding-right: 40px; }
+  .search-input-wrap .input-clear { display: none; align-items: center; justify-content: center; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: none; background: none; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; border-radius: 50%; }
+  .search-input-wrap .input-clear:hover { background: var(--border); color: var(--red); }
+  /* Round: spinner takes the same right-side slot as the × while a lookup
+     is in flight — the two are never shown at once, since a result (which
+     is what the × depends on) can't exist until the fetch finishes. */
+  .search-input-wrap .input-spinner { display: none; position: absolute; right: 6px; top: 50%; width: 18px; height: 18px; margin-top: -9px; border: 2px solid var(--border); border-top-color: var(--sky); border-radius: 50%; animation: distro-spin 0.7s linear infinite; }
+  @keyframes distro-spin { to { transform: rotate(360deg); } }
   .tab-row { display: flex; gap: 6px; margin-bottom: 14px; }
   .tab-btn { flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
   .tab-btn.active { background: var(--sky); border-color: var(--sky); color: #fff; }
@@ -159,15 +168,21 @@
     </div>
     <div id="tabName">
       <div class="search-row">
-        <input type="text" id="nameInput" placeholder="Type a name…" oninput="onNameInput()">
-        <button class="clear-btn" id="nameClearBtn" onclick="clearResult()" style="display:none;" title="Clear">✕</button>
+        <div class="search-input-wrap">
+          <input type="text" id="nameInput" placeholder="Type a name…" oninput="onNameInput()">
+          <span class="input-spinner" id="nameSpinner"></span>
+          <button class="input-clear" id="nameClearBtn" onclick="clearResult()" title="Clear">✕</button>
+        </div>
       </div>
       <div class="result-list" id="nameResults"></div>
     </div>
     <div id="tabCode" style="display:none;">
       <div class="search-row">
-        <input type="text" id="codeInput" placeholder="6-character passcode" maxlength="6" style="text-transform:uppercase;letter-spacing:0.1em;font-family:'DM Mono',monospace;">
-        <button class="clear-btn" id="codeGoBtn" onclick="lookupByCode()">Go</button>
+        <div class="search-input-wrap">
+          <input type="text" id="codeInput" placeholder="6-character passcode" maxlength="6" style="text-transform:uppercase;letter-spacing:0.1em;font-family:'DM Mono',monospace;" oninput="onCodeInput()" onkeydown="if(event.key==='Enter')lookupByCode()">
+          <span class="input-spinner" id="codeSpinner"></span>
+          <button class="input-clear" id="codeClearBtn" onclick="clearResult()" title="Clear">✕</button>
+        </div>
       </div>
     </div>
     <button class="scan-btn" onclick="openScanner()" style="margin-top:10px;">📷 Scan QR Code</button>
@@ -361,8 +376,16 @@ function copyURL() {
     clearTimeout(nameDebounce);
     const q = document.getElementById('nameInput').value.trim();
     const list = document.getElementById('nameResults');
+    const spinner = document.getElementById('nameSpinner');
+    spinner.style.display = 'none'; // cancelled/too-short — nothing in flight (yet)
+    // The name tab is a live-typing search, not a single-value lookup like
+    // the passcode tab — so its × means "there's something typed to clear",
+    // not "a specific result was picked". Independent of updateSearchButtons()
+    // below, which still drives the passcode tab's × off currentResult.
+    document.getElementById('nameClearBtn').style.display = q ? 'flex' : 'none';
     if (q.length < 2) { list.innerHTML = ''; return; }
     nameDebounce = setTimeout(async () => {
+      spinner.style.display = 'block';
       try {
         const res = await fetch('/.netlify/functions/distro-lookup?query=' + encodeURIComponent(q), {
           headers: { 'Authorization': 'Bearer ' + distroToken },
@@ -376,13 +399,24 @@ function copyURL() {
           </div>`).join('') || '<div class="m" style="padding:8px;">No matches.</div>';
       } catch (e) {
         showToast('Error: ' + e.message);
+      } finally {
+        spinner.style.display = 'none';
       }
     }, 300);
+  }
+
+  // Round: no more "Go" button — a full 6-character passcode searches
+  // itself. Same debounce-free immediacy the old button gave on click,
+  // just without needing the click.
+  function onCodeInput() {
+    if (document.getElementById('codeInput').value.trim().length === 6) lookupByCode();
   }
 
   async function lookupByCode(codeOverride) {
     const code = (codeOverride || document.getElementById('codeInput').value).trim();
     if (!code) return;
+    const spinner = document.getElementById('codeSpinner');
+    spinner.style.display = 'block';
     try {
       const res = await fetch('/.netlify/functions/distro-lookup?code=' + encodeURIComponent(code), {
         headers: { 'Authorization': 'Bearer ' + distroToken },
@@ -396,6 +430,8 @@ function copyURL() {
       selectResult(r, method, code);
     } catch (e) {
       showToast('Error: ' + e.message);
+    } finally {
+      spinner.style.display = 'none';
     }
   }
 
@@ -444,15 +480,14 @@ function copyURL() {
     }
   }
 
-  // Round 96: Go (code tab) becomes a ✕ once a result is showing — same
-  // slot, so clearing doesn't need a second control. Name tab gets a
-  // matching ✕ next to its input, hidden until there's something to clear.
+  // Round: clearing lives inside each input as an inline × now, instead of
+  // a separate button. Passcode is a single-value lookup, so its × still
+  // tracks currentResult (there's nothing to clear until a lookup lands);
+  // the name tab's × is driven by onNameInput() instead, since it's a
+  // live-typing search where "something to clear" means typed text, not a
+  // specifically-selected result.
   function updateSearchButtons() {
-    const hasResult = !!currentResult;
-    const codeBtn = document.getElementById('codeGoBtn');
-    codeBtn.textContent = hasResult ? '✕' : 'Go';
-    codeBtn.onclick = hasResult ? clearResult : () => lookupByCode();
-    document.getElementById('nameClearBtn').style.display = hasResult ? 'inline-flex' : 'none';
+    document.getElementById('codeClearBtn').style.display = currentResult ? 'flex' : 'none';
   }
 
   function methodLabel(m) {
@@ -464,6 +499,7 @@ function copyURL() {
     renderResult();
     document.getElementById('nameInput').value = '';
     document.getElementById('nameResults').innerHTML = '';
+    document.getElementById('nameClearBtn').style.display = 'none';
     document.getElementById('codeInput').value = '';
   }
 
@@ -689,6 +725,14 @@ function copyURL() {
   }
 
   init();
+  // Round: distro-ctr.html polls this same endpoint every 2s so its big
+  // kiosk counter updates as OTHER devices mark packs claimed. This page
+  // only ever called loadMiniCounter() after this device's own actions
+  // (login, a lookup, marking claimed/unclaimed) — so it never picked up
+  // someone else's scan. Safe to run unconditionally: the endpoint is
+  // public/unauthenticated, and if #app is still hidden (pre-login) this
+  // just updates offscreen elements harmlessly until it's shown.
+  setInterval(loadMiniCounter, 2000);
 </script>
 </body>
 </html>
