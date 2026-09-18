@@ -37,6 +37,31 @@ export function gatheringHeroUrl() {
   return `${imgUrl}/assets/images/gathering-hero-email.jpg?v=${Date.now()}`;
 }
 
+// Round 110: food-pack claim code block, shared by the registration-received
+// email, the payment-confirmed email, and the standalone food-code
+// resend/blast email — same markup everywhere so a participant recognizes
+// it no matter which email it arrived in. The QR encodes a full
+// `/distro?code=` URL (same param distro.html's ?code auto-lookup and the
+// in-app scanner both already parse), not just the bare token, so a
+// participant's own phone camera app can jump straight into a lookup too.
+// Rendered via a public QR image API — safe for email (unlike an artifact,
+// an email <img> isn't subject to the CSP host allowlist) and needs no
+// server-side QR library.
+export function gatheringFoodCodeBlock(row) {
+  const siteUrl = (process.env.SITE_URL || "").replace(/\/+$/, "");
+  const claimUrl = `${siteUrl}/distro?code=${encodeURIComponent(row.food_qr_code)}`;
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(claimUrl)}`;
+  return `
+    <div style="margin:18px 0;padding:18px;background:#F7FAFB;border:1.5px solid #D4E2EA;border-radius:10px;text-align:center;">
+      <p style="margin:0 0 12px;font-size:13px;color:#2A3D4A;font-weight:700;">🍱 Your Food Pack Code</p>
+      <img src="${qrImg}" alt="Food pack QR code" width="160" height="160" style="display:block;margin:0 auto 12px;border-radius:6px;">
+      <p style="margin:0 0 4px;font-size:11px;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;">Or give this passcode</p>
+      <p style="margin:0;font-size:22px;font-weight:700;letter-spacing:0.12em;color:#1C2B38;font-family:monospace;">${escapeHtml(row.food_passcode)}</p>
+      <p style="margin:10px 0 0;font-size:11.5px;color:#6B8A9A;">Show this QR code or passcode at the food distribution table to claim ${row.participant_count > 1 ? `your ${row.participant_count} food packs` : "your food pack"}.</p>
+    </div>`;
+}
+
+
 // Two-tone diagonal gradients — same palette used repo-wide (verify.js,
 // admin-data.js, submit.js): blue for "awaiting/needs confirmation",
 // green for "confirmed / pay-at-venue". Slate for cancellations — neither
@@ -92,7 +117,8 @@ export function gatheringPaymentConfirmedEmail(row) {
     body: `
       <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
       <p style="margin:0 0 10px;">We've confirmed your GCash payment for <strong>Gathering Around the Gospel</strong> — ${row.participant_count} participant(s), ₱${row.amount_due?.toLocaleString?.() ?? row.amount_due}.</p>
-      <p style="margin:0;">See you on September 25 at CCT Tagaytay Retreat &amp; Training Center!</p>`,
+      <p style="margin:0;">See you on September 25 at CCT Tagaytay Retreat &amp; Training Center!</p>
+      ${row.food_qr_code && row.food_passcode ? gatheringFoodCodeBlock(row) : ""}`,
   });
 }
 
@@ -133,7 +159,8 @@ function gatheringReceivedBody(row) {
     <p style="margin:0 0 4px;">Amount due: <strong>₱${row.amount_due?.toLocaleString?.() ?? row.amount_due}</strong></p>
     ${carLine}
     <p style="margin:14px 0 0;">📍 CCT Tagaytay Retreat &amp; Training Center — September 25, 2026, 7:00–9:30 PM</p>
-    ${paymentNote}`;
+    ${paymentNote}
+    ${row.food_qr_code && row.food_passcode ? gatheringFoodCodeBlock(row) : ""}`;
 }
 
 /**
@@ -167,6 +194,44 @@ export async function sendGatheringRegistrationReceivedEmail(sendEmail, row, pro
   } catch (err) {
     console.error("Gathering registration-received email failed:", err.message);
     await recordGatheringEmailStatus(row.id, "registration", "failed", provider);
+  }
+}
+
+// Round 110: standalone "here's your food code" email — used for (a) the
+// per-row Resend icon on the admin table, and (b) the "Send Food Codes to
+// Everyone" blast for participants who registered before codes existed on
+// the registration/payment-confirmed emails. Reuses the same
+// gatheringFoodCodeBlock as those two, so the code itself is never
+// regenerated here — it's always whatever was already stored on the row
+// from submit-gathering.js's insert-time generation, so a resend or a
+// blast never invalidates a code a participant already has.
+export function gatheringFoodCodeEmail(row) {
+  return gatheringEmailShell({
+    heroUrl: gatheringHeroUrl(),
+    headerBg: GATHERING_HEADER_GRADIENT_GREEN,
+    headerTitle: "Your Food Pack Code 🍱",
+    body: `
+      <p style="margin:0 0 10px;">Hi ${escapeHtml(row.name)},</p>
+      <p style="margin:0;">Here's your food pack QR code and passcode for <strong>Gathering Around the Gospel</strong> — hang on to this, you'll need it at the food distribution table.</p>
+      ${gatheringFoodCodeBlock(row)}`,
+  });
+}
+
+export async function sendGatheringFoodCodeEmail(sendEmail, row, providerOverride) {
+  if (!row.email) return;
+  if (!row.food_qr_code || !row.food_passcode) return; // nothing to send — shouldn't happen post-migration, but don't email a blank code
+  const provider = providerOverride || await getGatheringEmailProvider();
+  try {
+    await sendEmail({
+      to: row.email,
+      subject: "Your Food Pack Code — Gathering Around the Gospel",
+      html: gatheringFoodCodeEmail(row),
+      provider,
+    });
+    await recordGatheringEmailStatus(row.id, "food_code", "sent", provider);
+  } catch (err) {
+    console.error("Gathering food-code email failed:", err.message);
+    await recordGatheringEmailStatus(row.id, "food_code", "failed", provider);
   }
 }
 

@@ -1,7 +1,7 @@
 // netlify/functions/admin-gathering.js
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "../lib/mailer.js";
-import { sendGatheringPaymentConfirmedEmail, sendGatheringCancellationEmail, sendGatheringRegistrationReceivedEmail, GATHERING_CANCELLATION_REASONS } from "../lib/gathering-email.js";
+import { sendGatheringPaymentConfirmedEmail, sendGatheringCancellationEmail, sendGatheringRegistrationReceivedEmail, sendGatheringFoodCodeEmail, GATHERING_CANCELLATION_REASONS } from "../lib/gathering-email.js";
 import { getAdmin } from "../lib/admin-auth.js";
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -28,6 +28,43 @@ export const handler = async (event) => {
     if (event.httpMethod === "POST") {
       const body = JSON.parse(event.body || "{}");
       const { action, id } = body;
+
+      // Round 110: bulk send, not scoped to one row — handled before the
+      // `!id` guard below since this action has no single target.
+      if (action === "blast_food_codes") {
+        if (!admin.permissions?.verify_payment || admin.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: "No permission" }) };
+        }
+        const { provider } = body;
+        const providerOverride = (provider === "resend" || provider === "gmail") ? provider : undefined;
+        // Every non-cancelled row, regardless of payment_status — food
+        // distribution is a venue check-in concern independent of payment
+        // (plan's Confirmed Rule #1), so a venue-pay/unpaid registrant is
+        // just as entitled to their code as a confirmed GCash one.
+        const { data: rows, error: fetchErr } = await supabase
+          .from("gathering_registrations")
+          .select("*")
+          .neq("payment_status", "cancelled");
+        if (fetchErr) throw fetchErr;
+
+        let sent = 0, skipped = 0;
+        // Sequential, not Promise.all — this can be a few hundred rows and
+        // sequential keeps it well clear of the mailer's/Netlify's rate
+        // limits, matching how every other bulk-send in this admin panel
+        // already behaves. sendGatheringFoodCodeEmail never throws (it
+        // catches internally and records status on the row, same as every
+        // other Gathering send) — per-row success/failure is what the
+        // 🍱 icon in the Emails column reflects after this reloads, this
+        // count is only a rough "did we even attempt it" summary for the
+        // toast.
+        for (const row of (rows || [])) {
+          if (!row.email || !row.food_qr_code || !row.food_passcode) { skipped++; continue; }
+          await sendGatheringFoodCodeEmail(sendEmail, row, providerOverride);
+          sent++;
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, sent, skipped, total: (rows || []).length }) };
+      }
+
       if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: "Missing id" }) };
 
       const { data: row, error: fetchErr } = await supabase
@@ -139,6 +176,15 @@ export const handler = async (event) => {
           // comment) but now honors an admin's one-off Resend override
           // same as the other two email types.
           await sendGatheringCancellationEmail(sendEmail, row, row.cancellation_reason, providerOverride);
+        } else if (type === "food_code") {
+          // Round 110. Unlike the other three types this isn't gated on
+          // payment_status at all — a food code is valid the moment the
+          // row exists, cancelled rows excepted (checked below), since
+          // it's a venue check-in concern rather than a payment one.
+          if (row.payment_status === "cancelled") {
+            return { statusCode: 400, headers, body: JSON.stringify({ error: "This registration is cancelled — nothing to send." }) };
+          }
+          await sendGatheringFoodCodeEmail(sendEmail, row, providerOverride);
         } else {
           return { statusCode: 400, headers, body: JSON.stringify({ error: "Unknown email type." }) };
         }
