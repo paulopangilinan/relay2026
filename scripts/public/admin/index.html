@@ -2055,7 +2055,7 @@
           </div>
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;">
             <div>
-              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Include Food Code in Payment Confirmation Email</div>
+              <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;">Include Food Code in Confirmation Emails</div>
               <div style="font-size:12px;color:var(--muted);" id="settings-gathering-food-code-status">Loading…</div>
             </div>
             <div onclick="toggleSetting('gathering_food_code_in_email_enabled')" id="settings-gathering_food_code_in_email_enabled-track" style="width:44px;height:24px;border-radius:50px;background:#D4E2EA;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;">
@@ -9682,16 +9682,15 @@
     paintToggle('gathering_venue_payment_enabled', currentSettings.gathering_venue_payment_enabled, '#2E7048');
 
     // Food-code toggle — defaults OFF (see the migration), so the QR/
-    // passcode block stays out of the payment-confirmed email until an
-    // admin explicitly turns it on. Never affects the registration-
-    // received email (never included there, regardless of this toggle)
-    // or the standalone "Send Food Codes to Everyone" blast.
+    // passcode block stays out of the registration-received and
+    // payment-confirmed emails until an admin explicitly turns it on.
+    // Never affects the standalone "Send Food Codes to Everyone" blast.
     paintToggle('gathering_food_code_in_email_enabled', currentSettings.gathering_food_code_in_email_enabled, '#C49A1A');
     const foodCodeStatusEl = document.getElementById('settings-gathering-food-code-status');
     if (foodCodeStatusEl) {
       foodCodeStatusEl.textContent = currentSettings.gathering_food_code_in_email_enabled
-        ? 'Food QR/passcode is included when a GCash payment is confirmed.'
-        : 'Food QR/passcode is left out — use the 🍱 button/icon in the Gathering tab to send it separately.';
+        ? 'Food QR/passcode is included in those emails.'
+        : 'Food QR/passcode is left out of those emails — use the 🍱 button/icon in the Gathering tab to send it separately.';
     }
     document.getElementById('settings-gathering-venue-status').textContent = currentSettings.gathering_venue_payment_enabled
       ? 'Pay at Venue is available to registrants.'

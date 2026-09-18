@@ -28,11 +28,10 @@ export async function getGatheringEmailProvider() {
 }
 
 // Round 112: admin-configurable, defaults OFF. Controls whether the food
-// QR/passcode block is auto-included in the payment-confirmed email only
-// (Round 113: explicitly NOT the registration-received email, even when
-// this is on) — and NOT the standalone food-code email/blast (that one
-// exists specifically to send the code, so it always includes it
-// regardless of this setting). Fails closed (false) on a read error,
+// QR/passcode block is auto-included in the registration-received and
+// payment-confirmed emails — NOT the standalone food-code email/blast
+// (that one exists specifically to send the code, so it always includes
+// it regardless of this setting). Fails closed (false) on a read error,
 // matching the column's own DEFAULT false.
 export async function isGatheringFoodCodeInEmailEnabled() {
   try {
@@ -160,7 +159,7 @@ export async function sendGatheringPaymentConfirmedEmail(sendEmail, row, provide
 // registration-received email, addressed to the registrant rather than an
 // admin. Kept here (not in submit-gathering.js's admin-facing
 // gatheringNotifyBody) since the wording is participant-facing throughout.
-function gatheringReceivedBody(row) {
+function gatheringReceivedBody(row, includeFoodCode = true) {
   const isGcash = row.payment_method === "gcash";
   const carLine = row.bringing_car
     ? `<p style="margin:0 0 4px;">Car: <strong>${escapeHtml(row.car_maker || "")} ${escapeHtml(row.car_model || "")}</strong> — Plate <strong>${escapeHtml(row.car_plate || "")}</strong></p>`
@@ -176,13 +175,8 @@ function gatheringReceivedBody(row) {
     <p style="margin:0 0 4px;">Amount due: <strong>₱${row.amount_due?.toLocaleString?.() ?? row.amount_due}</strong></p>
     ${carLine}
     <p style="margin:14px 0 0;">📍 CCT Tagaytay Retreat &amp; Training Center — September 25, 2026, 7:00–9:30 PM</p>
-    ${paymentNote}`;
-    // Round 113: food code deliberately NEVER appears here, even when the
-    // toggle is on — per explicit request it's payment-confirmation-only.
-    // A venue-pay registrant therefore won't get it automatically at all
-    // (venue payments never reach "confirmed" through this system — see
-    // Confirmed Rule #1); they rely on the admin's manual blast/resend
-    // (Round 111) for their code. Flagged for the user as a real gap.
+    ${paymentNote}
+    ${includeFoodCode && row.food_qr_code && row.food_passcode ? gatheringFoodCodeBlock(row) : ""}`;
 }
 
 /**
@@ -192,24 +186,25 @@ function gatheringReceivedBody(row) {
  * Header color follows the same "blue = awaiting confirmation, green =
  * nothing left to confirm" convention as the admin-notify emails.
  */
-export function gatheringRegistrationReceivedEmail(row) {
+export function gatheringRegistrationReceivedEmail(row, includeFoodCode = true) {
   const isGcash = row.payment_method === "gcash";
   return gatheringEmailShell({
     heroUrl: gatheringHeroUrl(),
     headerBg: isGcash ? GATHERING_HEADER_GRADIENT_BLUE : GATHERING_HEADER_GRADIENT_GREEN,
     headerTitle: "You're Registered! 🎉",
-    body: gatheringReceivedBody(row),
+    body: gatheringReceivedBody(row, includeFoodCode),
   });
 }
 
 export async function sendGatheringRegistrationReceivedEmail(sendEmail, row, providerOverride) {
   if (!row.email) return;
   const provider = providerOverride || await getGatheringEmailProvider();
+  const includeFoodCode = await isGatheringFoodCodeInEmailEnabled();
   try {
     await sendEmail({
       to: row.email,
       subject: "You're Registered! — Gathering Around the Gospel",
-      html: gatheringRegistrationReceivedEmail(row),
+      html: gatheringRegistrationReceivedEmail(row, includeFoodCode),
       provider,
     });
     await recordGatheringEmailStatus(row.id, "registration", "sent", provider);
