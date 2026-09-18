@@ -443,7 +443,16 @@ function copyURL() {
   // itself. Same debounce-free immediacy the old button gave on click,
   // just without needing the click.
   function onCodeInput() {
-    if (document.getElementById('codeInput').value.trim().length === 6) lookupByCode();
+    const len = document.getElementById('codeInput').value.trim().length;
+    if (len === 6) { lookupByCode(); return; }
+    // Editing back down from a full 6-char match (e.g. deleting the last
+    // character) shouldn't leave the previous person's result on screen —
+    // only clear the result state here, not the input itself, since the
+    // user is still actively typing.
+    if (currentResult) {
+      currentResult = null; currentMethod = null; currentCode = null;
+      renderResult();
+    }
   }
 
   async function lookupByCode(codeOverride) {
