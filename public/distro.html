@@ -110,10 +110,29 @@
   .btn-back { background: none; color: var(--muted); text-decoration: underline; font-weight: 500; font-size: 13px; padding: 8px; }
 
   /* ── Scanner overlay ── */
-  #scannerOverlay { display: none; position: fixed; inset: 0; background: #000; z-index: 999; flex-direction: column; align-items: center; justify-content: center; }
-  #scannerOverlay video { width: 100%; max-width: 480px; }
+  #scannerOverlay { display: none; position: fixed; inset: 0; background: linear-gradient(135deg,#1C2B38,#2A3D4A); z-index: 999; flex-direction: column; align-items: center; justify-content: center; }
+  #scannerOverlay video { width: 100%; max-width: 480px; display: block; }
   #scannerOverlay .scan-hint { color: #fff; font-size: 13px; margin-top: 16px; text-align: center; padding: 0 20px; }
-  #scannerOverlay .close-scan { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; }
+  #scannerOverlay .close-scan { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; z-index: 2; }
+  /* Scanner frame — wraps just the video so the overlay elements below
+     track its actual rendered size/position instead of the whole screen. */
+  .scan-frame-wrap { position: relative; width: 100%; max-width: 480px; }
+  .scan-mask { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at center, transparent 0, transparent 130px, rgba(28,43,56,0.6) 132px); }
+  .scan-brand { position: absolute; top: 16px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 16px; text-align: center; pointer-events: none; }
+  .scan-brand img { height: 28px; width: auto; object-fit: contain; margin-bottom: 2px; }
+  .scan-brand .caption { font-family: "Bebas Neue", sans-serif; letter-spacing: 0.04em; font-size: clamp(15px, 4.2vw, 19px); color: #fff; line-height: 1.1; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+  .scan-brand .subtext { font-size: 11px; font-weight: 600; color: var(--sky-light); letter-spacing: 0.02em; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+  /* Corner-bracket viewfinder — green-primary/blue-secondary, same pairing
+     the food-counter's own progress bar uses (distro-ctr.html:
+     linear-gradient(90deg,#4BAE6A,#3A8BBF)), rather than a flat single color. */
+  .scan-viewfinder { position: absolute; top: 50%; left: 50%; width: min(60vw, 220px); height: min(60vw, 220px); transform: translate(-50%, -50%); pointer-events: none; }
+  .scan-viewfinder .corner { position: absolute; width: 30px; height: 30px; border-width: 4px; border-style: solid; border-radius: 6px; }
+  .scan-viewfinder .tl { top: 0; left: 0; border-color: var(--green-bright); border-right: none; border-bottom: none; }
+  .scan-viewfinder .tr { top: 0; right: 0; border-color: var(--green-bright); border-left: none; border-bottom: none; }
+  .scan-viewfinder .bl { bottom: 0; left: 0; border-color: var(--sky); border-right: none; border-top: none; }
+  .scan-viewfinder .br { bottom: 0; right: 0; border-color: var(--sky); border-left: none; border-top: none; }
+  .scan-viewfinder .sweep { position: absolute; left: 4px; right: 4px; height: 2px; background: linear-gradient(90deg, transparent, var(--green-bright) 35%, var(--sky) 65%, transparent); animation: distro-scan-sweep 2.2s ease-in-out infinite; }
+  @keyframes distro-scan-sweep { 0%, 100% { top: 8%; opacity: 0; } 10% { opacity: 1; } 50% { top: 88%; opacity: 1; } 90% { opacity: 0; } }
 
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; z-index: 1000; display: none; max-width: 90%; text-align: center; }
 
@@ -134,8 +153,8 @@
     <h1>GATHERING AROUND THE GOSPEL</h1>
     <p>🍱 Food Distribution Admin Portal</p>
     <div class="login-err" id="loginErr"></div>
-    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
-    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">Sign In</button>
   </div>
 </div>
@@ -200,7 +219,22 @@
 
 <div id="scannerOverlay">
   <button class="close-scan" onclick="closeScanner()">✕</button>
-  <video id="scanVideo" playsinline muted></video>
+  <div class="scan-frame-wrap">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="scan-mask"></div>
+    <div class="scan-brand">
+      <img src="assets/images/admin-icon.jpg" alt="SGC Logo" onerror="this.style.display='none'">
+      <div class="caption">RELAY Asia-Pacific Conference 2026</div>
+      <div class="subtext">Gathering Around the Gospel</div>
+    </div>
+    <div class="scan-viewfinder">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="sweep"></div>
+    </div>
+  </div>
   <div class="scan-hint">Point the camera at the participant's QR code</div>
 </div>
 
