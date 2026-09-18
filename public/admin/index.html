@@ -1824,7 +1824,6 @@
           </div>
         </div>
         <div class="tile gathering-tile-actions">
-          <button onclick="blastGatheringFoodCodes()" style="width:100%;padding:9px 15px;background:#C49A1A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">🍱</span> Send Food Codes to Everyone</button>
           <button onclick="exportGatheringExcel()" style="width:100%;padding:9px 15px;background:#2E7048;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">📊</span> Export Excel</button>
           <button onclick="loadGatheringRegistrations()" style="width:100%;padding:9px 16px;background:var(--sky);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><span style="font-size:14px;">🔄</span> Refresh</button>
         </div>
@@ -1874,12 +1873,39 @@
         </div>
       </div>
       <div class="table-wrap">
+        <div class="table-header">
+          <h2>Gathering Registrations</h2>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span id="gathering-selected-count" style="font-size:11px;color:var(--muted);">0 selected</span>
+            <div style="display:flex;align-items:stretch;position:relative;">
+              <button onclick="blastGatheringFoodCodes()" id="gathering-blast-btn" disabled style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#C49A1A;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;white-space:nowrap;opacity:0.5;cursor:not-allowed;">
+                <span style="font-size:14px;">🍱</span><span>Send Food Codes</span>
+              </button>
+              <button id="gathering-food-caret" onclick="toggleGatheringFoodMenu(event)" title="Selection presets" style="display:inline-flex;align-items:center;justify-content:center;padding:0 11px;height:34px;background:#C49A1A;color:#fff;border:none;border-left:1px solid rgba(255,255,255,0.35);border-radius:0 8px 8px 0;font-size:11px;font-weight:700;line-height:1;cursor:pointer;">▾</button>
+              <div id="gathering-food-presets" style="display:none;position:absolute;top:calc(100% + 4px);right:0;min-width:250px;background:#fff;border:1px solid #D4E2EA;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.16);overflow:hidden;z-index:20;">
+                <button onclick="selectGatheringPreset('all');toggleGatheringFoodMenu()" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✓ Select All Eligible</span>
+                  <span class="preset-sub">Everyone not cancelled</span>
+                </button>
+                <button onclick="selectGatheringPreset('retro');toggleGatheringFoodMenu()" class="preset-opt" title="Registrants who haven't received a food-code email yet — the ones who registered before this feature existed and never got a catch-up send">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">🔁 Select Retro</span>
+                  <span class="preset-sub">Never received a food-code email yet</span>
+                </button>
+                <button onclick="selectGatheringPreset('clear');toggleGatheringFoodMenu()" class="preset-opt">
+                  <span style="font-size:13px;font-weight:700;color:#2A3D4A;">✕ Clear Selection</span>
+                  <span class="preset-sub">Deselect everyone</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="table-scroll">
           <table style="min-width:820px;">
             <thead><tr>
-              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Food Code</th><th>Registered</th><th>Verified By</th><th>Emails</th><th>Action</th>
+              <th style="width:34px;text-align:center;"><input type="checkbox" id="gathering-select-all" onclick="toggleGatheringSelectAll(this.checked)" title="Select all rows in this view" style="cursor:pointer;"></th>
+              <th>Name</th><th>Contact</th><th>Participants</th><th>Payment Method</th><th>Amount Due</th><th>Receipt</th><th>Status</th><th>Car</th><th>Food Code</th><th>Food Claimed</th><th>Registered</th><th>Verified By</th><th>Emails</th><th>Action</th>
             </tr></thead>
-            <tbody id="gathering-body"><tr><td colspan="13" class="loading">Loading...</td></tr></tbody>
+            <tbody id="gathering-body"><tr><td colspan="15" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2640,8 +2666,28 @@
       adminToken   = json.token;
       adminSession = { name: json.name, email: json.email, permissions: json.permissions, is_super_admin: json.is_super_admin };
 
+      // Let a required password change through first — distro.html has no
+      // password-change screen of its own, so a food_distribution-only
+      // admin still needs this portal once, on their very first login, to
+      // set a real password before they can use /distro at all.
       if (json.force_password_change) {
         showChangePassword();
+        return;
+      }
+
+      // food_distribution is meant for the /distro volunteer app only —
+      // if that's the ONLY permission an admin has, they have no actual
+      // use for the full admin portal (every tab here is gated by some
+      // other permission or hidden entirely), so send them to /distro
+      // instead of letting them in to browse read-only registrant PII.
+      // Any other permission (or being a super admin) still gets in here
+      // same as before.
+      const perms = json.permissions || {};
+      const hasOtherPermission = Object.keys(perms).some(k => k !== 'food_distribution' && perms[k]);
+      if (perms.food_distribution && !hasOtherPermission && !json.is_super_admin) {
+        errEl.textContent = 'This account only has Food Distribution access — use the Food Distribution app instead.';
+        errEl.style.display = 'block';
+        adminToken = null; adminSession = null;
         return;
       }
 
@@ -4739,6 +4785,12 @@
   function toggleMerchVariantMenu(e, tab) {
     if (e) e.stopPropagation();
     const menu = document.getElementById(`${tab}-merch-variant-menu`);
+    if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function toggleGatheringFoodMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('gathering-food-presets');
     if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
   }
 
@@ -7609,6 +7661,14 @@
   const gatheringMultiSelect = { method: new Set(), car: new Set(), status: new Set() };
   const GATHERING_LABELS = { method: ['All Payment Methods', 'methods selected'], car: ['All', 'selected'], status: ['All Statuses', 'statuses selected'] };
 
+  // Round 114: checkbox selection for the food-code blast, own dedicated
+  // Set rather than reusing the PH/Intl `bulkSelected` mechanism — that
+  // one is wired specifically to filteredPH/filteredIntl and a single
+  // shared #ph-bulk-followup toolbar, and the Gathering tab is a fully
+  // separate table/filter system, so a parallel implementation is safer
+  // than trying to generalize the existing one.
+  let gatheringSelectedIds = new Set();
+
   async function loadGatheringRegistrations() {
     try {
       const res = await fetch('/.netlify/functions/admin-gathering', { headers: { 'Authorization': 'Bearer ' + adminToken } });
@@ -7734,8 +7794,67 @@
       return true;
     });
     renderGatheringTable();
+    syncGatheringSelectionUI();
     const countEl = document.getElementById('gathering-count');
     if (countEl) countEl.textContent = gatheringFilteredRows.length + ' of ' + gatheringRows.length + ' records';
+  }
+
+  // ── Round 114: checkbox selection for the food-code blast ──────────────
+  function toggleGatheringRowSelection(id, checked) {
+    if (checked) gatheringSelectedIds.add(id); else gatheringSelectedIds.delete(id);
+    syncGatheringSelectionUI();
+  }
+
+  function toggleGatheringSelectAll(checked) {
+    // Only ever acts on cancelled-excluded, currently-visible rows — same
+    // "what you see is what you send" convention as PH/Intl's select-all.
+    gatheringFilteredRows.filter(r => r.payment_status !== 'cancelled').forEach(r => {
+      if (checked) gatheringSelectedIds.add(r.id); else gatheringSelectedIds.delete(r.id);
+    });
+    document.querySelectorAll('#gathering-body .gathering-check').forEach(cb => {
+      if (!cb.disabled) cb.checked = checked;
+    });
+    syncGatheringSelectionUI();
+  }
+
+  // "All" / "Retro" / "Clear" — presets tick rows, they never send
+  // anything by themselves, so the admin still reviews the count/button
+  // before actually clicking Send. Scoped to the current filtered view.
+  function selectGatheringPreset(mode) {
+    gatheringSelectedIds.clear();
+    if (mode === 'all') {
+      gatheringFilteredRows.filter(r => r.payment_status !== 'cancelled').forEach(r => gatheringSelectedIds.add(r.id));
+    } else if (mode === 'retro') {
+      // "Never received a dedicated food-code email" — the honest, actually-
+      // trackable signal, rather than a hardcoded feature-launch date this
+      // code has no reliable way to know. Registrants whose code was
+      // already folded inline into their original confirmation email
+      // (post-feature) may occasionally get swept in here too and receive
+      // a harmless duplicate of their own already-valid code — there's no
+      // per-row record of which registrations got the inline block vs.
+      // not, so this can't be narrowed further without a new column.
+      gatheringFilteredRows.filter(r => r.payment_status !== 'cancelled' && !r.food_code_email_status).forEach(r => gatheringSelectedIds.add(r.id));
+    }
+    renderGatheringTable();
+    syncGatheringSelectionUI();
+  }
+
+  function syncGatheringSelectionUI() {
+    const n = gatheringSelectedIds.size;
+    const countEl = document.getElementById('gathering-selected-count');
+    if (countEl) countEl.textContent = `${n} selected`;
+    const btn = document.getElementById('gathering-blast-btn');
+    if (btn) {
+      btn.disabled = n === 0;
+      btn.style.opacity = n === 0 ? '0.5' : '1';
+      btn.style.cursor = n === 0 ? 'not-allowed' : 'pointer';
+      btn.innerHTML = `<span style="font-size:14px;">🍱</span> Send Food Codes${n ? ` (${n})` : ''}`;
+    }
+    const selectAll = document.getElementById('gathering-select-all');
+    if (selectAll) {
+      const eligible = gatheringFilteredRows.filter(r => r.payment_status !== 'cancelled');
+      selectAll.checked = eligible.length > 0 && eligible.every(r => gatheringSelectedIds.has(r.id));
+    }
   }
 
   // Exports exactly what's currently on screen — the filtered row set,
@@ -7845,9 +7964,9 @@
 
   function renderGatheringTable() {
     const body = document.getElementById('gathering-body');
-    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="13" class="empty">No registrations yet</td></tr>'; return; }
+    if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="15" class="empty">No registrations yet</td></tr>'; return; }
     const rows = gatheringFilteredRows;
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="13" class="empty">No registrations match the current filters</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="15" class="empty">No registrations match the current filters</td></tr>'; return; }
     body.innerHTML = rows.map(r => {
       const methodLabel = r.payment_method === 'gcash' ? '💳 GCash' : '🏠 Venue';
       const receiptCell = r.receipt_url
@@ -7887,7 +8006,16 @@
             <button type="button" onclick="toggleGatheringFoodCode('${r.id}')" title="Show/hide passcode" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1;">👁️</button>
           </span>`
         : '<span style="color:var(--muted);">—</span>';
+      // Same claimed/unclaimed language as the /distro volunteer app —
+      // tooltip carries who/when/how, same fields distro-claim.js writes.
+      // Method label matches distro.html's own methodLabel() so the raw
+      // 'admin_override' enum value never leaks into the UI as-is.
+      const claimMethodLabel = { qr: 'QR code', passcode: 'passcode', admin_override: 'name only (admin override)' }[r.food_claimed_method] || r.food_claimed_method;
+      const foodClaimedCell = r.food_claimed
+        ? `<span class="badge badge-green" title="${r.food_claimed_at ? new Date(r.food_claimed_at).toLocaleString() : ''}${r.food_claimed_by ? ' · by ' + esc(r.food_claimed_by) : ''}${claimMethodLabel ? ' · via ' + esc(claimMethodLabel) : ''}">✅ Claimed</span>`
+        : '<span class="badge badge-amber">⏳ Not Yet</span>';
       return `<tr>
+        <td style="text-align:center;"><input type="checkbox" class="gathering-check" value="${r.id}" ${gatheringSelectedIds.has(r.id) ? 'checked' : ''} ${r.payment_status === 'cancelled' ? 'disabled title="Cancelled — not eligible for a food code"' : ''} onchange="toggleGatheringRowSelection('${r.id}', this.checked)" style="cursor:pointer;"></td>
         <td>${esc(properCaseName(r.name))}${r.flagged_duplicate ? ` <span title="Possible duplicate — same GCash receipt as another registration" style="background:var(--red-light);color:var(--red);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;vertical-align:middle;">⚠️ DUPLICATE</span>` : ''}</td>
         <td style="font-size:11px;color:var(--muted);">${esc(r.email || '—')}<br>${esc(r.mobile || '')}</td>
         <td>${r.participant_count}</td>
@@ -7897,6 +8025,7 @@
         <td>${gatheringStatusBadge(r)}</td>
         <td>${carCell}</td>
         <td>${foodCodeCell}</td>
+        <td>${foodClaimedCell}</td>
         <td>${registered}</td>
         <td>${r.verified_by ? esc(r.verified_by) : '<span style="color:var(--muted);">—</span>'}</td>
         <td>${emailsCell}</td>
@@ -8097,30 +8226,34 @@
     }
   }
 
-  // Round 110: retroactive send for everyone who registered before food
-  // codes existed on the registration/payment-confirmed emails. Same
-  // provider-choice modal as a single resend; skips cancelled rows
-  // server-side (see admin-gathering.js's blast_food_codes).
+  // Round 114: now sends only to whatever's checked (own selection state,
+  // not the PH/Intl bulkSelected Set), with "All"/"Retro"/"Clear" presets
+  // to fill that selection quickly instead of firing at literally
+  // everyone with one click. Same provider-choice modal as a single
+  // resend; still skips cancelled rows server-side regardless of what's
+  // in the selection (see admin-gathering.js's blast_food_codes).
   function blastGatheringFoodCodes() {
-    const count = gatheringRows.filter(r => r.payment_status !== 'cancelled').length;
+    const ids = Array.from(gatheringSelectedIds);
+    if (!ids.length) { showToast('Select at least one registrant first.'); return; }
     openGatheringConfirmProviderChoice(
-      'Send Food Codes to Everyone',
-      `This emails the QR code + passcode to all ${count} non-cancelled registrant(s). Choose which service to send through.`,
+      'Send Food Codes',
+      `This emails the QR code + passcode to ${ids.length} selected registrant(s). Choose which service to send through.`,
       currentSettings.gathering_email_provider || 'resend',
-      (provider) => doBlastGatheringFoodCodes(provider)
+      (provider) => doBlastGatheringFoodCodes(provider, ids)
     );
   }
-  async function doBlastGatheringFoodCodes(provider) {
+  async function doBlastGatheringFoodCodes(provider, ids) {
     showToast('Sending food codes…');
     try {
       const res = await fetch('/.netlify/functions/admin-gathering', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-        body: JSON.stringify({ action: 'blast_food_codes', provider }),
+        body: JSON.stringify({ action: 'blast_food_codes', provider, ids }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'Failed');
       showToast(`Sent to ${json.sent} registrant(s)${json.skipped ? `, skipped ${json.skipped}` : ''}.`);
+      gatheringSelectedIds.clear();
       loadGatheringRegistrations();
     } catch (e) {
       showToast('Error: ' + e.message);
@@ -10522,7 +10655,8 @@
       ['ph-merch-variant-menu', 'ph-merch-caret'],
       ['intl-merch-variant-menu', 'intl-merch-caret'],
       ['gathering-confirm-provider-menu', 'gathering-confirm-provider-caret'],
-      ['hotel-provider-menu', 'hotel-provider-caret']
+      ['hotel-provider-menu', 'hotel-provider-caret'],
+      ['gathering-food-presets', 'gathering-food-caret']
     ]) {
       const menu = document.getElementById(menuId);
       if (!menu || menu.style.display !== 'block') continue;

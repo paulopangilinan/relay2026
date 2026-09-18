@@ -20,25 +20,52 @@
 
   /* ── Login screen ── */
   #loginScreen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg,#1C2B38,#2A3D4A); padding: 20px; }
-  .login-card { background: var(--card); border-radius: 14px; padding: 32px 28px; max-width: 360px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
+  .login-card { background: var(--card); border-radius: 14px; padding: 32px 28px; max-width: 360px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.25); text-align: center; }
+  .login-logo { height: 52px; width: auto; object-fit: contain; margin-bottom: 12px; }
   .login-card h1 { font-size: 26px; margin-bottom: 4px; }
   .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-  .login-card input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none; }
+  .login-card input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none; text-align: left; }
   .login-card input:focus { border-color: var(--sky); }
   .login-card button { width: 100%; padding: 13px; background: var(--sky); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
   .login-err { color: var(--red); font-size: 12.5px; margin-bottom: 10px; min-height: 16px; }
 
   /* ── Main app ── */
-  #app { display: none; max-width: 480px; margin: 0 auto; padding: 16px 16px 60px; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 4px 18px; }
-  .topbar .who { font-size: 12px; color: var(--muted); }
-  .topbar button { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 12px; color: var(--text); cursor: pointer; }
+  #app { display: none; max-width: 480px; margin: 0 auto; padding: 0 0 60px; }
+  /* Header now carries the title AND the signed-in admin name (as a
+     subtitle right under it) — replaces the separate white .sub-header
+     strip that used to hold "Signed in as X". */
+  .app-header { position: relative; background: var(--dark); color: #fff; padding: 14px 50px 14px 20px; display: flex; align-items: center; gap: 12px; }
+  .app-header img { height: 34px; width: auto; object-fit: contain; flex-shrink: 0; }
+  .app-header .header-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .app-header .title { font-family: "DM Sans", sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.03em; text-transform: uppercase; line-height: 1.2; }
+  .app-header .subtitle { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.65); line-height: 1.2; }
+  /* Icon-only logout, top-right of the dark header bar. */
+  .header-logout-btn { position: absolute; top: 50%; right: 16px; transform: translateY(-50%); width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .header-logout-btn:hover { background: rgba(255,255,255,0.18); }
+  /* Big dark "food packs distributed" stat card, sitting right below the
+     header — live claimed/total counter (same public distro-counter.js
+     endpoint /distro-ctr uses), a % line, and a progress bar. */
+  .distro-stats-card { background: var(--dark); color: #fff; border-radius: 14px; padding: 20px 20px 18px; margin: 16px 16px 0; text-align: center; box-shadow: var(--shadow); }
+  .ds-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 12px; }
+  .ds-numbers { display: flex; align-items: baseline; justify-content: center; gap: 12px; font-family: "Bebas Neue", sans-serif; line-height: 1; }
+  .ds-numbers .claimed { font-size: 58px; color: var(--green-bright); }
+  .ds-numbers .sep { font-size: 40px; color: #5A7A94; display: inline-block; transform: skewX(-15deg); }
+  .ds-numbers .total { font-size: 58px; color: #fff; }
+  .ds-pct { font-size: 11px; color: rgba(255,255,255,0.5); margin: 10px 0 10px; }
+  .ds-bar { height: 6px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; }
+  .ds-bar-fill { height: 100%; width: 0%; background: var(--green-bright); border-radius: 4px; transition: width 0.4s; }
+  .app-body { padding: 16px 16px 0; }
 
   .card { background: var(--card); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px; }
 
   .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .search-row input { flex: 1; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 15px; font-family: inherit; outline: none; }
   .search-row input:focus { border-color: var(--sky); }
+  /* Round 96: Go (code tab) turns into a ✕ once a result is showing, so
+     clearing it doesn't require scrolling down to "← Back to search"; the
+     name tab gets a matching ✕ alongside its input for the same reason,
+     hidden until there's a result to clear. */
+  .search-row .clear-btn { flex: none; padding: 0 16px; border-radius: 8px; border: 1.5px solid var(--red); background: #fff; color: var(--red); font-weight: 700; font-size: 15px; cursor: pointer; }
   .tab-row { display: flex; gap: 6px; margin-bottom: 14px; }
   .tab-btn { flex: 1; padding: 9px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
   .tab-btn.active { background: var(--sky); border-color: var(--sky); color: #fff; }
@@ -52,14 +79,25 @@
   .result-item .m { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
   .food-result h2 { font-size: 22px; margin-bottom: 4px; }
-  .food-result .count { font-size: 15px; color: var(--text); margin-bottom: 14px; }
+  /* Round 96: replaces the old "Entitled to N food packs" line — a big,
+     hard-to-miss stat instead of a sentence, since that's the one number
+     a volunteer at a table actually needs to see at a glance. */
+  .foodpack-count { text-align: center; padding: 10px 0 6px; }
+  .foodpack-count .fc-number { font-family: "Bebas Neue", sans-serif; font-size: 84px; line-height: 1; color: var(--dark); }
+  .foodpack-count .fc-label { font-size: 15px; font-weight: 700; color: var(--text); margin-top: 2px; }
   .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 14px; }
   .badge.unclaimed { background: var(--gold-bg); color: var(--gold); }
-  .badge.claimed { background: var(--green-bg); color: var(--green); }
+  /* Round 96: the claimed card's header row (name + a small circular ↩
+     icon button, top-right — replacing the old full-width "Undo Claim"
+     button) and the big red stamp that takes its old spot below the meta
+     text, replacing the small green pill badge. */
+  .claimed-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .claimed-header h2 { margin-bottom: 0; }
+  .icon-undo-btn { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--red); background: #fff; color: var(--red); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .claimed-stamp { border: 4px solid var(--red); color: var(--red); font-family: "Bebas Neue", sans-serif; font-size: 38px; letter-spacing: 0.08em; text-align: center; padding: 12px; border-radius: 10px; transform: rotate(-3deg); margin: 16px 6px 20px; opacity: 0.92; }
   .claim-meta { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
   .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 6px; }
   .btn-claim { background: var(--green); color: #fff; }
-  .btn-undo { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
   .btn-back { background: none; color: var(--muted); text-decoration: underline; font-weight: 500; font-size: 13px; padding: 8px; }
 
   /* ── Scanner overlay ── */
@@ -83,8 +121,9 @@
 
 <div id="loginScreen">
   <div class="login-card">
-    <h1>🍱 Food Distribution</h1>
-    <p>Sign in with your admin account to start scanning.</p>
+    <img src="assets/images/admin-logo.jpg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
+    <h1>GATHERING AROUND THE GOSPEL</h1>
+    <p>🍱 Food Distribution Admin Portal</p>
     <div class="login-err" id="loginErr"></div>
     <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
     <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
@@ -93,10 +132,25 @@
 </div>
 
 <div id="app">
-  <div class="topbar">
-    <div class="who">Signed in as <strong id="whoName"></strong></div>
-    <button onclick="doLogout()">Log Out</button>
+  <div class="app-header">
+    <img src="assets/images/admin-icon.jpg" alt="Logo" onerror="this.style.display='none'">
+    <div class="header-text">
+      <div class="title">Gathering Around the Gospel</div>
+      <div class="subtitle" id="whoName"></div>
+    </div>
+    <button class="header-logout-btn" onclick="doLogout()" title="Log Out" aria-label="Log Out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
   </div>
+  <div class="distro-stats-card">
+    <div class="ds-label">🍱 Food Packs Distributed</div>
+    <div class="ds-numbers">
+      <span class="claimed" id="dsClaimedNum">–</span><span class="sep">/</span><span class="total" id="dsTotalNum">–</span>
+    </div>
+    <div class="ds-pct" id="dsPct">–% distributed</div>
+    <div class="ds-bar"><div class="ds-bar-fill" id="dsBarFill"></div></div>
+  </div>
+  <div class="app-body">
 
   <div class="card" id="searchCard">
     <div class="tab-row">
@@ -104,19 +158,29 @@
       <button class="tab-btn" id="tabCodeBtn" onclick="switchTab('code')">🔢 Passcode</button>
     </div>
     <div id="tabName">
-      <div class="search-row"><input type="text" id="nameInput" placeholder="Type a name…" oninput="onNameInput()"></div>
+      <div class="search-row">
+        <input type="text" id="nameInput" placeholder="Type a name…" oninput="onNameInput()">
+        <button class="clear-btn" id="nameClearBtn" onclick="clearResult()" style="display:none;" title="Clear">✕</button>
+      </div>
       <div class="result-list" id="nameResults"></div>
     </div>
     <div id="tabCode" style="display:none;">
       <div class="search-row">
         <input type="text" id="codeInput" placeholder="6-character passcode" maxlength="6" style="text-transform:uppercase;letter-spacing:0.1em;font-family:'DM Mono',monospace;">
-        <button class="tab-btn active" style="flex:none;padding:0 16px;" onclick="lookupByCode()">Go</button>
+        <button class="clear-btn" id="codeGoBtn" onclick="lookupByCode()">Go</button>
       </div>
     </div>
     <button class="scan-btn" onclick="openScanner()" style="margin-top:10px;">📷 Scan QR Code</button>
+    <!-- Fallback for browsers/webviews that don't expose live camera
+         streaming (getUserMedia) at all — a plain file input with
+         capture="environment" opens the phone's native camera app
+         instead, which works in far more contexts than a live stream.
+         Triggered by openScanner() when live scanning isn't available. -->
+    <input type="file" id="scanFileInput" accept="image/*" capture="environment" style="display:none;" onchange="handleScanFile(event)">
   </div>
 
   <div class="card food-result" id="resultCard" style="display:none;"></div>
+  </div>
 </div>
 
 <div id="scannerOverlay">
@@ -138,6 +202,63 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- IAB Detection Modal — ported from register-ph.html. Facebook Messenger's
+     (and similar) in-app browsers typically don't expose getUserMedia at
+     all, which is what forces openScanner() to fall back to a native
+     camera-app photo capture instead of live in-page scanning — a much
+     worse experience for scanning a QR. Steering people to a real browser
+     up front fixes the actual cause rather than just softening the
+     fallback. -->
+<div id="iabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:28px 24px 36px;max-width:480px;width:100%;box-shadow:0 -8px 32px rgba(0,0,0,0.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">📷</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;color:#1C2B38;margin-bottom:8px;">Open this in your browser to scan QR codes.</div>
+    <div style="font-size:13px;color:#6B8A9A;line-height:1.6;margin-bottom:24px;">This app's built-in browser can't access your camera directly — you can still look people up by name or passcode here, but scanning needs your regular browser.</div>
+    <div id="iabButtons" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+<script>
+(function detectIAB() {
+  var ua = navigator.userAgent || '';
+  var isIAB = /FBAN|FBAV|Instagram|TikTok|Twitter|LinkedIn|Line|Snapchat|WeChat|MicroMessenger/i.test(ua);
+  if (!isIAB) return;
+  if (sessionStorage.getItem('distro_iab_dismissed')) return;
+  var modal = document.getElementById('iabModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  var isAndroid = /android/i.test(ua);
+  var btns = document.getElementById('iabButtons');
+  if (!btns) return;
+  var closeBtn = '<button onclick="dismissIAB()" style="width:100%;padding:14px;background:#3A8BBF;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Continue Anyway</button>';
+  var openBtn = '<button onclick="openInBrowser()" style="width:100%;padding:14px;background:#2E7048;color:#fff;border:none;border-radius:10px;font-family:sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Open in Browser</button>';
+  var copyBtn = '<button id="copyUrlBtn" onclick="copyURL()" style="width:100%;padding:12px;background:transparent;color:#6B8A9A;border:1.5px solid #D4E2EA;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Copy URL</button>';
+  if (isAndroid) {
+    btns.innerHTML = openBtn + closeBtn;
+  } else {
+    btns.innerHTML = closeBtn + copyBtn;
+  }
+})();
+function dismissIAB() {
+  sessionStorage.setItem('distro_iab_dismissed', '1');
+  document.getElementById('iabModal').style.display = 'none';
+}
+function openInBrowser() {
+  var url = window.location.href;
+  window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+}
+function copyURL() {
+  var url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyUrlBtn');
+      if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = 'Copy URL'; }, 2000); }
+    });
+  } else {
+    prompt('Copy this link and open it in Safari:', url);
+  }
+}
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
   let distroToken = localStorage.getItem('distroToken') || '';
@@ -157,11 +278,29 @@
     t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, 3200);
   }
 
+  // Same public/unauthenticated endpoint the /distro-ctr venue screen
+  // polls — rendered here as a card instead of a full-screen display.
+  async function loadMiniCounter() {
+    try {
+      const res = await fetch('/.netlify/functions/distro-counter');
+      const json = await res.json();
+      if (!res.ok || json.error) return;
+      const claimed = json.claimedPacks || 0;
+      const total   = json.totalPacks || 0;
+      document.getElementById('dsClaimedNum').textContent = claimed;
+      document.getElementById('dsTotalNum').textContent = total;
+      const pct = total > 0 ? Math.round((claimed / total) * 100) : 0;
+      document.getElementById('dsPct').textContent = pct + '% distributed';
+      document.getElementById('dsBarFill').style.width = pct + '%';
+    } catch (e) { /* non-critical — leave the dashes showing */ }
+  }
+
   function init() {
     if (distroToken) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('whoName').textContent = distroName;
+      loadMiniCounter();
     }
     // If opened as /distro?code=XXXX (e.g. a QR scanned by the phone's own
     // camera app rather than this page's in-app scanner), auto-run the
@@ -199,6 +338,7 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('whoName').textContent = distroName;
+      loadMiniCounter();
     } catch (e) {
       err.textContent = e.message;
     }
@@ -269,29 +409,50 @@
   function renderResult() {
     const card = document.getElementById('resultCard');
     const r = currentResult;
+    updateSearchButtons();
     if (!r) { card.style.display = 'none'; return; }
     card.style.display = 'block';
 
     if (r.foodClaimed) {
       card.innerHTML = `
-        <h2>${escapeHtml(r.name)}</h2>
-        <div class="badge claimed">✅ Claimed</div>
+        <div class="claimed-header">
+          <h2>${escapeHtml(r.name)}</h2>
+          <button class="icon-undo-btn" onclick="confirmUndo()" title="Undo Claim">↩</button>
+        </div>
         <div class="claim-meta">
           Claimed ${r.foodClaimedAt ? new Date(r.foodClaimedAt).toLocaleString() : ''}<br>
           By ${escapeHtml(r.foodClaimedBy || 'unknown')} · via ${methodLabel(r.foodClaimedMethod)}
         </div>
-        <button class="btn btn-undo" onclick="confirmUndo()">↩ Undo Claim</button>
+        <div class="foodpack-count">
+          <div class="fc-number">${r.participantCount}</div>
+          <div class="fc-label">🍱 Food Pack${r.participantCount === 1 ? '' : 's'} Claimed</div>
+        </div>
+        <div class="claimed-stamp">CLAIMED</div>
         <button class="btn btn-back" onclick="clearResult()">← Back to search</button>`;
     } else {
       const via = currentMethod ? `Verified via ${methodLabel(currentMethod)}.` : 'No QR or passcode was scanned — found by name only.';
       card.innerHTML = `
         <h2>${escapeHtml(r.name)}</h2>
-        <div class="food-result count">🍱 Entitled to <strong>${r.participantCount} food pack${r.participantCount === 1 ? '' : 's'}</strong></div>
+        <div class="foodpack-count">
+          <div class="fc-number">${r.participantCount}</div>
+          <div class="fc-label">🍱 Food Pack${r.participantCount === 1 ? '' : 's'}</div>
+        </div>
         <div class="badge unclaimed">⏳ Not yet claimed</div>
         <div class="claim-meta">${via}</div>
         <button class="btn btn-claim" onclick="${currentMethod ? 'submitClaim()' : 'confirmOverrideClaim()'}">✅ Mark Claimed</button>
         <button class="btn btn-back" onclick="clearResult()">← Back to search</button>`;
     }
+  }
+
+  // Round 96: Go (code tab) becomes a ✕ once a result is showing — same
+  // slot, so clearing doesn't need a second control. Name tab gets a
+  // matching ✕ next to its input, hidden until there's something to clear.
+  function updateSearchButtons() {
+    const hasResult = !!currentResult;
+    const codeBtn = document.getElementById('codeGoBtn');
+    codeBtn.textContent = hasResult ? '✕' : 'Go';
+    codeBtn.onclick = hasResult ? clearResult : () => lookupByCode();
+    document.getElementById('nameClearBtn').style.display = hasResult ? 'inline-flex' : 'none';
   }
 
   function methodLabel(m) {
@@ -322,6 +483,7 @@
       currentResult = toCamel(json.registration);
       currentMethod = null; currentCode = null;
       renderResult();
+      loadMiniCounter();
       showToast('Marked claimed ✅');
     } catch (e) {
       showToast('Error: ' + e.message);
@@ -348,6 +510,7 @@
       currentResult = toCamel(json.registration);
       currentMethod = null;
       renderResult();
+      loadMiniCounter();
       showToast('Marked claimed ✅');
     } catch (e) {
       showToast('Error: ' + e.message);
@@ -373,6 +536,7 @@
       if (!res.ok || json.error) { showToast(json.error || 'Failed to undo'); return; }
       currentResult = toCamel(json.registration);
       renderResult();
+      loadMiniCounter();
       showToast('Claim undone');
     } catch (e) {
       showToast('Error: ' + e.message);
@@ -407,19 +571,56 @@
   });
 
   // ── QR scanning ──
+  // Live in-page scanning (getUserMedia) is the primary path, but it
+  // needs a secure context AND a browser/webview that actually exposes
+  // the API — some restrictive in-app browsers don't, even on a modern
+  // phone with a perfectly working camera (same class of issue as the
+  // Messenger in-app browser problems seen elsewhere on this site). When
+  // that's the case, fall back to the device's native camera app via a
+  // plain file input — far more universally supported since it's not a
+  // live stream, just "take one photo" — and decode that single frame
+  // with the same jsQR call.
   async function openScanner() {
     const overlay = document.getElementById('scannerOverlay');
     const video = document.getElementById('scanVideo');
-    if (!navigator.mediaDevices?.getUserMedia) { showToast('Camera not available on this device — use the passcode instead.'); return; }
-    try {
-      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      video.srcObject = scanStream;
-      await video.play();
-      overlay.style.display = 'flex';
-      scanFrame();
-    } catch (e) {
-      showToast('Camera access denied or unavailable.');
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      // A genuine capability gap — the API isn't there at all (an old or
+      // restrictive in-app browser). Chrome always has this API, so this
+      // branch never applies to a real Chrome session; it's here for the
+      // rarer case where it doesn't exist at all.
+      showToast("Live scanning isn't available in this browser — opening your camera app instead.");
+      document.getElementById('scanFileInput').click();
+      return;
     }
+    try {
+      // { facingMode: 'environment' } (a hard requirement) throws
+      // OverconstrainedError on some Android/Chrome camera setups that
+      // don't report a camera explicitly labeled "environment" — this was
+      // very likely why live scanning was giving up and silently falling
+      // back to the native camera app even in a real Chrome browser.
+      // { ideal: 'environment' } is a preference, not a requirement: Chrome
+      // still picks the back camera when it can, but no longer throws when
+      // it can't satisfy the label exactly.
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+    } catch (e1) {
+      try {
+        // Second attempt with no constraints at all, in case even the
+        // "ideal" hint was the problem on this particular device/camera.
+        scanStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      } catch (e2) {
+        // Both attempts failed — now it's a genuine failure (permission
+        // denied, camera in use, no camera device), not a constraint
+        // mismatch. Reports the actual reason instead of failing silently,
+        // and only NOW falls back to the native camera app.
+        showToast("Couldn't access the camera directly (" + (e2.name || e2.message) + ") — opening your camera app instead.");
+        document.getElementById('scanFileInput').click();
+        return;
+      }
+    }
+    video.srcObject = scanStream;
+    await video.play();
+    overlay.style.display = 'flex';
+    scanFrame();
   }
   function closeScanner() {
     document.getElementById('scannerOverlay').style.display = 'none';
@@ -436,23 +637,51 @@
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const decoded = jsQR(imageData.data, imageData.width, imageData.height);
       if (decoded && decoded.data) {
-        // QR encodes a full https://<site>/distro?code=... URL — extract
-        // the code param if present, else fall back to the raw text
-        // (covers the unlikely case of a plain-token QR from elsewhere).
-        let code = decoded.data;
-        try {
-          const u = new URL(decoded.data);
-          const c = u.searchParams.get('code');
-          if (c) code = c;
-        } catch { /* not a URL — use decoded.data as-is */ }
         closeScanner();
-        switchTab('code');
-        document.getElementById('codeInput').value = code;
-        lookupByCode(code);
+        handleDecodedQr(decoded.data);
         return;
       }
     }
     scanRAF = requestAnimationFrame(scanFrame);
+  }
+
+  function handleScanFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // reset so picking the same file again still fires onchange
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const decoded = jsQR(imageData.data, imageData.width, imageData.height);
+      URL.revokeObjectURL(img.src);
+      if (decoded && decoded.data) {
+        handleDecodedQr(decoded.data);
+      } else {
+        showToast("Couldn't read a QR code in that photo — try again with the code centered and in focus, or use the passcode instead.");
+      }
+    };
+    img.onerror = () => showToast('Could not open that photo.');
+    img.src = URL.createObjectURL(file);
+  }
+
+  // Shared by both the live scanner and the file-capture fallback — QR
+  // encodes a full https://<site>/distro?code=... URL, so extract the
+  // code param if present, else fall back to the raw text (covers the
+  // unlikely case of a plain-token QR from elsewhere).
+  function handleDecodedQr(raw) {
+    let code = raw;
+    try {
+      const u = new URL(raw);
+      const c = u.searchParams.get('code');
+      if (c) code = c;
+    } catch { /* not a URL — use raw as-is */ }
+    switchTab('code');
+    document.getElementById('codeInput').value = code;
+    lookupByCode(code);
   }
 
   function escapeHtml(str) {

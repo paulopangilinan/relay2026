@@ -35,15 +35,26 @@ export const handler = async (event) => {
         if (!admin.permissions?.verify_payment || admin.force_password_change) {
           return { statusCode: 403, headers, body: JSON.stringify({ error: "No permission" }) };
         }
-        const { provider } = body;
+        const { provider, ids } = body;
         const providerOverride = (provider === "resend" || provider === "gmail") ? provider : undefined;
-        // Every non-cancelled row, regardless of payment_status — food
-        // distribution is a venue check-in concern independent of payment
-        // (plan's Confirmed Rule #1), so a venue-pay/unpaid registrant is
-        // just as entitled to their code as a confirmed GCash one.
+        // Round 114: now always scoped to an explicit selection from the
+        // admin panel's checkbox UI — no more implicit "everyone" default,
+        // since that's exactly the kind of one-click-blasts-hundreds-of-
+        // people footgun the checkbox selection was built to replace.
+        if (!Array.isArray(ids) || !ids.length) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "No registrants selected." }) };
+        }
+        // Every non-cancelled row in the selection, regardless of
+        // payment_status — food distribution is a venue check-in concern
+        // independent of payment (plan's Confirmed Rule #1), so a
+        // venue-pay/unpaid registrant is just as entitled to their code as
+        // a confirmed GCash one. Still re-checked server-side (not just
+        // trusting the client's selection) in case a row was cancelled
+        // between the admin loading the page and clicking Send.
         const { data: rows, error: fetchErr } = await supabase
           .from("gathering_registrations")
           .select("*")
+          .in("id", ids)
           .neq("payment_status", "cancelled");
         if (fetchErr) throw fetchErr;
 
