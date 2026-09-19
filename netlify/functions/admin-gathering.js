@@ -1,7 +1,7 @@
 // netlify/functions/admin-gathering.js
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "../lib/mailer.js";
-import { sendGatheringPaymentConfirmedEmail, sendGatheringCancellationEmail, sendGatheringRegistrationReceivedEmail, sendGatheringFoodCodeEmail, GATHERING_CANCELLATION_REASONS } from "../lib/gathering-email.js";
+import { sendGatheringPaymentConfirmedEmail, sendGatheringPartialPaymentConfirmedEmail, fillGatheringPartialTokens, sendGatheringCancellationEmail, sendGatheringRegistrationReceivedEmail, sendGatheringFoodCodeEmail, GATHERING_CANCELLATION_REASONS } from "../lib/gathering-email.js";
 import { getAdmin } from "../lib/admin-auth.js";
 
 const supabase   = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -113,6 +113,75 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, registration: updated }) };
       }
 
+      if (action === "confirm_partial") {
+        // Reintroduces admin-editable participant_count, on purpose but
+        // narrowly — only through this one action, only at the moment of
+        // confirming a GCash payment for fewer participants than were
+        // submitted (e.g. 5 submitted, only 4 actually paid for). The
+        // general `update_count` action above stays a 410 — this isn't a
+        // reopening of free-form count editing anywhere else in the row.
+        // Same permission gate as every other payment-confirming action
+        // here: any admin with verify_payment, not restricted further.
+        if (!admin.permissions?.verify_payment || admin.force_password_change) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: "No permission" }) };
+        }
+        if (row.payment_method !== "gcash") {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Only GCash payments can be confirmed here. Venue payments are confirmed at check-in." }) };
+        }
+        if (row.payment_status !== "pending_review") {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Only a pending-review registration can be partially confirmed." }) };
+        }
+
+        const submittedCount = row.participant_count;
+        const confirmedCount = parseInt(body.confirmedCount, 10);
+        if (!Number.isInteger(confirmedCount) || confirmedCount < 1) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Confirmed participant count must be a whole number of 1 or more." }) };
+        }
+        // Can only confirm fewer than (or equal to) what was submitted —
+        // this action exists specifically for the "paid for less than they
+        // registered for" case, not for inflating a headcount.
+        if (confirmedCount > submittedCount) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Confirmed count can't be higher than what was originally submitted." }) };
+        }
+        const emailBody = String(body.emailBody || "").trim();
+        if (!emailBody) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: "Email body is required." }) };
+        }
+
+        // fee_per_head is snapshotted per row at submission time (see
+        // submit-gathering.js), so this is exact — not a guess or a fresh
+        // pricing lookup that could disagree with what they were quoted.
+        const newAmountDue = (row.fee_per_head || 0) * confirmedCount;
+
+        const { data: updated, error } = await supabase
+          .from("gathering_registrations")
+          .update({
+            participant_count: confirmedCount,
+            amount_due: newAmountDue,
+            payment_status: "confirmed",
+            verified_at: new Date().toISOString(),
+            verified_by: admin.email || "admin",
+            // Stored (not just sent-and-forgotten) so a later "resend" on
+            // this row's payment-confirmed icon can regenerate the exact
+            // same purple/partial email instead of silently falling back
+            // to the generic one — see the resend_email handler below.
+            confirmed_partial: true,
+            partial_confirm_submitted_count: submittedCount,
+            partial_confirm_email_body: emailBody,
+          })
+          .eq("id", id).select().single();
+        if (error) throw error;
+
+        // Tokens filled against the UPDATED row (so {confirmedCount}/{amount}
+        // reflect what was actually saved), with submittedCount passed
+        // alongside since that value no longer exists on the row itself
+        // once participant_count has been overwritten above.
+        const filledBody = fillGatheringPartialTokens(emailBody, updated, submittedCount);
+        await sendGatheringPartialPaymentConfirmedEmail(sendEmail, updated, filledBody);
+
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, registration: updated }) };
+      }
+
       if (action === "cancel") {
         // Cancellable for either payment method — venue registrations can be
         // duplicates/no-shows-in-advance too, not just unverifiable GCash
@@ -178,7 +247,21 @@ export const handler = async (event) => {
           if (row.payment_status !== "confirmed") {
             return { statusCode: 400, headers, body: JSON.stringify({ error: "This registration isn't confirmed — nothing to resend." }) };
           }
-          await sendGatheringPaymentConfirmedEmail(sendEmail, row, providerOverride);
+          // A row confirmed via "Confirm Partial Payment" gets its own
+          // purple template with an admin-written body, not the normal
+          // fixed-copy one — resend needs to reproduce THAT email, not
+          // silently substitute the generic one just because they share
+          // the same payment_confirmed_email_status slot. Tokens are
+          // re-filled fresh against the current row rather than reusing
+          // whatever was filled at the original send time, so a resend
+          // after any later edit to the row still reflects the row as it
+          // stands now.
+          if (row.confirmed_partial) {
+            const filledBody = fillGatheringPartialTokens(row.partial_confirm_email_body, row, row.partial_confirm_submitted_count);
+            await sendGatheringPartialPaymentConfirmedEmail(sendEmail, row, filledBody, providerOverride);
+          } else {
+            await sendGatheringPaymentConfirmedEmail(sendEmail, row, providerOverride);
+          }
         } else if (type === "cancellation") {
           if (row.payment_status !== "cancelled" || !row.cancellation_reason) {
             return { statusCode: 400, headers, body: JSON.stringify({ error: "This registration isn't cancelled (with a reason on file) — nothing to resend." }) };

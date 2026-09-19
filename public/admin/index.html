@@ -343,11 +343,13 @@
   .gem-icon.gem-none{opacity:0.35;}
   .gem-badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;font-size:9px;line-height:14px;text-align:center;color:#fff;font-weight:700;}
   .gem-badge-sent{background:var(--green);}
+  .gem-badge-sent-partial{background:var(--purple);}
   .gem-badge-failed{background:var(--red);}
   .gem-badge-retry{background:var(--sky);display:none;align-items:center;justify-content:center;}
   .gem-icon.gem-failed:hover .gem-badge-failed{display:none;}
   .gem-icon.gem-failed:hover .gem-badge-retry{display:flex;}
   .gem-icon.gem-retrying .gem-badge-sent,
+  .gem-icon.gem-retrying .gem-badge-sent-partial,
   .gem-icon.gem-retrying .gem-badge-failed{display:none;}
   .gem-icon.gem-retrying .gem-badge-retry{display:flex;animation:gem-spin 0.8s linear infinite;}
   .gem-icon.gem-retrying{pointer-events:none;}
@@ -686,6 +688,47 @@
         <span id="gathering-cancel-confirm-label">Confirm Cancellation</span>
       </button>
       <button id="gathering-cancel-no-btn" onclick="closeGatheringCancelModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">No</button>
+    </div>
+  </div>
+</div>
+
+<!-- GATHERING CONFIRM-PARTIAL MODAL — for the "submitted N, only paid for
+     M" case: lets an admin lower the participant count while confirming,
+     with an editable email explaining it. Deliberately its own modal, not
+     folded into #gathering-confirm-modal below, since it needs real form
+     fields (a number input + a live-recalculated amount + a textarea),
+     not just 1-2 action buttons. -->
+<div id="gathering-partial-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:460px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto;">
+    <h3 style="font-size:16px;font-weight:700;color:#1C2B38;margin-bottom:8px;">⚠️ Confirm Partial Payment</h3>
+    <p style="font-size:13px;color:#6B8A9A;margin-bottom:18px;line-height:1.5;">
+      For <strong id="gpc-name" style="color:#1C2B38;"></strong> — submitted for
+      <strong id="gpc-submitted" style="color:#1C2B38;"></strong> participant(s).
+      Confirms payment for fewer, updates their registration to match, and sends them a note explaining it.
+    </p>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px;">Confirmed Participant Count</label>
+      <input type="number" id="gpc-count" min="1" oninput="onGpcCountInput()" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;color:#2A3D4A;">
+    </div>
+
+    <div style="margin-bottom:16px;padding:10px 12px;background:#F7FAFB;border:1px solid #D4E2EA;border-radius:8px;font-size:13px;color:#2A3D4A;">
+      Amount to confirm: <strong id="gpc-amount" style="font-family:'DM Mono',monospace;">₱0</strong>
+      <span style="display:block;font-size:11px;color:#6B8A9A;margin-top:2px;">Auto-calculated from the per-head fee — not editable.</span>
+    </div>
+
+    <label style="font-size:11px;font-weight:700;color:#6B8A9A;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:6px;">Email Body</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+      <code onclick="insertGpcPlaceholder('{name}')" title="Click to insert" style="cursor:pointer;font-size:11px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{name}</code>
+      <code onclick="insertGpcPlaceholder('{submittedCount}')" title="Click to insert" style="cursor:pointer;font-size:11px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{submittedCount}</code>
+      <code onclick="insertGpcPlaceholder('{confirmedCount}')" title="Click to insert" style="cursor:pointer;font-size:11px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{confirmedCount}</code>
+      <code onclick="insertGpcPlaceholder('{amount}')" title="Click to insert" style="cursor:pointer;font-size:11px;font-weight:700;color:var(--sky);background:#EBF5FB;padding:3px 8px;border-radius:4px;">{amount}</code>
+    </div>
+    <textarea id="gpc-body" rows="10" style="width:100%;padding:10px 12px;border:1.5px solid #D4E2EA;border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;color:#2A3D4A;"></textarea>
+
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button id="gpc-send-btn" onclick="submitGatheringPartialConfirm()" style="flex:1;padding:12px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">Confirm &amp; Send</button>
+      <button onclick="closeGatheringPartialConfirmModal()" style="padding:12px 16px;background:#f0f4f7;color:#2A3D4A;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;">Cancel</button>
     </div>
   </div>
 </div>
@@ -7975,9 +8018,13 @@
       const actionCell = r.payment_status === 'confirmed' || r.payment_status === 'cancelled'
         ? '<span style="color:var(--muted);">—</span>'
         : r.payment_method === 'gcash' && r.payment_status === 'pending_review'
-        ? `<div style="display:flex;gap:6px;">
-            <button onclick="confirmGatheringPayment('${r.id}')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Confirm</button>
-            <button onclick="openGatheringCancelModal('${r.id}')" title="No actual receipt attached / can't verify this payment" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Cancel</button>
+        ? `<div style="display:flex;gap:6px;flex-wrap:nowrap;align-items:center;position:relative;">
+            <button onclick="confirmGatheringPayment('${r.id}')" style="padding:6px 12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">Confirm</button>
+            <button onclick="openGatheringCancelModal('${r.id}')" title="No actual receipt attached / can't verify this payment" style="padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">Cancel</button>
+            <button onclick="toggleGatheringRowKebab(event,'${r.id}')" title="More actions" style="padding:6px 9px;background:#F0F4F7;color:#2A3D4A;border:1px solid #D4E2EA;border-radius:6px;cursor:pointer;font-size:14px;font-weight:700;line-height:1;flex-shrink:0;">⋮</button>
+            <div id="gathering-kebab-${r.id}" class="gathering-row-kebab-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #D4E2EA;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.15);z-index:20;min-width:190px;overflow:hidden;">
+              <button onclick="closeAllGatheringRowKebabs();openGatheringPartialConfirmModal('${r.id}')" style="display:block;width:100%;text-align:left;padding:9px 12px;background:none;border:none;cursor:pointer;font-size:12.5px;font-weight:600;color:#2A3D4A;">🔸 Confirm Partial Payment</button>
+            </div>
           </div>`
         : r.payment_method === 'venue' && r.payment_status === 'unpaid'
         ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
@@ -8056,12 +8103,17 @@
   function gatheringEmailIcon(r, type) {
     const status = r[`${type}_email_status`];
     const provider = r[`${type}_email_provider`];
-    const statusClass = status === 'sent' ? 'gem-sent' : status === 'failed' ? 'gem-failed' : 'gem-none';
-    const label = GEM_TYPE_LABEL[type];
+    // A payment_confirmed row that was actually a partial confirmation
+    // gets its own purple treatment — same slot/status, different email
+    // entirely (see resend_email's confirmed_partial branch), so this
+    // needs to look visibly different from a normal full confirmation.
+    const isPartial = type === 'payment_confirmed' && r.confirmed_partial === true;
+    const statusClass = status === 'sent' ? (isPartial ? 'gem-sent-partial' : 'gem-sent') : status === 'failed' ? 'gem-failed' : 'gem-none';
+    const label = isPartial ? 'Partial payment confirmation email' : GEM_TYPE_LABEL[type];
     const title = status === 'sent' ? `${label} — sent${provider ? ' via ' + provider : ''}. Click to resend.`
       : status === 'failed' ? `${label} — failed to send. Click to retry.`
       : `${label} — not sent yet. Click to send.`;
-    const badge = status === 'sent' ? '<span class="gem-badge gem-badge-sent">✓</span>'
+    const badge = status === 'sent' ? `<span class="gem-badge ${isPartial ? 'gem-badge-sent-partial' : 'gem-badge-sent'}">✓</span>`
       : status === 'failed' ? '<span class="gem-badge gem-badge-failed">!</span>'
       : '';
     const retryBadge = '<span class="gem-badge gem-badge-retry">↻</span>';
@@ -8182,6 +8234,117 @@
       showToast('Payment confirmed');
       loadGatheringRegistrations();
     } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  // --- Confirm Partial Payment (submitted N, only paid for M) -------------
+  const GPC_DEFAULT_TEMPLATE = 'Hi {name},\n\n' +
+    'We\'ve confirmed your GCash payment for Gathering Around the Gospel \u2014 {confirmedCount} participant(s), {amount}.\n\n' +
+    'Your registration was originally submitted for {submittedCount} participant(s), but we could only confirm payment for {confirmedCount}. We\'ve updated your registration to reflect this.\n\n' +
+    'If the remaining participant is a child, no need to include them in the headcount \u2014 they\'re still welcome to join you at the event.\n\n' +
+    'If you have questions or would like to settle the difference, just reply to this email.\n\n' +
+    'See you on September 25 at CCT Tagaytay Retreat & Training Center!';
+
+  let gpcTargetId = null;
+  let gpcSubmittedCount = 0;
+  let gpcFeePerHead = 0;
+
+  // Round 116: "Confirm Partial Payment" moved off its own always-visible
+  // button into a ⋮ kebab beside Cancel, per feedback that the 3-button
+  // row was crowding onto two lines — this keeps Confirm/Cancel/⋮ to one
+  // row and tucks the less-common action behind the menu instead.
+  function toggleGatheringRowKebab(e, id) {
+    e.stopPropagation();
+    const menu = document.getElementById(`gathering-kebab-${id}`);
+    if (!menu) return;
+    const wasOpen = menu.style.display === 'block';
+    closeAllGatheringRowKebabs();
+    if (!wasOpen) menu.style.display = 'block';
+  }
+  function closeAllGatheringRowKebabs() {
+    document.querySelectorAll('.gathering-row-kebab-menu').forEach(m => m.style.display = 'none');
+  }
+  document.addEventListener('click', closeAllGatheringRowKebabs);
+
+  function openGatheringPartialConfirmModal(id) {
+    const row = gatheringRows.find(r => r.id === id);
+    if (!row) return;
+    gpcTargetId = id;
+    gpcSubmittedCount = row.participant_count;
+    gpcFeePerHead = row.fee_per_head || 0;
+    document.getElementById('gpc-name').textContent = row.name;
+    document.getElementById('gpc-submitted').textContent = row.participant_count;
+    const countInput = document.getElementById('gpc-count');
+    countInput.value = row.participant_count;
+    countInput.max = row.participant_count;
+    // Reset every time — a modal that remembers the previous registrant's
+    // edited body is how the wrong explanation gets emailed to someone.
+    document.getElementById('gpc-body').value = GPC_DEFAULT_TEMPLATE;
+    onGpcCountInput();
+    document.getElementById('gathering-partial-confirm-modal').style.display = 'flex';
+  }
+
+  function closeGatheringPartialConfirmModal() {
+    document.getElementById('gathering-partial-confirm-modal').style.display = 'none';
+    gpcTargetId = null;
+  }
+
+  // Amount is derived, not typed — fee_per_head is the row's own snapshot
+  // from submission, so this is exact rather than a fresh pricing lookup
+  // that could disagree with what the registrant was originally quoted.
+  function onGpcCountInput() {
+    let count = parseInt(document.getElementById('gpc-count').value, 10);
+    if (!Number.isFinite(count) || count < 1) count = 1;
+    if (count > gpcSubmittedCount) count = gpcSubmittedCount;
+    document.getElementById('gpc-amount').textContent = '\u20B1' + (gpcFeePerHead * count).toLocaleString();
+  }
+
+  // Round 116: if the textarea was never clicked into yet (fresh modal,
+  // pre-filled default template), selectionStart/End default to 0 in most
+  // browsers — inserting there landed the token at the very start of the
+  // text instead of somewhere sensible, which read as "the chip doesn't
+  // do anything" even though it technically was inserting. Defaulting to
+  // the end of the text when the textarea isn't actually focused fixes
+  // that first-click case; once you've clicked into it, insertion still
+  // respects wherever your cursor actually is.
+  function insertGpcPlaceholder(token) {
+    const ta = document.getElementById('gpc-body');
+    const hasFocus = document.activeElement === ta;
+    const start = hasFocus ? ta.selectionStart : ta.value.length;
+    const end = hasFocus ? ta.selectionEnd : ta.value.length;
+    ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = start + token.length;
+  }
+
+  async function submitGatheringPartialConfirm() {
+    if (!gpcTargetId) return;
+    const count = parseInt(document.getElementById('gpc-count').value, 10);
+    if (!Number.isFinite(count) || count < 1) { showToast('Enter a valid participant count.'); return; }
+    if (count > gpcSubmittedCount) { showToast("Confirmed count can't exceed the submitted count."); return; }
+    const emailBody = document.getElementById('gpc-body').value.trim();
+    if (!emailBody) { showToast('Email body is required.'); return; }
+
+    const btn = document.getElementById('gpc-send-btn');
+    const original = btn.textContent;
+    btn.textContent = 'Sending\u2026';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/.netlify/functions/admin-gathering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
+        body: JSON.stringify({ action: 'confirm_partial', id: gpcTargetId, confirmedCount: count, emailBody }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed');
+      showToast('Payment confirmed for ' + count + ' participant(s).');
+      closeGatheringPartialConfirmModal();
+      loadGatheringRegistrations();
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    } finally {
+      btn.textContent = original;
+      btn.disabled = false;
+    }
   }
 
   // Always confirms before sending — never fires immediately, regardless
@@ -10497,6 +10660,13 @@
   window.switchGroup          = switchGroup;
   window.loadGatheringRegistrations = loadGatheringRegistrations;
   window.confirmGatheringPayment    = confirmGatheringPayment;
+  window.openGatheringPartialConfirmModal  = openGatheringPartialConfirmModal;
+  window.toggleGatheringRowKebab    = toggleGatheringRowKebab;
+  window.closeAllGatheringRowKebabs = closeAllGatheringRowKebabs;
+  window.closeGatheringPartialConfirmModal = closeGatheringPartialConfirmModal;
+  window.onGpcCountInput                   = onGpcCountInput;
+  window.insertGpcPlaceholder              = insertGpcPlaceholder;
+  window.submitGatheringPartialConfirm     = submitGatheringPartialConfirm;
   window.resendGatheringEmail       = resendGatheringEmail;
   window.openGatheringCancelModal   = openGatheringCancelModal;
   window.closeGatheringCancelModal  = closeGatheringCancelModal;
