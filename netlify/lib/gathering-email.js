@@ -100,9 +100,13 @@ export function gatheringFoodCodeBlock(row) {
 // admin-data.js, submit.js): blue for "awaiting/needs confirmation",
 // green for "confirmed / pay-at-venue". Slate for cancellations — neither
 // "awaiting" nor "confirmed" applies to a cancelled row.
-export const GATHERING_HEADER_GRADIENT_BLUE  = "linear-gradient(135deg,#1C2B38,#3A8BBF)";
-export const GATHERING_HEADER_GRADIENT_GREEN = "linear-gradient(135deg,#1C2B38,#2E7048)";
-export const GATHERING_HEADER_GRADIENT_RED   = "linear-gradient(135deg,#1C2B38,#C0392B)";
+export const GATHERING_HEADER_GRADIENT_BLUE   = "linear-gradient(135deg,#1C2B38,#3A8BBF)";
+export const GATHERING_HEADER_GRADIENT_GREEN  = "linear-gradient(135deg,#1C2B38,#2E7048)";
+export const GATHERING_HEADER_GRADIENT_RED    = "linear-gradient(135deg,#1C2B38,#C0392B)";
+// Used only for the partial-payment-confirmed email — same #6D28D9 the rest
+// of the admin panel already uses for "purple" (e.g. the breakout exclude
+// button), not a new color invented for this one email.
+export const GATHERING_HEADER_GRADIENT_PURPLE = "linear-gradient(135deg,#1C2B38,#6D28D9)";
 
 // Writes the outcome of a send attempt back onto the row so the admin panel
 // can show a real ✅/❌ indicator and offer a Resend button, instead of the
@@ -173,6 +177,76 @@ export async function sendGatheringPaymentConfirmedEmail(sendEmail, row, provide
     await recordGatheringEmailStatus(row.id, "payment_confirmed", "sent", provider);
   } catch (err) {
     console.error("Gathering payment-confirmed email failed:", err.message);
+    await recordGatheringEmailStatus(row.id, "payment_confirmed", "failed", provider);
+  }
+}
+
+// Fills the admin's free-text email body (plain text, {tokens} same style as
+// the SMS templates in sms-templates.js) against the ACTUAL saved row —
+// called after the DB update, never against client-submitted values — so
+// what gets sent can't drift from what was actually confirmed.
+// `submittedCount` is passed separately since by the time this runs,
+// `row.participant_count` has already been overwritten with the new
+// (lower) confirmed count.
+export function fillGatheringPartialTokens(text, row, submittedCount) {
+  const amount = `\u20B1${row.amount_due?.toLocaleString?.() ?? row.amount_due}`;
+  return String(text || "")
+    .split("{name}").join(row.name || "")
+    .split("{submittedCount}").join(String(submittedCount))
+    .split("{confirmedCount}").join(String(row.participant_count))
+    .split("{amount}").join(amount);
+}
+
+// Plain text -> paragraphs, blank-line-separated (matching how the admin
+// types it in the modal's textarea) — HTML-escaped, so a free-text field an
+// admin edits per-send can't inject markup into the email.
+function textToParagraphs(text) {
+  return String(text || "")
+    .split(/\n\s*\n/)
+    .map((para) => para.trim())
+    .filter(Boolean)
+    .map((para) => `<p style="margin:0 0 12px;">${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+/**
+ * Partial-payment variant of the payment-confirmed email — same shell
+ * (hero, rainbow bar, footer) as the normal one, but a purple header with a
+ * dynamic title, and the body is the admin's own edited/reviewed text
+ * (already token-filled by the caller) instead of the fixed copy.
+ */
+export function gatheringPartialPaymentConfirmedEmail(row, filledBodyText, includeFoodCode = true) {
+  return gatheringEmailShell({
+    heroUrl: gatheringHeroUrl(),
+    headerBg: GATHERING_HEADER_GRADIENT_PURPLE,
+    headerTitle: `Payment for ${row.participant_count} Confirmed \u2705`,
+    body: `
+      ${textToParagraphs(filledBodyText)}
+      ${includeFoodCode && row.food_qr_code && row.food_passcode ? gatheringFoodCodeBlock(row) : ""}`,
+  });
+}
+
+export async function sendGatheringPartialPaymentConfirmedEmail(sendEmail, row, filledBodyText, providerOverride) {
+  if (!row.email) return;
+  const provider = providerOverride || await getGatheringEmailProvider();
+  // Same setting as the normal payment-confirmed email — the food-code
+  // block is a system add-on independent of the admin's free-text body,
+  // so it follows the exact same on/off switch either way.
+  const includeFoodCode = await isGatheringFoodCodeInEmailEnabled();
+  try {
+    await sendEmail({
+      to: row.email,
+      subject: `Payment for ${row.participant_count} Confirmed \u2014 Gathering Around the Gospel`,
+      html: gatheringPartialPaymentConfirmedEmail(row, filledBodyText, includeFoodCode),
+      provider,
+    });
+    // Same status columns as the normal payment-confirmed send — this is
+    // the same email slot conceptually (there's only ever one "payment
+    // confirmed" email per registration), just a different template/body
+    // for this override case.
+    await recordGatheringEmailStatus(row.id, "payment_confirmed", "sent", provider);
+  } catch (err) {
+    console.error("Gathering partial-payment-confirmed email failed:", err.message);
     await recordGatheringEmailStatus(row.id, "payment_confirmed", "failed", provider);
   }
 }
