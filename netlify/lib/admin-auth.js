@@ -30,7 +30,7 @@ export async function getAdmin(event, supabase) {
 
   const { data: admin, error } = await supabase
     .from("admins")
-    .select("email, name, permissions, is_super_admin, force_password_change")
+    .select("id, email, name, permissions, is_super_admin, force_password_change")
     .eq("email", claims.email)
     .maybeSingle();
   // A DB hiccup or a deleted/renamed admin both fail closed here — better
