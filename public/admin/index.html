@@ -1918,7 +1918,7 @@
       <div class="table-wrap">
         <div class="table-header">
           <h2>Gathering Registrations</h2>
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div id="gathering-food-actions" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span id="gathering-selected-count" style="font-size:11px;color:var(--muted);">0 selected</span>
             <div style="display:flex;align-items:stretch;position:relative;">
               <button onclick="blastGatheringFoodCodes()" id="gathering-blast-btn" disabled style="display:inline-flex;align-items:center;gap:7px;padding:0 14px;height:34px;background:#C49A1A;color:#fff;border:none;border-radius:8px 0 0 8px;font-size:13px;font-weight:700;line-height:1;white-space:nowrap;opacity:0.5;cursor:not-allowed;">
@@ -4823,6 +4823,17 @@
       showToast('✅ Added to Pre-Con');
       loadData();
     } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  // Shows/hides the entire "Send Food Codes" header control (button +
+  // caret + preset dropdown) based on the same "Include Food Code in
+  // Payment Confirmation Email" config the per-row icon is gated on.
+  // Hidden rather than just disabled when off, matching the per-row
+  // icon's own treatment — a visible-but-dead control with no visible
+  // reason reads as broken, not as "this feature is off".
+  function applyGatheringFoodCodeConfigUI() {
+    const wrap = document.getElementById('gathering-food-actions');
+    if (wrap) wrap.style.display = currentSettings.gathering_food_code_in_email_enabled ? 'flex' : 'none';
   }
 
   function toggleMerchVariantMenu(e, tab) {
@@ -8006,6 +8017,7 @@
   }
 
   function renderGatheringTable() {
+    applyGatheringFoodCodeConfigUI();
     const body = document.getElementById('gathering-body');
     if (!gatheringRows.length) { body.innerHTML = '<tr><td colspan="15" class="empty">No registrations yet</td></tr>'; return; }
     const rows = gatheringFilteredRows;
@@ -8127,10 +8139,14 @@
     }
     const icons = [gatheringEmailIcon(r, 'registration')];
     if (r.payment_status === 'confirmed') icons.push(gatheringEmailIcon(r, 'payment_confirmed'));
-    // Food code isn't gated on payment status — same reasoning as the
-    // blast/resend backend: it's a venue check-in credential, valid the
-    // moment the row exists.
-    icons.push(gatheringEmailIcon(r, 'food_code'));
+    // Food code send/resend is gated behind the same "Include Food Code"
+    // config as the blast button in the table header (see
+    // applyGatheringFoodCodeConfigUI) — when it's off, this icon doesn't
+    // render at all rather than showing disabled, since a disabled icon
+    // with no explanation reads as broken rather than intentionally off.
+    if (currentSettings.gathering_food_code_in_email_enabled) {
+      icons.push(gatheringEmailIcon(r, 'food_code'));
+    }
     return `<div style="display:flex;gap:4px;">${icons.join('')}</div>`;
   }
 
@@ -10224,9 +10240,11 @@
       try {
         await saveSingleSetting(column);
         showToast('Food code email setting saved.');
+        applyGatheringFoodCodeConfigUI();
       } catch (err) {
         currentSettings[column] = !currentSettings[column];
         renderSettingsUI();
+        applyGatheringFoodCodeConfigUI();
         showToast('Failed to save: ' + err.message, true);
       }
     }
@@ -10610,6 +10628,7 @@
       renderSmsAccordion();
       notifyConfig = { ...notifyConfig, ...currentSettings, ...settingsProviders };
       renderSettingsUI();
+      applyGatheringFoodCodeConfigUI();
     } catch(e) { showToast('Could not load settings.'); }
   }
 
